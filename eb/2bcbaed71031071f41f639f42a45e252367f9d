@@ -1,0 +1,205 @@
+.dockerignore
+  s_dc116501f82d39::t_3ec462baff86a2 1-20
+.github/workflows/check.yml
+  s_dc116501f82d39::t_d2b8507a92c776 1-15
+.gitignore
+  s_dc116501f82d39::t_b1accc40ab330f 1-30
+.railwayignore
+  s_dc116501f82d39::t_155268e1e868ca 1-20
+Dockerfile
+  s_dc116501f82d39::t_a0e6eb52d7e621 1-21
+LICENSE
+  s_dc116501f82d39::t_51de1a9621e622 1-21
+README.md
+  s_dc116501f82d39::t_4528770d4072ff 1-80
+SECURITY.md
+  s_dc116501f82d39::t_aa1867c460248f 1-7
+THIRD_PARTY_NOTICES.md
+  s_dc116501f82d39::t_6a718a9c05e6c4 1-8
+data/cards.json
+  s_dc116501f82d39::t_1daef7f107d699 1-1189
+docs/HRF-LICENSE.txt
+  s_dc116501f82d39::t_8db1c93009b1fd 1-21
+docs/asset-sources.json
+  s_dc116501f82d39::t_f081bd2d08e45e 1-492
+docs/card-assets.json
+  s_dc116501f82d39::t_4d67c6d8afb9c4 1-580
+game/autoplay.js
+  s_dc116501f82d39::t_4903290913bbda 1-43
+game/data.js
+  s_dc116501f82d39::t_dc82baa7a676b7 1-269
+game/engine.js
+  s_dc116501f82d39::t_36ac41b39c0578 1-3916
+game/timeout-policy.js
+  s_dc116501f82d39::t_1f0fe3bc17f032 1-152
+index.html
+  s_dc116501f82d39::t_ae50c24c75faa3 1-19
+package-lock.json
+  s_dc116501f82d39::t_1b2615190c64b7 1-2751
+package.json
+  s_dc116501f82d39::t_b067a39d5348ef 1-51
+public/assets/fonts/fraunces-OFL.txt
+  s_dc116501f82d39::t_79cdba54efed31 1-93
+public/assets/fonts/sourcesans3-OFL.txt
+  s_dc116501f82d39::t_7fc59ed426d3cf 1-93
+public/favicon.svg
+  s_dc116501f82d39::t_ffa3c03a0b4787 1
+scripts/browser-check.mjs
+  s_dc116501f82d39::t_0797eaa040a02d 1-222
+scripts/controls-check.mjs
+  s_dc116501f82d39::t_11f4c2a7e83a65 1-337
+scripts/hosted-timeout-check.mjs
+  s_dc116501f82d39::t_9a017c72a098da 1-86
+scripts/import-content.mjs
+  s_dc116501f82d39::t_d412aa222e0d52 1-37
+scripts/learning-check.mjs
+  s_dc116501f82d39::t_15d09a8863293f 1-332
+scripts/movement-api-check.mjs
+  s_dc116501f82d39::t_8c52db5aa55390 1-103
+scripts/player-table-check.mjs
+  s_dc116501f82d39::t_075caea624d09c 1-239
+scripts/prepare-content.mjs
+  s_dc116501f82d39::t_a8f722fd6908c0 1-15
+scripts/resource-tray-check.mjs
+  s_dc116501f82d39::t_eb9a9ee7592a8e 1-161
+scripts/shared-board-check.mjs
+  s_dc116501f82d39::t_73a0973c9b9a41 1-157
+scripts/simulate.js
+  s_dc116501f82d39::t_e64fc6ec414c19 1-43
+scripts/timeout-simulations.mjs
+  s_dc116501f82d39::t_f8a6b2ed820c0d 1-40
+scripts/tool-check.mjs
+  s_dc116501f82d39::t_336930a4a8ac74 1-108
+scripts/ux-check.mjs
+  s_dc116501f82d39::t_a5edcf56611e0f 1-316
+scripts/ux-flow-check.mjs
+  s_dc116501f82d39::t_658eb5fe4aa0bb 1-196
+scripts/ux-simulation-audit.mjs
+  s_dc116501f82d39::t_783f8b170793d2 1-71
+scripts/ux-state-check.mjs
+  s_dc116501f82d39::t_078a34e9964863 1-157
+scripts/verify-assets.mjs
+  s_dc116501f82d39::t_b9f5a990d85dd8 1-4
+server/clock.js
+  s_dc116501f82d39::t_ed75c0739b2f38 1-171
+server/history.js
+  s_dc116501f82d39::t_7374cfc3fcb7da 1-207
+server/index.js
+  s_dc116501f82d39::t_4fb211bede4991 1-456
+server/timeout.js
+  s_dc116501f82d39::t_1c363c4d60c0a6 1-45
+src/ActionChoices.jsx
+  s_dc116501f82d39::t_5e3ec4ae57f901 1-37
+src/App.jsx
+  s_dc116501f82d39::t_17f9d69fac3575 1-2079
+src/BattleGuide.jsx
+  s_dc116501f82d39::t_d5b4257b6bb33e 1-170
+src/Board.jsx
+  s_dc116501f82d39::t_caab46ad03eeb0 1-616
+src/Cards.jsx
+  s_dc116501f82d39::t_6fa3673296aec0 1-62
+src/CombatEffects.jsx
+  s_dc116501f82d39::t_c180fbaac861a0 1-129
+src/CommandPanel.jsx
+  s_dc116501f82d39::t_fd3ac68fa64e91 1-554
+src/DecisionObjects.jsx
+  s_dc116501f82d39::t_11a851e3444f34 1-197
+src/DockResize.jsx
+  s_dc116501f82d39::t_2be6681712eaec 1-54
+src/PlayChoices.jsx
+  s_dc116501f82d39::t_f6385cee15b089 1-98
+src/PlayerBoardResize.jsx
+  s_dc116501f82d39::t_6a291a168601f0 1-64
+src/PlayerTable.jsx
+  s_dc116501f82d39::t_15fa262e7f1159 1-309
+src/ResourceTray.jsx
+  s_dc116501f82d39::t_f726dac5019359 1-185
+src/RuleHelp.jsx
+  s_dc116501f82d39::t_6b3bc4041fdbf2 1-133
+src/SelectionObjects.jsx
+  s_dc116501f82d39::t_719222e5844b62 1-139
+src/SharedBoard.jsx
+  s_dc116501f82d39::t_dba3499c82101e 1-130
+src/TableStory.jsx
+  s_dc116501f82d39::t_a6774c9511b673 1-172
+src/TurnFlow.jsx
+  s_dc116501f82d39::t_6f3708f32df325 1-97
+src/TurnTimers.jsx
+  s_dc116501f82d39::t_674aa09d7baa43 1-237
+src/battleOdds.js
+  s_dc116501f82d39::t_990e06af9063c7 1-36
+src/clear-table.css
+  s_dc116501f82d39::t_336e0030963de3 1-1144
+src/decision-objects.css
+  s_dc116501f82d39::t_de37921b931723 1-428
+src/decisionGuide.js
+  s_dc116501f82d39::t_a65bd57fea18e6 1-267
+src/fonts.css
+  s_dc116501f82d39::t_1f32d2506cb786 1-49
+src/learning.css
+  s_dc116501f82d39::t_1dd5b052c7ebae 1-712
+src/learning.js
+  s_dc116501f82d39::t_1bcf4a19831858 1-105
+src/main.jsx
+  s_dc116501f82d39::t_cd8683222b2cce 1-18
+src/player-table.css
+  s_dc116501f82d39::t_0c46556fb7cdcf 1-671
+src/resource-tray.css
+  s_dc116501f82d39::t_a13569e01513ea 1-261
+src/shared-board.css
+  s_dc116501f82d39::t_a7ece17b7b11fc 1-643
+src/sharedBoard.js
+  s_dc116501f82d39::t_29bd6973eb803c 1-24
+src/style.css
+  s_dc116501f82d39::t_05b17f1b618b8b 1-2643
+src/table-ux.css
+  s_dc116501f82d39::t_9904aad23e1b15 1-1546
+src/tableContext.js
+  s_dc116501f82d39::t_5176a313a55652 1-89
+src/tableTools.js
+  s_dc116501f82d39::t_ef3eadba23cc94 1-156
+src/useMapCamera.js
+  s_dc116501f82d39::t_8cc2f1d5120e34 1-148
+tests/battle-ux.test.js
+  s_dc116501f82d39::t_94be569a4f3d41 1-48
+tests/content-preparation.test.js
+  s_dc116501f82d39::t_9055f655ebf6ef 1-44
+tests/decision-guide.test.js
+  s_dc116501f82d39::t_74ed57c1f57a9b 1-99
+tests/engine.test.js
+  s_dc116501f82d39::t_b118f8af79c6b2 1-1508
+tests/learning.test.js
+  s_dc116501f82d39::t_d0187b81398894 1-30
+tests/resource-arrangement.test.js
+  s_dc116501f82d39::t_1d5b20891fb06d 1-99
+tests/server.test.js
+  s_dc116501f82d39::t_170d87c5d24681 1-392
+tests/shared-board.test.js
+  s_dc116501f82d39::t_eef1a7abc185ea 1-34
+tests/simulations.test.js
+  s_dc116501f82d39::t_9f35928bc7ef8c 1-27
+tests/timeout-server.test.js
+  s_dc116501f82d39::t_c20d74cdc296f9 1-119
+tests/timeout.test.js
+  s_dc116501f82d39::t_538e74be5ab9be 1-134
+tests/turn-controls.test.js
+  s_dc116501f82d39::t_634a27d47abcca 1-235
+vite.config.js
+  s_dc116501f82d39::t_b3ce9bc0f107ae 1-12
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "eb2bcbaed71031071f41f639f42a45e252367f9d",
+  "prompts": {},
+  "sessions": {
+    "s_dc116501f82d39": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0feb0-6bcc-7a61-b57d-5b785a6c2cc5",
+        "model": "gpt-6-astra"
+      },
+      "human_author": "farazmsiddiqi <70923196+farazmsiddiqi@users.noreply.github.com>"
+    }
+  }
+}
