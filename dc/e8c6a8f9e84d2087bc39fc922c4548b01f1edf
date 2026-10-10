@@ -1,0 +1,41 @@
+.gitattributes
+  s_dc116501f82d39::t_c1e8ed8eaec438 1-5
+.gitignore
+  s_dc116501f82d39::t_484564ea072e4e 23
+README.md
+  s_dc116501f82d39::t_86b1499069443d 5-7,15,23,26-27,29,32,34,44,59,67
+THIRD_PARTY_NOTICES.md
+  s_dc116501f82d39::t_0a1e35223be695 7
+data/cards.json
+  s_dc116501f82d39::t_93ac98e18b3661 1
+data/errata.json
+  s_dc116501f82d39::t_e46394864f7b22 1-528
+data/faq.json
+  s_dc116501f82d39::t_eade85fbdd878b 1-541
+docs/assets-integrity.json
+  s_dc116501f82d39::t_634bf91a9ac6cc 1-889
+game/data.js
+  s_dc116501f82d39::t_77493744714ece 1
+package.json
+  s_dc116501f82d39::t_609bfb3786f767 31-33
+scripts/verify-assets.mjs
+  s_dc116501f82d39::t_a87ae273793a3a 1-24
+src/App.jsx
+  s_dc116501f82d39::t_e1486973c45caa 42-43
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "dce8c6a8f9e84d2087bc39fc922c4548b01f1edf",
+  "prompts": {},
+  "sessions": {
+    "s_dc116501f82d39": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0feb0-6bcc-7a61-b57d-5b785a6c2cc5",
+        "model": "gpt-6-astra"
+      },
+      "human_author": "farazmsiddiqi <70923196+farazmsiddiqi@users.noreply.github.com>"
+    }
+  }
+}
