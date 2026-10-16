@@ -1,0 +1,39 @@
+CHANGES.md
+  s_dc116501f82d39::t_a101cbfa16fb18 53,166-168,339-341,405-418
+README.md
+  s_dc116501f82d39::t_d69c735a803472 32
+docs/release-review-2026-10.md
+  s_dc116501f82d39::t_fa55f86cdcbfad 1-36
+game/engine.js
+  s_dc116501f82d39::t_19db4021452edc 2800
+server/clock.js
+  s_dc116501f82d39::t_42f78a9a4a0115 37-38
+server/index.js
+  s_dc116501f82d39::t_fc9a85bc700493 10,34,36-39,96
+server/migrate.js
+  s_dc116501f82d39::t_e0ce33ed37580e 1-111
+tests/engine.test.js
+  s_dc116501f82d39::t_f46a088a0d4bbe 2285-2290,2292,2306
+tests/fairness-review.test.js
+  s_dc116501f82d39::t_1338378c0e0c87 1-70
+tests/migration.test.js
+  s_dc116501f82d39::t_2551e956474bd6 1-174
+tests/server.test.js
+  s_dc116501f82d39::t_925f77ad9289d1 9,60,583-662
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "307423d1d55aa11326f408c4e4fa2fb843c03943",
+  "prompts": {},
+  "sessions": {
+    "s_dc116501f82d39": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0feb0-6bcc-7a61-b57d-5b785a6c2cc5",
+        "model": "gpt-6-astra"
+      },
+      "human_author": "farazmsiddiqi <70923196+farazmsiddiqi@users.noreply.github.com>"
+    }
+  }
+}
