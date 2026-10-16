@@ -1,40 +1,16 @@
 import { ACTION_CARDS, CARDS, SUITS } from "../game/data.js";
 export const cap = (s = "") => s[0]?.toUpperCase() + s.slice(1);
-export function declarationsFor(game) {
-  if (!game.lead) return [];
-  if (game.lead.declarations) return game.lead.declarations;
-  // Existing saved tables predate structured declarations. Recover only public
-  // events after this round's lead; do not attribute an older chapter's marker.
-  const log = game.log ?? [];
-  let start = -1;
-  for (let i = log.length - 1; i >= 0; i--) {
-    if (
-      ACTION_CARDS[log[i].card] &&
-      / leads with [A-Z][a-z]+ [1-7]\.$/.test(log[i].text)
-    ) {
-      start = i;
-      break;
-    }
-  }
-  return start < 0
-    ? []
-    : log.slice(start + 1).flatMap((e) => {
-        const match = e.text.match(
-          /^(.*) declares (tycoon|tyrant|warlord|keeper|empath) \((\d+)\/(\d+)\)\.$/,
-        );
-        if (!match) return [];
-        return [
-          {
-            player: game.players.findIndex((p) => p.name === match[1]),
-            name: match[1],
-            ambition: match[2],
-            high: +match[3],
-            low: +match[4],
-            zero: null,
-          },
-        ];
-      });
-}
+// Card and FAQ text uses a light markup: `symbol:x` icons, $link:Name$ card
+// links, *emphasis*. Render it as plain text with the icons substituted.
+export const rulesText = (s) =>
+  (s ?? "")
+    .replace(/\$link:([^$]+)\$/g, "$1")
+    .replace(/`symbol:key`/g, "⚿")
+    .replace(/`symbol:intercept`/g, "↩")
+    .replace(/`symbol:hit`/g, "✹")
+    .replaceAll("*", "")
+    .replaceAll("`", "");
+export const declarationsFor = (game) => game.lead?.declarations ?? [];
 export function choiceHint(c, game) {
   const card = ACTION_CARDS[c.card];
   if (c.op === "play" && card) {

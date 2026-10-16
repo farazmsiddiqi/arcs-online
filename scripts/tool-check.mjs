@@ -21,7 +21,7 @@ const room = await post("/api/rooms", { name: "Tool host", players: 2 }),
 const initial = await post(`/api/rooms/${room.id}/start`, {}, room.key);
 const actor = initial.game.decision.actor,
   key = actor === 0 ? room.key : guest.key;
-const b = await chromium.launch();
+const b = await chromium.launch({ channel: process.env.PW_CHANNEL });
 const c = await b.newContext();
 await c.addInitScript(
   ({ id, key }) => {

@@ -41,7 +41,7 @@ const projection = () => ({
   game: viewFor(room.game, 0),
   history: historyView(room, 0),
 });
-const browser = await chromium.launch();
+const browser = await chromium.launch({ channel: process.env.PW_CHANNEL });
 const page = await browser.newPage({ viewport: { width: 1512, height: 982 } });
 const errors = [];
 let writes = 0;

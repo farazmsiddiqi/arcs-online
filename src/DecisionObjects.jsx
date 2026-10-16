@@ -1,4 +1,3 @@
-import React from "react";
 import {
   ArrowRight,
   ChevronLeft,
@@ -17,7 +16,7 @@ import { CARDS, ACTION_CARDS } from "../game/data.js";
 import { cardImage } from "./Cards.jsx";
 import { sprite } from "./Board.jsx";
 import { choiceObject, guideFor } from "./decisionGuide.js";
-import { choiceHint } from "./tableContext.js";
+import { choiceHint, rulesText } from "./tableContext.js";
 const symbols = {
   cancel: ChevronLeft,
   skip: SkipForward,
@@ -168,12 +167,14 @@ export function DecisionGuide({ game, teaching, setTeaching, onInspect }) {
         <div className="decision-instruction">
           <p>
             {source && game.decision.description
-              ? game.decision.description
+              ? rulesText(game.decision.description)
               : instruction}
           </p>
           {!source &&
             ["raid", "ruthless"].includes(game.decision.context?.kind) &&
-            game.decision.description && <p>{game.decision.description}</p>}
+            game.decision.description && (
+              <p>{rulesText(game.decision.description)}</p>
+            )}
           <details className="next-step-help">
             <summary>What happens next?</summary>
             <small>{next}</small>

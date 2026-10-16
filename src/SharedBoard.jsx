@@ -1,4 +1,3 @@
-import React from "react";
 import { AMBITIONS } from "../game/data.js";
 import { cap } from "./tableContext.js";
 import { ambitionLabels, ambitionStanding } from "./sharedBoard.js";

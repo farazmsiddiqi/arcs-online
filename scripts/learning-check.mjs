@@ -48,7 +48,7 @@ const projection = () => ({
   game: viewFor(room.game, 1),
   history: historyView(room, 1),
 });
-const browser = await chromium.launch();
+const browser = await chromium.launch({ channel: process.env.PW_CHANNEL });
 const page = await browser.newPage({ viewport: { width: 1512, height: 982 } });
 const errors = [];
 page.on("pageerror", (e) => errors.push(e.message));
@@ -204,11 +204,20 @@ try {
   await page
     .locator(`[data-system="${friendly.system}"] .system-target`)
     .click();
-  if (room.game.pending[0].type === "action")
+  // Starting a battle waits for its confirm step (M11, C-6), whether the
+  // system click picked the only target or the tray offered several.
+  const confirmRegion = page.getByRole("region", {
+    name: "Confirm this choice",
+  });
+  if (!(await confirmRegion.count()))
     await page
       .locator(".map-choice-tray")
       .getByRole("button", { name: new RegExp("^Battle Mira") })
       .click();
+  assert.equal(room.game.pending[0].type, "action", "not sent unconfirmed");
+  await confirmRegion
+    .getByRole("button", { name: "Confirm & start battle", exact: true })
+    .click();
   await page.getByLabel("skirmish dice", { exact: true }).waitFor();
   await page.waitForFunction(
     () => Number(document.querySelector(".map-viewport").dataset.zoom) > 3.49,

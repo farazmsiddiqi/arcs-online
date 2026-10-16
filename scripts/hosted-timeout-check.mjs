@@ -44,7 +44,7 @@ try {
   state = await request(root + "/timer", created.key, {
     revision: state.game.revision,
     operation: "configure",
-    config: { mode: "live", seconds: 60, expiry: "auto" },
+    config: { mode: "live", turn: 60, expiry: "auto" },
   });
   const turn = state.clock.key;
   const deadline = Date.now() + 110000;

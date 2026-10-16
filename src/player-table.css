@@ -411,17 +411,11 @@
 .app .player-mat .resource-slot .slot-number {
   font-size: 8px;
 }
-.app .player-mat .resource-slot .slot-name {
-  font-size: 9px;
-}
 .app .player-mat .resource-slot .slot-keys {
   font-size: 8px;
 }
 .app .player-mat .resource-slot .slot-keys svg {
   width: 10px;
-}
-.player-mat .resource-tray-hint {
-  display: none;
 }
 .app .player-mat .resource-tray-footer {
   margin: 5px 0;

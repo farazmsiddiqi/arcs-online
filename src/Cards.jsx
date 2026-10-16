@@ -1,22 +1,22 @@
-import React from "react";
 import { CARDS, ACTION_CARDS, SUITS } from "../game/data.js";
 export const cardImage = (id) =>
-  CARDS[id]?.product === "blightedreach"
-    ? CARDS[id].image
-    : ACTION_CARDS[id]
-      ? `/assets/${id}.webp`
-      : `/assets/cards/${id}.webp`;
-export function Card({ id, onClick, small = false, selected = false }) {
+  ACTION_CARDS[id] ? `/assets/${id}.webp` : `/assets/cards/${id}.webp`;
+export function Card({ id, onClick, badge = null }) {
   const c = CARDS[id];
   if (!c) return null;
   return (
     <button
-      className={`court-card ${small ? "small" : ""} ${selected ? "selected" : ""}`}
+      className={`court-card ${c.imageClass === "rotated" ? "landscape" : ""}`}
       onClick={onClick}
       title={c.name}
     >
       <img src={cardImage(id)} alt={c.name} loading="lazy" />
       <span>{c.name}</span>
+      {badge && (
+        <b className="card-badge" title="Has publisher FAQ or errata">
+          {badge}
+        </b>
+      )}
     </button>
   );
 }

@@ -641,16 +641,6 @@
       "sha256": "61bc32786b7980dece10b3c1450a5c4bc2b1e2575650aa0fea383249c96f8a58"
     },
     {
-      "file": "public/assets/map-regions-select.webp",
-      "bytes": 23374,
-      "sha256": "1b4f5536aa0b71470f8b6f09a63c71f9671395f5dcaea8dba9249c0af4fdab90"
-    },
-    {
-      "file": "public/assets/map-regions.webp",
-      "bytes": 25052,
-      "sha256": "fba1073080ceb171f63f7fbbcc91a7825a116792dd4d4426f10f3c3849940983"
-    },
-    {
       "file": "public/assets/material.webp",
       "bytes": 3960,
       "sha256": "6a2077ab39f1396e3bd769a9442fd1057b841738320a0b56c3230d0efe22f053"

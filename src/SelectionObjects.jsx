@@ -1,4 +1,3 @@
-import React from "react";
 import { Check, Minus } from "lucide-react";
 import { ChoiceArt } from "./DecisionObjects.jsx";
 import { DiceSymbol } from "./BattleGuide.jsx";
@@ -8,6 +7,7 @@ export default function SelectionObjects({
   setValues,
   busy,
   onSubmit,
+  onBack,
 }) {
   const f = game.decision.form;
   const blocked = (o) =>
@@ -108,6 +108,11 @@ export default function SelectionObjects({
       </div>
       <div className="selection-footer">
         <div className="selection-shortcuts">
+          {game.decision.canCancel && onBack && (
+            <button disabled={busy} onClick={onBack}>
+              ← Back
+            </button>
+          )}
           {f.options.length > 1 && (
             <button
               disabled={busy || !allLegal}

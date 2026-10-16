@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 export default function CombatEffects({ game, centers, slots }) {
   const seen = useRef(game.log?.at(-1)?.id ?? 0),
     prior = useRef(game.pieces),

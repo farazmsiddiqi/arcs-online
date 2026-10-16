@@ -22,7 +22,7 @@ const room = { game: structuredClone(fixtures.preludeRoot.raw) },
   me = room.game.players[p];
 me.leader = "LEAD04";
 me.cards = ["L03", "L07", "BC09", "BC14"];
-me.hand.push(...room.game.discard.splice(0, 4));
+me.hand.push(...room.game.discardDown.splice(0, 4));
 me.trophies = [
   { id: "test-t1", owner: (p + 1) % 3, type: "ship" },
   { id: "test-t2", owner: (p + 2) % 3, type: "city" },
@@ -43,7 +43,7 @@ const projection = () => ({
   options: { timer: { mode: "off" } },
   history: historyView(room, p),
 });
-const browser = await chromium.launch(),
+const browser = await chromium.launch({ channel: process.env.PW_CHANNEL }),
   page = await browser.newPage({ viewport: { width: 1512, height: 982 } }),
   errors = [];
 let writes = 0;
@@ -85,11 +85,9 @@ try {
   await expect(slot).toHaveAttribute("aria-pressed", "true");
   assert.equal(writes, 0);
   assert.equal(room.game.turn.prelude, true);
-  assert.ok(
-    await page
-      .locator(".stage-categories .selected")
-      .innerText()
-      .then((t) => t.includes("Slot 2")),
+  // The command panel's filter follows the slot a render later: retry.
+  await expect(page.locator(".stage-categories .selected")).toContainText(
+    "Slot 2",
   );
   await page
     .getByRole("button", {

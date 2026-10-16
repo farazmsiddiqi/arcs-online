@@ -1,8 +1,10 @@
 import PlayChoices from "./PlayChoices.jsx";
+import { setupImage, setupsFor } from "./setupPreview.js";
+import { draftOrder } from "./draftOrder.js";
 import PlayerBoardResize, { clampPlayerWidth } from "./PlayerBoardResize.jsx";
 import PlayerTable from "./PlayerTable.jsx";
 import DockResize from "./DockResize.jsx";
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useLayoutEffect, useRef } from "react";
 import {
   Orbit,
   Plus,
@@ -22,7 +24,6 @@ import {
   Shield,
   Flag,
   Ship,
-  LogOut,
   Download,
   Maximize2,
   Minimize2,
@@ -44,27 +45,29 @@ import faq from "../data/faq.json";
 import Board, { sprite } from "./Board.jsx";
 import TurnTimers, { ClockChip } from "./TurnTimers.jsx";
 import BattleGuide from "./BattleGuide.jsx";
+import BattleRecord, { battleList } from "./BattleRecord.jsx";
 import CommandPanel from "./CommandPanel.jsx";
 import { Card, ActionCard, cardImage } from "./Cards.jsx";
+import { discardPanelModel } from "./discardPanel.js";
+import { groupTurns } from "./turnHistory.js";
+import {
+  clarificationsFor,
+  clarificationSearchText,
+  hasClarifications,
+  linkParts,
+} from "./clarifications.js";
 import { useTableTools } from "./tableTools.js";
+import { confirmFor } from "./confirmStep.js";
+import { rulesText } from "./tableContext.js";
+import { affectsSeat } from "./notices.js";
+import NoticeToasts, { useNoticeToasts } from "./NoticeToasts.jsx";
+import { chime, flashTitle, readSound, writeSound } from "./attention.js";
 import { RoundStory, TurnBeacon } from "./TableStory.jsx";
 import SharedBoard, { AmbitionIcon, AmbitionMarker } from "./SharedBoard.jsx";
-const rulesText = (s) =>
-  (s ?? "")
-    .replace(/\$link:([^$]+)\$/g, "$1")
-    .replace(/`symbol:key`/g, "⚿")
-    .replace(/`symbol:intercept`/g, "↩")
-    .replace(/`symbol:hit`/g, "✹")
-    .replaceAll("*", "")
-    .replaceAll("`", "");
+const clarificationSources = { errata, faq };
+const cardIdByName = (name) =>
+  Object.values(CARDS).find((c) => c.name === name)?.id;
 const cap = (s) => s?.[0]?.toUpperCase() + s?.slice(1);
-const symbols = {
-  material: "▥",
-  fuel: "◉",
-  weapon: "♜",
-  relic: "✦",
-  psionic: "◈",
-};
 const demo = {
   chapter: 1,
   round: 1,
@@ -124,9 +127,9 @@ const demo = {
     agents: [0, 0, 0, 0],
   })),
   markers: [
-    { high: 5, low: 3 },
-    { high: 3, low: 2 },
-    { high: 2, low: 0 },
+    { id: 2, high: 5, low: 3 },
+    { id: 1, high: 3, low: 2 },
+    { id: 0, high: 2, low: 0 },
   ],
   courtDeckCount: 27,
   log: [],
@@ -156,7 +159,7 @@ export default function App() {
     [modal, setModal] = useState(
       initial.id && !initial.key ? "join" : initial.key ? null : "welcome",
     ),
-    [detail, setDetail] = useState(null),
+    [detailStack, setDetailStack] = useState([]),
     [name, setName] = useState(localStorage.getItem("arcs-name") ?? ""),
     [count, setCount] = useState(4),
     [leaders, setLeaders] = useState(false),
@@ -165,6 +168,8 @@ export default function App() {
     [query, setQuery] = useState(""),
     [category, setCategory] = useState("all"),
     [error, setError] = useState(""),
+    // Timer-control errors show only in the Turn timers dialog.
+    [timerError, setTimerError] = useState(""),
     [picked, setPicked] = useState(null),
     [busy, setBusy] = useState(false),
     [connected, setConnected] = useState(false),
@@ -172,7 +177,10 @@ export default function App() {
     [copied, setCopied] = useState(false),
     [fullMap, setFullMap] = useState(false),
     [playerDetail, setPlayerDetail] = useState(null),
-    [sound, setSound] = useState(localStorage.getItem("arcs-sound") === "yes");
+    [sound, setSound] = useState(readSound),
+    // The one-click choice waiting for its confirm step (C-6), as the id of a
+    // choice at one revision. Any new revision drops it.
+    [pendingConfirm, setPendingConfirm] = useState(null);
   const [dockHeight, setDockHeight] = useState(() => {
     const v = Number(localStorage.getItem("arcs-dock-height"));
     return v >= 180 ? Math.min(v, Math.max(180, innerHeight - 400)) : null;
@@ -213,14 +221,48 @@ export default function App() {
     if (value === null) localStorage.removeItem("arcs-dock-height");
     else localStorage.setItem("arcs-dock-height", String(value));
   };
+  // Card detail is a stack so a linked card (`$link:X$`) closes back to the
+  // card that linked it, then to the library/board it was opened from.
+  const detail = detailStack.at(-1) ?? null,
+    setDetail = (id) => setDetailStack(id == null ? [] : [id]),
+    pushDetail = (id) =>
+      setDetailStack((stack) => (stack.at(-1) === id ? stack : [...stack, id])),
+    modalRef = useRef(null),
+    modalScroll = useRef(0);
+  // Close the topmost layer only: card > commander details > modal > a
+  // pending confirm step > the expanded map. The modal underneath (library,
+  // discard piles, players...) stays as it was.
+  const closeTop = () => {
+    if (detailStack.length) setDetailStack((stack) => stack.slice(0, -1));
+    else if (playerDetail !== null) setPlayerDetail(null);
+    else if (modal) setModal(null);
+    else if (pendingConfirm) setPendingConfirm(null);
+    else setFullMap(false);
+  };
+  const layer = detail ? "card" : playerDetail !== null ? "player" : "modal";
+  useLayoutEffect(() => {
+    modalScroll.current = 0;
+  }, [modal]);
+  useLayoutEffect(() => {
+    if (layer === "modal" && modalRef.current)
+      modalRef.current.scrollTop = modalScroll.current;
+  }, [layer]);
+  const closeTopRef = useRef(closeTop);
+  closeTopRef.current = closeTop;
   const previousActor = useRef(null),
-    boardRef = useRef(null),
+    watching = useRef(false),
     logRef = useRef(null),
     commandRef = useRef(null);
   const game = room?.game ?? demo,
     me = game.players[game.me ?? 0],
     live = !!room?.game;
   const effectiveDockHeight = dockHeight ?? autoDockHeight;
+  // Every player sees each new timer notice as a toast; the player it is
+  // about also gets the tab title flashed while the tab is in the background.
+  const { toasts, dismiss: dismissToast } = useNoticeToasts(room, (fresh) => {
+    const mine = affectsSeat(fresh, room.me);
+    if (mine.length) flashTitle(mine.at(-1).text);
+  });
   useEffect(() => {
     if (dockHeight !== null) return;
     const content = commandRef.current?.querySelector(".command-live");
@@ -233,7 +275,17 @@ export default function App() {
       const base = innerHeight <= 800 ? 250 : 300;
       setAutoDockHeight(
         Math.min(
-          Math.min(500, Math.max(180, innerHeight - 400)),
+          // The dock never takes more than 46% of a tall window, so the map
+          // keeps about 370px on a 14" MacBook and 330px at 900px tall; a
+          // longer panel scrolls, and the dock can still be dragged taller.
+          // Short windows keep the old 400px reserve for the map.
+          Math.min(
+            500,
+            Math.max(
+              180,
+              Math.min(innerHeight - 400, Math.round(innerHeight * 0.46)),
+            ),
+          ),
           Math.max(
             base,
             Math.ceil(content.scrollHeight) + 20,
@@ -254,7 +306,8 @@ export default function App() {
       window.removeEventListener("resize", measure);
     };
   }, [dockHeight, live, game.revision, picked]);
-  const request = async (path, method = "GET", body, key = credentials.key) => {
+  const request = async (path, method = "GET", body) => {
+    const key = credentials.key;
     const r = await fetch(path, {
       method,
       headers: {
@@ -311,9 +364,12 @@ export default function App() {
     };
   }, [credentials.id, credentials.key]);
   useEffect(() => {
-    if (!live) return;
+    if (!live) {
+      watching.current = false;
+      return;
+    }
     setPicked(null);
-    setSelected(null);
+    setPendingConfirm(null);
     const f = game.decision?.form;
     setSelectedPieces(
       game.interaction?.kind === "moveSelect" && f?.options.length <= f?.max
@@ -323,31 +379,23 @@ export default function App() {
     setDraggedCard(null);
     if (logRef.current) logRef.current.scrollTop = logRef.current.scrollHeight;
     const actor = game.decision?.actor;
-    if (sound && actor === game.me && previousActor.current !== actor) {
-      try {
-        const ctx = new AudioContext(),
-          o = ctx.createOscillator(),
-          g = ctx.createGain();
-        o.connect(g);
-        g.connect(ctx.destination);
-        o.frequency.value = 660;
-        g.gain.setValueAtTime(0.04, ctx.currentTime);
-        g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.25);
-        o.start();
-        o.stop(ctx.currentTime + 0.25);
-        o.onended = () => ctx.close();
-      } catch {}
+    // Only a change seen while watching counts, so loading or reconnecting
+    // onto your own turn stays quiet. The chime can be muted in Settings;
+    // the title flash only runs while the tab is in the background.
+    if (
+      watching.current &&
+      actor === game.me &&
+      previousActor.current !== actor
+    ) {
+      if (sound) chime();
+      flashTitle("Your turn");
     }
     previousActor.current = actor;
+    watching.current = true;
   }, [game.revision, live]);
   useEffect(() => {
     const key = (e) => {
-      if (e.key === "Escape") {
-        setModal(null);
-        setDetail(null);
-        setPlayerDetail(null);
-        setFullMap(false);
-      }
+      if (e.key === "Escape") closeTopRef.current();
     };
     window.addEventListener("keydown", key);
     return () => window.removeEventListener("keydown", key);
@@ -362,7 +410,8 @@ export default function App() {
           'button:not(:disabled),a[href],input,select,[tabindex="0"]',
         ),
       ].filter((el) => el.getClientRects().length);
-    focusable()[0]?.focus();
+    // preventScroll: keep the library where the reader left it.
+    focusable()[0]?.focus({ preventScroll: true });
     const trap = (e) => {
       if (e.key !== "Tab") return;
       const items = focusable(),
@@ -379,7 +428,7 @@ export default function App() {
     dialog.addEventListener("keydown", trap);
     return () => {
       dialog.removeEventListener("keydown", trap);
-      previous?.focus();
+      previous?.focus({ preventScroll: true });
     };
   }, [modal, detail, playerDetail]);
   async function create(practice = false) {
@@ -461,7 +510,7 @@ export default function App() {
         setError("Select at least one ship to move.");
         return;
       }
-      act({ value: selectedPieces, destination: system });
+      actOrConfirm({ value: selectedPieces, destination: system });
       return;
     }
     const c = game.decision.choices?.find(
@@ -469,7 +518,7 @@ export default function App() {
         c.system === system &&
         ["moveFrom", "moveTo", "continue"].includes(c.op),
     );
-    if (c) act({ choice: c.id });
+    if (c) actOrConfirm({ choice: c.id });
     else {
       const targets = game.decision.choices.filter((c) => c.system === system);
       if (
@@ -482,7 +531,7 @@ export default function App() {
           "hit",
         ].includes(targets[0].op)
       )
-        act({ choice: targets[0].id });
+        actOrConfirm({ choice: targets[0].id });
     }
   }
   function togglePiece(id) {
@@ -524,8 +573,9 @@ export default function App() {
   }
   async function control(kind, input) {
     if (busy) return;
+    const fail = kind === "timer" ? setTimerError : setError;
     setBusy(true);
-    setError("");
+    fail("");
     try {
       const data = await request(
         `/api/rooms/${credentials.id}/${kind}`,
@@ -534,11 +584,14 @@ export default function App() {
       );
       setRoom(data);
     } catch (e) {
-      setError(e.message);
+      fail(e.message);
     } finally {
       setBusy(false);
     }
   }
+  useEffect(() => {
+    if (modal !== "timers") setTimerError("");
+  }, [modal]);
   async function act(input) {
     if (busy) return { ok: false, error: "Another command is in progress." };
     const target = game.decision.choices?.find(
@@ -562,6 +615,41 @@ export default function App() {
       setBusy(false);
     }
   }
+  // C-6: every click or button in the interface sends its choice through
+  // here. One-click choices that commit or reveal a card (see confirmStep.js)
+  // wait for a confirm step in the command panel; everything else, and any
+  // input that is not a plain choice (forms, Back, resource arrangement),
+  // goes straight to `act`. The table tools below keep the raw `act`: a tool
+  // call is itself a deliberate submission at a stated revision.
+  function actOrConfirm(input) {
+    const choice =
+      live && game.decision?.actor === game.me && input.choice !== undefined
+        ? game.decision.choices?.find((c) => c.id === input.choice)
+        : null;
+    if (!confirmFor(choice, game)) {
+      setPendingConfirm(null);
+      return act(input);
+    }
+    if (busy || room.clock?.blocked)
+      return Promise.resolve({
+        ok: false,
+        error: "Another command is in progress.",
+      });
+    setError("");
+    setPendingConfirm({ revision: game.revision, choice: choice.id });
+    // The confirm lives in the command panel, so clear whatever covers it:
+    // dialogs, and the expanded map, which is drawn over the whole screen.
+    setDetailStack([]);
+    setPlayerDetail(null);
+    setModal(null);
+    setFullMap(false);
+    return Promise.resolve({ ok: false, pending: true });
+  }
+  const confirmPending = () => {
+    if (pendingConfirm?.revision !== game.revision) return;
+    const { choice } = pendingConfirm;
+    return act({ choice });
+  };
   useTableTools(game, live, act, room);
   const inviteLink = credentials.id
     ? `${location.origin}/table/${credentials.id}#invite=${invite || localStorage.getItem(`arcs-invite-${credentials.id}`) || ""}`
@@ -591,13 +679,26 @@ export default function App() {
     }
   }
   const library = Object.values(CARDS)
-    .filter((c) => c.product !== "blightedreach")
     .filter((c) => category === "all" || c.kind === category)
     .filter((c) =>
-      (c.name + " " + c.tags.join(" ") + " " + (c.text ?? ""))
+      (
+        c.name +
+        " " +
+        c.tags.join(" ") +
+        " " +
+        (c.text ?? "") +
+        " " +
+        clarificationSearchText(c, c.id, clarificationSources)
+      )
         .toLowerCase()
         .includes(query.toLowerCase()),
     );
+  // Table history opens at the newest turn; later updates leave the scroll
+  // position alone.
+  useEffect(() => {
+    if (modal === "journal" && logRef.current)
+      logRef.current.scrollTop = logRef.current.scrollHeight;
+  }, [modal]);
   const detailCard = detail ? (CARDS[detail] ?? ACTION_CARDS[detail]) : null;
   return (
     <div
@@ -658,6 +759,7 @@ export default function App() {
           </button>
         </nav>
       </header>
+      <NoticeToasts toasts={toasts} onDismiss={dismissToast} />
       <RoundStory
         game={game}
         onInspect={setDetail}
@@ -686,7 +788,6 @@ export default function App() {
             if (draggedCard) e.preventDefault();
           }}
           onDrop={dropCard}
-          ref={boardRef}
         >
           {draggedCard && (
             <div className="card-drop-hint">
@@ -739,6 +840,56 @@ export default function App() {
                 Draft in reverse turn order. Choose one leader and{" "}
                 {game.options.doubleLore ? "two lore cards" : "one lore card"}.
               </p>
+              {(() => {
+                const order = draftOrder(game);
+                return (
+                  <ol className="draft-order" aria-label="Draft pick order">
+                    {order.chips.map((c) => {
+                      const pl = game.players[c.seat];
+                      return (
+                        <li
+                          key={c.index}
+                          className={`draft-chip ${c.state} ${c.pass % 2 ? "alt" : ""}`}
+                          style={{ "--player": pl.color }}
+                          aria-current={
+                            c.state === "current" ? "step" : undefined
+                          }
+                          title={
+                            c.archivist
+                              ? "Archivist: also chooses Lore privately after the draft"
+                              : undefined
+                          }
+                        >
+                          <span className="draft-chip-pick">
+                            Pick {c.index + 1}
+                          </span>
+                          <b>
+                            {pl.name}
+                            {c.seat === game.me ? " (you)" : ""}
+                          </b>
+                          <span className="draft-chip-what">
+                            {c.state === "done"
+                              ? (CARDS[c.card]?.name ?? "Taken")
+                              : c.state === "current"
+                                ? "Picking now"
+                                : "Waiting"}
+                          </span>
+                          {c.initiative && (
+                            <span className="draft-chip-note">
+                              Initiative · picks last each pass
+                            </span>
+                          )}
+                          {c.archivist && (
+                            <span className="draft-chip-note">
+                              Archivist: chooses Lore privately after the draft
+                            </span>
+                          )}
+                        </li>
+                      );
+                    })}
+                  </ol>
+                );
+              })()}
               {["leaders", "lore"].map((kind) => (
                 <section key={kind}>
                   <h3>
@@ -758,7 +909,9 @@ export default function App() {
                             <button
                               className="draft-pick"
                               disabled={busy}
-                              onClick={() => act({ choice: choice.id })}
+                              onClick={() =>
+                                actOrConfirm({ choice: choice.id })
+                              }
                             >
                               Draft {CARDS[id].name}
                             </button>
@@ -778,7 +931,7 @@ export default function App() {
               onSelect={selectBoard}
               selectedPieces={selectedPieces}
               onPiece={togglePiece}
-              onAction={act}
+              onAction={actOrConfirm}
               onInspect={() => setModal("system")}
               interactive={!busy && !room?.clock?.blocked}
             />
@@ -796,6 +949,13 @@ export default function App() {
                 aria-label={`Inspect Court discard pile: ${game.courtDiscard?.length ?? 0} cards`}
               >
                 <Layers size={12} /> {game.courtDiscard?.length ?? 0} discarded
+              </button>
+              <button
+                className="court-discard-link action-discard-link"
+                onClick={() => setModal("action-discard")}
+                aria-label="Inspect action discard piles"
+              >
+                <Layers size={12} /> Action discard
               </button>
             </div>
             <div className="court-row">
@@ -819,7 +979,7 @@ export default function App() {
                                 ].includes(v.op),
                             );
                           if (target && !busy && !room?.clock?.blocked)
-                            act({ choice: target.id });
+                            actOrConfirm({ choice: target.id });
                           else setDetail(c.id);
                         }}
                       />
@@ -898,7 +1058,7 @@ export default function App() {
           live={live}
           busy={busy || room?.clock?.blocked}
           onInspect={setDetail}
-          onAction={act}
+          onAction={actOrConfirm}
           resourceFocus={resourceFocus}
           onResource={(index) => {
             setResourceFocus({
@@ -963,8 +1123,7 @@ export default function App() {
               game={game}
               room={room}
               resourceFocus={resourceFocus}
-              personalBoard={true}
-              onAction={act}
+              onAction={actOrConfirm}
               onBattleGuide={(dice) => {
                 setBattleDice(dice);
                 setModal("dice-guide");
@@ -980,6 +1139,13 @@ export default function App() {
               onInspect={setDetail}
               onClearCard={() => setPicked(null)}
               onClearSystem={() => setSelected(null)}
+              confirming={
+                pendingConfirm?.revision === game.revision
+                  ? pendingConfirm.choice
+                  : null
+              }
+              onConfirm={confirmPending}
+              onCancelConfirm={() => setPendingConfirm(null)}
             />
           ) : (
             <div className="turn-message">
@@ -1002,15 +1168,15 @@ export default function App() {
         </aside>
       </footer>
       {(modal || detail || playerDetail !== null) && (
-        <div
-          className="modal-backdrop"
-          onClick={() => {
-            setModal(null);
-            setDetail(null);
-            setPlayerDetail(null);
-          }}
-        >
+        <div className="modal-backdrop" onClick={closeTop}>
           <section
+            ref={modalRef}
+            onClickCapture={(e) => {
+              // Remember the modal's own scroll before a click can open a card
+              // over it, so closing the card returns to the same place.
+              if (layer === "modal")
+                modalScroll.current = e.currentTarget.scrollTop;
+            }}
             className={`modal ${modal === "library" ? "library-modal" : modal === "dice-guide" ? "dice-guide-modal" : ""} ${detail ? "card-modal" : ""}`}
             role="dialog"
             aria-modal="true"
@@ -1026,11 +1192,7 @@ export default function App() {
             <button
               className="modal-close icon-button"
               aria-label="Close dialog"
-              onClick={() => {
-                setModal(null);
-                setDetail(null);
-                setPlayerDetail(null);
-              }}
+              onClick={closeTop}
             >
               <X size={20} />
             </button>
@@ -1071,7 +1233,7 @@ export default function App() {
                           game={game}
                           busy={busy || room?.clock?.blocked}
                           onPlay={async (c) => {
-                            const result = await act({ choice: c.id });
+                            const result = await actOrConfirm({ choice: c.id });
                             if (result.ok) setDetail(null);
                           }}
                         />
@@ -1082,33 +1244,47 @@ export default function App() {
                         )}
                       </section>
                     )}
-                  {errata
-                    .filter(
-                      (e) =>
-                        e.card === detailCard?.name ||
-                        e.card === `ARCS-${detail}`,
-                    )
-                    .map((e, i) => (
-                      <div className="errata" key={i}>
-                        <strong>Publisher clarification</strong>
-                        {e.errata.map((x, j) => (
-                          <p key={j}>{rulesText(x.text)}</p>
+                  {(() => {
+                    const extra = clarificationsFor(
+                      detailCard,
+                      detail,
+                      clarificationSources,
+                    );
+                    const linked = (text) =>
+                      linkParts(text, cardIdByName).map((part, k) =>
+                        part.id ? (
+                          <button
+                            key={k}
+                            className="rules-link"
+                            onClick={() => pushDetail(part.id)}
+                          >
+                            {rulesText(part.text)}
+                          </button>
+                        ) : (
+                          <React.Fragment key={k}>
+                            {rulesText(part.text)}
+                          </React.Fragment>
+                        ),
+                      );
+                    return (
+                      <>
+                        {extra.errata.map((e, i) => (
+                          <div className="errata" key={i}>
+                            <strong>Publisher clarification</strong>
+                            {e.errata.map((x, j) => (
+                              <p key={j}>{linked(x.text)}</p>
+                            ))}
+                          </div>
                         ))}
-                      </div>
-                    ))}
-                  {faq
-                    .filter(
-                      (e) =>
-                        e.card === detailCard?.name ||
-                        e.card === `ARCS-${detail}`,
-                    )
-                    .flatMap((e) => e.faq)
-                    .map((f, i) => (
-                      <details className="card-faq" key={i}>
-                        <summary>{rulesText(f.q)}</summary>
-                        <p>{rulesText(f.a)}</p>
-                      </details>
-                    ))}
+                        {extra.faq.map((f, i) => (
+                          <details className="card-faq" key={i}>
+                            <summary>{linked(f.q)}</summary>
+                            <p>{linked(f.a)}</p>
+                          </details>
+                        ))}
+                      </>
+                    );
+                  })()}
                   <span className="card-credit">
                     Game: Cole Wehrle · Artwork: Kyle Ferrin
                     <br />
@@ -1275,15 +1451,41 @@ export default function App() {
                       onChange={(e) => setSetup(e.target.value)}
                     >
                       <option value="random">Random official setup</option>
-                      {Object.entries(SETUPS)
-                        .filter(([id, s]) => s.players === count)
-                        .map(([id, s]) => (
-                          <option key={id} value={id}>
-                            {s.name}
-                          </option>
-                        ))}
+                      {setupsFor(count).map(([id, s]) => (
+                        <option key={id} value={id}>
+                          {s.name}
+                        </option>
+                      ))}
                     </select>
                   </label>
+                  {setup === "random" ? (
+                    <div
+                      className="setup-preview setup-preview-grid"
+                      aria-label="Setup cards that can be drawn"
+                    >
+                      {setupsFor(count).map(([id, s]) => (
+                        <button
+                          key={id}
+                          type="button"
+                          title={`Choose ${s.name}`}
+                          onClick={() => setSetup(id)}
+                        >
+                          <img src={setupImage(id)} alt={s.name} />
+                          <span>{s.name}</span>
+                        </button>
+                      ))}
+                    </div>
+                  ) : (
+                    SETUPS[setup] && (
+                      <figure className="setup-preview">
+                        <img
+                          src={setupImage(setup)}
+                          alt={`${SETUPS[setup].name} setup card`}
+                        />
+                        <figcaption>{SETUPS[setup].name}</figcaption>
+                      </figure>
+                    )
+                  )}
                 </details>
                 <button
                   className="primary full"
@@ -1454,6 +1656,11 @@ export default function App() {
                           key={c.id}
                           id={c.id}
                           onClick={() => setDetail(c.id)}
+                          badge={
+                            hasClarifications(c, c.id, clarificationSources)
+                              ? "FAQ"
+                              : null
+                          }
                         />
                       ))}
                 </div>
@@ -1478,6 +1685,107 @@ export default function App() {
                   <p>No Court cards have been discarded.</p>
                 )}
               </>
+            ) : modal === "action-discard" ? (
+              (() => {
+                const pile = discardPanelModel(game);
+                return (
+                  <>
+                    <span className="eyebrow gold">ACTION DISCARD</span>
+                    <h2>Action discard</h2>
+                    <p>
+                      Face-up cards are public. They are drawn only when the
+                      face-down pile runs short: then they are shuffled into it.
+                      Face-down cards stay hidden; only their count is known.
+                    </p>
+                    <p className="discard-down-count">
+                      In the discard: <strong>{pile.total}</strong>{" "}
+                      {pile.total === 1 ? "card" : "cards"} · face-up{" "}
+                      <strong>{pile.faceUpCount}</strong> · face-down{" "}
+                      <strong>{pile.faceDownCount}</strong>
+                    </p>
+                    {pile.rounds.map((r) => (
+                      <section className="discard-round" key={r.round}>
+                        <h3>Round {r.round}</h3>
+                        <div className="library-grid">
+                          {r.cards.map((c, i) => (
+                            <div
+                              className="discard-up-item"
+                              key={`${c.card}-${i}`}
+                            >
+                              <ActionCard
+                                id={c.card}
+                                onClick={() => setDetail(c.card)}
+                                onInspect={() => setDetail(c.card)}
+                              />
+                              <span className="discard-up-by">
+                                {c.playerName} · {c.modeLabel}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </section>
+                    ))}
+                    {!pile.faceUpCount && <p>No face-up cards in the pile.</p>}
+                    {pile.merge && (
+                      <section className="discard-merge">
+                        <h3>
+                          Last merge · round {pile.merge.round} (event{" "}
+                          {String(pile.merge.eventId).padStart(2, "0")})
+                        </h3>
+                        <p>
+                          {pile.merge.count} face-up{" "}
+                          {pile.merge.count === 1 ? "card was" : "cards were"}{" "}
+                          shuffled into the face-down pile and can no longer be
+                          told apart from it. The counts above are current.
+                        </p>
+                        {pile.merge.rounds.map((r) => (
+                          <div key={r.round}>
+                            <h4>Played in round {r.round}</h4>
+                            <div className="library-grid">
+                              {r.cards.map((c, i) => (
+                                <div
+                                  className="discard-up-item"
+                                  key={`${c.card}-${i}`}
+                                >
+                                  <ActionCard
+                                    id={c.card}
+                                    onClick={() => setDetail(c.card)}
+                                    onInspect={() => setDetail(c.card)}
+                                  />
+                                  <span className="discard-up-by">
+                                    {c.playerName} · {c.modeLabel}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        ))}
+                      </section>
+                    )}
+                    {pile.draws.length > 0 && (
+                      <section className="discard-draws">
+                        <h3>Draw log</h3>
+                        <p>
+                          Draws from the discard, oldest first. Counts only: the
+                          cards drawn are never shown.
+                        </p>
+                        <ul>
+                          {pile.draws.map((d) => (
+                            <li key={d.eventId}>
+                              <span>{String(d.eventId).padStart(2, "0")}</span>
+                              Chapter {d.chapter} · round {d.round} ·{" "}
+                              {d.playerName} drew {d.count}{" "}
+                              {d.count === 1 ? "card" : "cards"} ({d.viaLabel})
+                              {d.merged &&
+                                " after the face-up pile was shuffled in"}
+                            </li>
+                          ))}
+                        </ul>
+                      </section>
+                    )}
+                  </>
+                );
+              })()
             ) : modal?.startsWith("ambition:") ? (
               <>
                 <span className="eyebrow gold">AMBITION</span>
@@ -1495,9 +1803,10 @@ export default function App() {
                     {
                       tycoon:
                         "Most Material and Fuel icons, from resources and Guild cards.",
-                      tyrant: "Most captive agents.",
+                      tyrant:
+                        "Most Captives. Captives are rival agents you take by taxing their cities or securing Court cards they have agents on, plus a few card abilities such as Abduct and Gate Ports. If Tyrant is scored at chapter end, every player's Captives go back to their owners' supplies. If it was not declared, they stay and carry over.",
                       warlord:
-                        "Most trophies, including captured enemy pieces.",
+                        "Most Trophies. Trophies are rival ships, cities, starports and agents you destroyed, plus agents taken by Ransacking the Court and Captives executed with Prison Wardens. If Warlord is scored at chapter end, every player's Trophies go back: ships and starports to their owner's supply, cities to their owner's player board (which can cover a resource slot and force a discard). If it was not declared, they stay and carry over.",
                       keeper:
                         "Most Relic icons, from resources and Guild cards.",
                       empath:
@@ -1552,47 +1861,7 @@ export default function App() {
             ) : modal === "dice-guide" ? (
               <BattleGuide game={game} dice={battleDice} />
             ) : modal === "battle" ? (
-              <>
-                <span className="eyebrow gold">BATTLE RECORD</span>
-                <h2>
-                  {game.players[game.lastBattle.attacker].name} against{" "}
-                  {game.players[game.lastBattle.defender].name}
-                </h2>
-                <p>
-                  Sector {MAP[game.lastBattle.system].cluster} ·{" "}
-                  {cap(MAP[game.lastBattle.system].symbol)}. Latest dice,
-                  including any rerolls. Hit assignment and raid choices appear
-                  in the table log.
-                </p>
-                <div className="battle-record-dice">
-                  {game.lastBattle.dice.map((die, i) => (
-                    <div key={i}>
-                      <strong>{cap(die.type)}</strong>
-                      <span>
-                        {die.faces.length
-                          ? die.faces
-                              .map(
-                                (f) =>
-                                  ({
-                                    hit: "Ship hit",
-                                    self: "Self hit",
-                                    intercept: "Intercept",
-                                    building: "Building hit",
-                                    key: "Raid key",
-                                  })[f],
-                              )
-                              .join(" · ")
-                          : "Blank"}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-                <p>
-                  Intercept hits apply when the defender has fresh ships, with
-                  card abilities modifying the usual rules. Raid keys buy
-                  eligible resources or Guilds individually.
-                </p>
-              </>
+              <BattleRecord game={game} />
             ) : modal === "scores" ? (
               <>
                 <span className="eyebrow gold">CHAPTER RESULTS</span>
@@ -1823,7 +2092,8 @@ export default function App() {
             ) : modal === "journal" ? (
               <>
                 <h2>Table history</h2>{" "}
-                {live && game.lastBattle && (
+                <p>Everything done in public, grouped by whose turn it was.</p>
+                {live && battleList(game).length > 0 && (
                   <button
                     className="score-recap-button"
                     onClick={() => setModal("battle")}
@@ -1849,14 +2119,25 @@ export default function App() {
                   </div>
                   <div className="log-entries" ref={logRef}>
                     {game.log.length ? (
-                      game.log.map((entry) => (
-                        <p key={entry.id}>
-                          <span>{entry.id.toString().padStart(2, "0")}</span>
-                          {entry.automatic && (
-                            <small className="automatic-move">AI · </small>
-                          )}
-                          {entry.text}
-                        </p>
+                      groupTurns(game).map((turn) => (
+                        <section className="turn-group" key={turn.key}>
+                          <h4>
+                            {turn.legacy
+                              ? "Earlier events"
+                              : `Chapter ${turn.chapter} · round ${turn.round} · ${turn.name}'s turn`}
+                          </h4>
+                          {turn.entries.map((entry) => (
+                            <p key={entry.id}>
+                              <span>
+                                {entry.id.toString().padStart(2, "0")}
+                              </span>
+                              {entry.automatic && (
+                                <small className="automatic-move">AI · </small>
+                              )}
+                              {entry.text}
+                            </p>
+                          ))}
+                        </section>
                       ))
                     ) : (
                       <>
@@ -1961,7 +2242,7 @@ export default function App() {
                 room={room}
                 onControl={(input) => control("timer", input)}
                 busy={busy}
-                error={error}
+                error={timerError}
               />
             ) : modal === "settings" ? (
               <>
@@ -1969,12 +2250,13 @@ export default function App() {
                 <h2>Table settings</h2>
                 <button
                   className="reference-link full"
+                  aria-pressed={sound}
                   onClick={() => {
                     setSound(!sound);
-                    localStorage.setItem("arcs-sound", sound ? "no" : "yes");
+                    writeSound(!sound);
                   }}
                 >
-                  {sound ? "Turn sounds on" : "Turn sounds off"}
+                  {sound ? "Your-turn chime: on" : "Your-turn chime: muted"}
                   {sound ? <Volume2 size={18} /> : <VolumeX size={18} />}
                 </button>
                 {room && (

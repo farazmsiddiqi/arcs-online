@@ -23,14 +23,15 @@
     "test:resources": "node scripts/resource-tray-check.mjs",
     "test:ux-states": "node scripts/ux-state-check.mjs",
     "test:ux-flows": "node scripts/ux-flow-check.mjs",
-    "test:ux-simulations": "node scripts/ux-simulation-audit.mjs",
+    "fixtures:ux": "node scripts/ux-fixtures.mjs",
     "test:player-table": "node scripts/player-table-check.mjs",
     "test:shared-board": "node scripts/shared-board-check.mjs",
     "test:timeouts": "node --test tests/timeout.test.js tests/timeout-server.test.js",
     "test:timeout-simulations": "node scripts/timeout-simulations.mjs",
     "pretest": "npm run verify:assets",
     "prebuild": "npm run verify:assets",
-    "predev": "npm run verify:assets"
+    "predev": "npm run verify:assets",
+    "test:ux-sweep": "node scripts/ux-sweep.mjs"
   },
   "dependencies": {
     "express": "^5.1.0",

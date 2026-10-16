@@ -1,4 +1,3 @@
-import React from "react";
 export function TurnStages({ game, review }) {
   if (["draft", "over"].includes(game.phase))
     return (

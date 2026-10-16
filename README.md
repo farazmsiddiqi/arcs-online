@@ -29,9 +29,11 @@ npm run build
 npm start
 ```
 
-Stop the previous local server before restarting. Cards, artwork, and reference data are bundled and work locally without contacting a publisher server. Your own games are saved locally; private games and credentials from other installations are never included in this repository.
+Stop the previous local server before restarting. Existing saved tables and turn timers are upgraded automatically. Before the first upgrade, the server keeps a SQLite snapshot at `DATA_DIR/backups/before-save-v1.sqlite` (locally, `var/backups/before-save-v1.sqlite`). Keep that backup private. Cards, artwork, and reference data are bundled and work locally without contacting a publisher server. Your own games are saved locally; private games and credentials from other installations are never included in this repository.
 
 `npm run verify:assets` checks every bundled asset against its recorded checksum and confirms all 115 card images are present. This check also runs before tests, builds, and the development server.
+
+For a plain-language overview of the October 2026 review and the eighteen milestones built from it, see [CHANGES.md](CHANGES.md).
 
 ## Validation
 
@@ -49,6 +51,10 @@ npm run test:browser
 npm run test:player-table
 npm run test:shared-board
 ```
+
+The other browser checks (`test:ux`, `test:ux-states`, `test:ux-flows`, `test:controls`, `test:learning`, `test:resources`, `test:tools`) run the same way; set `PW_CHANNEL=chrome` to use an installed Chrome instead of Playwright's Chromium. The saved engine states they render come from `tests/fixtures/ux-states.json.gz`, regenerated from the current engine with `npm run fixtures:ux`.
+
+`npm run test:ux-sweep` is the UI regression check: it renders every saved state at four window sizes (14" and 13" laptops, a 1280x720 window, a phone), from the acting and a waiting seat, and with each dialog open, screenshots each render to `work/ux-sweep/`, and fails on overflow, page scroll on a computer, console errors, broken artwork, clipped text, controls off the window or overlapping, or a command panel the actor cannot see. `STATES=card,dice SIZES=desktop` narrows a run; `LAYERS=0 SHOTS=0` skips dialogs and screenshots.
 
 `TEST_URL` defaults to the local development server. Run browser checks only against disposable test instances: some create tables or take actions. Screenshots and generated reports belong in ignored `work/`. Automated coverage is substantial but does not prove every possible card interaction correct.
 

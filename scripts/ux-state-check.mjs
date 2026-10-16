@@ -11,30 +11,12 @@ const fixtures = JSON.parse(
     ),
   ).toString("utf8"),
 );
-// Explicit fixtures for optional flows deliberately skipped by the simple bots.
-for (const kind of [
-  "farseersDiscard",
-  "relicFence",
-  "steal",
-  "placeFleet",
-  "union",
-  "interest",
-  "revive",
-  "reorder",
-]) {
-  const raw = structuredClone(fixtures.preludeRoot.raw),
-    p = raw.current;
-  raw.pending = [
-    {
-      type: kind,
-      p,
-      ...(kind === "interest" ? { card: "BC02", resource: "material" } : {}),
-      ...(kind === "union" ? { suit: raw.turn.suit } : {}),
-      ...(kind === "reorder" ? { index: 0 } : {}),
-    },
-  ];
-  if (kind === "reorder") raw.pending.push({ type: "arrangeResources", p });
-  fixtures[kind] = { raw };
+// Revive (Mythic Wayfarers) is never reached by the bots; build it from the
+// Prelude root by hand.
+{
+  const raw = structuredClone(fixtures.preludeRoot.raw);
+  raw.pending = [{ type: "revive", p: raw.current }];
+  fixtures.revive = { raw };
 }
 const id = "ABCDDE12";
 let current;
@@ -48,7 +30,7 @@ const projection = () => ({
   options: { timer: { mode: "off" } },
   history: { canUndo: false, canRedo: false, reason: "Fixture", steps: [] },
 });
-const browser = await chromium.launch(),
+const browser = await chromium.launch({ channel: process.env.PW_CHANNEL }),
   page = await browser.newPage({ viewport: { width: 1512, height: 982 } }),
   errors = [],
   checked = [];
@@ -95,13 +77,16 @@ try {
       await expect
         .poll(
           async () =>
-            page
-              .locator("img:visible")
-              .evaluateAll((images) =>
-                images.every(
-                  (image) => image.complete && image.naturalWidth > 0,
-                ),
-              ),
+            page.locator("img:visible").evaluateAll((images) => {
+              // Cards below the fold are `loading="lazy"` and the browser
+              // may never start them; this check is about the artwork, so
+              // ask for it now.
+              for (const image of images)
+                if (!image.complete) image.loading = "eager";
+              return images.every(
+                (image) => image.complete && image.naturalWidth > 0,
+              );
+            }),
           { timeout: 15000, message: `${kind}: visible artwork loaded` },
         )
         .toBe(true);

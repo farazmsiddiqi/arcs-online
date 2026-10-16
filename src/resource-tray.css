@@ -257,5 +257,11 @@
 }
 
 /* Expanded trays share the available width before wrapping on small screens. */
-.resource-tray {display:flex;flex-wrap:wrap;}
-.app .resource-slot {flex:1 1 64px;max-width:104px;}
+.resource-tray {
+  display: flex;
+  flex-wrap: wrap;
+}
+.app .resource-slot {
+  flex: 1 1 64px;
+  max-width: 104px;
+}

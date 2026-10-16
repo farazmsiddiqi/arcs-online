@@ -33,7 +33,7 @@ test("persisted timeout runs without browsers, journals automatic moves, and sto
       { name: "A", keyHash: hash },
       { name: "B", keyHash: "unused" },
     ],
-    options: { timer: { mode: "live", seconds: 60, expiry: "auto" } },
+    options: { timer: { mode: "live", turn: 60, expiry: "auto" } },
   };
   initClock(room, Date.now() - 61000);
   for (const [id, expiry] of [

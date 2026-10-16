@@ -1,0 +1,108 @@
+/* Laptop windows (wider than 1000px, up to 1000px tall): give the map room.
+   Phones and big monitors are untouched. Remove this file and its import in
+   main.jsx to go back to the old layout.
+   1. The hand sits beside the player mat instead of under it, so the dock
+      needs about 260px of content instead of 400px.
+   2. The round-story strip is shorter.
+   The player board is a size container: the side-by-side arrangement only
+   applies when it is wide enough, so a narrowed board keeps the stacked one. */
+@media (min-width: 1001px) and (max-height: 1000px) {
+  .app,
+  .app:not(:has(.turn-beacon)) {
+    grid-template-rows: 48px 80px 28px minmax(160px, 1fr) var(
+        --dock-height,
+        280px
+      );
+  }
+  .app:not(:has(.turn-beacon)) {
+    grid-template-rows: 48px 80px minmax(160px, 1fr) var(--dock-height, 280px);
+  }
+  .app .topbar {
+    height: 48px;
+    min-height: 48px;
+  }
+  .app > .round-story {
+    height: 80px;
+    padding: 4px 22px;
+  }
+  .app .round-label > .eyebrow {
+    display: none;
+  }
+  .app .round-label .lead-rule {
+    font-size: 10px;
+    line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .app .round-label {
+    justify-content: center;
+    gap: 1px;
+  }
+  .app .round-label > strong {
+    font-size: 17px;
+  }
+  .app .round-seat .round-card,
+  .app .round-card {
+    height: 60px;
+    width: 43px;
+    flex-basis: 43px;
+  }
+  @container (min-width: 690px) {
+    .player-table-inner {
+      display: grid;
+      grid-template-columns: minmax(330px, 400px) max-content minmax(96px, 1fr);
+      column-gap: 12px;
+      align-items: start;
+    }
+    .player-table-heading {
+      grid-column: 1 / -1;
+    }
+    .app .personal-tabletop {
+      display: contents;
+    }
+    .app .player-mat {
+      grid-column: 1;
+      grid-row: 2;
+    }
+    .app .personal-hand {
+      grid-column: 2;
+      grid-row: 2;
+      margin-top: 0;
+      padding-top: 0;
+      border-top: 0;
+    }
+    .app .owned-table-cards {
+      grid-column: 3;
+      grid-row: 2;
+    }
+    .app .personal-hand .hand-cards {
+      display: grid;
+      grid-template-columns: repeat(3, 61px);
+      gap: 6px 8px;
+      max-height: 232px;
+      overflow-y: auto;
+    }
+    .app .personal-hand .hand-cards .action-wrapper {
+      width: 61px;
+      min-width: 61px;
+      flex-basis: 61px;
+    }
+    /* The empty-hand note spans the card grid instead of wrapping one word
+       per line in a single 61px column. */
+    .app .personal-hand .hand-cards .empty-hand {
+      grid-column: 1 / -1;
+      margin: 0;
+    }
+  }
+}
+/* A wider default player board (the hand needs the room) from 1200px up; a
+   narrower window keeps the old split and its stacked hand. */
+@media (min-width: 1200px) and (max-height: 1000px) {
+  .app .hand-area {
+    grid-template-columns: minmax(0, var(--player-width, 60%)) minmax(0, 1fr);
+  }
+  .player-board-resize {
+    left: var(--player-width, 60%);
+  }
+}

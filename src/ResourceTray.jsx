@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { Check, KeyRound, RotateCcw, ShieldCheck } from "lucide-react";
 import RuleHelp from "./RuleHelp.jsx";
 const cap = (s) => (s ? s[0].toUpperCase() + s.slice(1) : "Empty");

@@ -1,5 +1,4 @@
-import React from "react";
-import { Flag, Sparkles, ArrowRight, Clock3 } from "lucide-react";
+import { Sparkles, ArrowRight, Clock3 } from "lucide-react";
 import { ACTION_CARDS } from "../game/data.js";
 import { cardImage } from "./Cards.jsx";
 import { cap, declarationsFor } from "./tableContext.js";

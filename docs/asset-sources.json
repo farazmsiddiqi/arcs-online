@@ -183,18 +183,6 @@
       "bytes": 605066
     },
     {
-      "name": "map-regions",
-      "path": "public/assets/map-regions.webp",
-      "url": "https://hrf.im/hrf/webp2/arcs/images/map-regions.webp",
-      "bytes": 25052
-    },
-    {
-      "name": "map-regions-select",
-      "path": "public/assets/map-regions-select.webp",
-      "url": "https://hrf.im/hrf/webp2/arcs/images/map-regions-select.webp",
-      "bytes": 23374
-    },
-    {
       "name": "b-ship",
       "path": "public/assets/b-ship.webp",
       "url": "https://hrf.im/hrf/webp2/arcs/images/figure/b-ship.webp",

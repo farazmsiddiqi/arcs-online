@@ -1,10 +1,4 @@
-import React, {
-  useId,
-  useLayoutEffect,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
+import { useId, useLayoutEffect, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { CircleHelp, X } from "lucide-react";
 export default function RuleHelp({ info, children, label, className = "" }) {

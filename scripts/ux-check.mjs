@@ -32,7 +32,7 @@ const room = () => ({
   host: seat === 0,
   capacity: 3,
 });
-const browser = await chromium.launch();
+const browser = await chromium.launch({ channel: process.env.PW_CHANNEL });
 const page = await browser.newPage({ viewport: { width: 1512, height: 982 } });
 const errors = [];
 page.on("pageerror", (e) => errors.push(e.message));
@@ -119,6 +119,8 @@ try {
     .click();
   assert.ok((await page.locator(".choice-consequence").count()) > 0);
   assert.match(await page.locator(".play-pips").first().innerText(), /action/);
+  // Clicking a hand card opens its dialog; close it to reach the panel.
+  await page.keyboard.press("Escape");
   await page
     .getByRole("button", { name: "Clear selection", exact: true })
     .click();
@@ -140,15 +142,19 @@ try {
     ),
     "laptop height fits",
   );
+  // On a short laptop window the map keeps at least 200px (laptop-fit.css),
+  // and the Court's first row is whole; the rest scrolls inside the Court.
+  const board = await page.locator(".physical-board").boundingBox();
   assert.ok(
-    (await page.locator(".physical-board").boundingBox()).height >= 240,
-    "map remains usable on laptop",
+    board.height >= 200,
+    `map remains usable on laptop (${board.height}px)`,
   );
   const courtBounds = await page.locator(".court").boundingBox();
-  const lastCourt = await page.locator(".court-slot").last().boundingBox();
+  const secondCourt = await page.locator(".court-slot").nth(1).boundingBox();
   assert.ok(
-    lastCourt.y + lastCourt.height <= courtBounds.y + courtBounds.height + 2,
-    "all Court cards visible on laptop",
+    secondCourt.y + secondCourt.height <=
+      courtBounds.y + courtBounds.height + 2,
+    "first row of Court cards visible on laptop",
   );
   await page.getByRole("button", { name: "Expand board", exact: true }).click();
   assert.ok(await page.locator(".expanded-board").isVisible());
@@ -156,13 +162,6 @@ try {
     .getByRole("button", { name: "Close expanded board", exact: true })
     .click();
   await page.setViewportSize({ width: 1512, height: 982 });
-  // Existing saves without new structured metadata still explain declarations.
-  delete state.lead.declarations;
-  await refresh();
-  assert.match(
-    await page.locator(".round-story").innerText(),
-    /Alex declared Tycoon/,
-  );
   // A face-down copy is labelled, but its identity is not placed in DOM or alt text.
   step("play", (c) => c.mode === "copy");
   step("endTurn");
@@ -244,6 +243,7 @@ try {
       { type: "raid", faces: ["key"] },
     ],
   };
+  state.battles = [{ ...state.lastBattle, rerolls: [] }];
   seat = 1;
   await refresh();
   assert.match(
@@ -286,12 +286,76 @@ try {
     /Self hit/,
   );
   await page.getByRole("button", { name: "Close dialog" }).click();
+  // Per-chapter battle list: newest first, current chapter open, older folded.
+  const roll = (chapter, round, rerolls, faces) => ({
+    attacker: 2,
+    defender: 1,
+    system: origin,
+    dice: [{ type: "skirmish", faces }],
+    rerolls,
+    at: { chapter, round, player: 2 },
+  });
+  state.chapter = 2;
+  state.battles = [
+    roll(1, 1, [], ["hit"]),
+    roll(1, 3, ["Skirmishers"], []),
+    roll(2, 2, [], ["hit"]),
+  ];
+  for (const [w, h] of [
+    [1280, 700],
+    [1440, 790],
+  ]) {
+    await page.setViewportSize({ width: w, height: h });
+    await refresh();
+    await page
+      .getByRole("button", { name: "Table history", exact: true })
+      .click();
+    await page
+      .getByRole("button", { name: "Review latest battle dice" })
+      .click();
+    const dialog = page.getByRole("dialog");
+    assert.equal(await dialog.locator("summary").count(), 2);
+    assert.match(
+      await dialog.locator("summary").first().innerText(),
+      /Chapter 2 · 1 roll$/,
+    );
+    assert.match(
+      await dialog.locator("summary").last().innerText(),
+      /Chapter 1 · 2 rolls$/,
+    );
+    assert.equal(await dialog.locator("details[open]").count(), 1);
+    assert.equal(
+      await dialog.locator(".battle-record-dice:visible").count(),
+      1,
+    );
+    await dialog.locator("summary").last().click();
+    const text = await dialog.innerText();
+    assert.match(text, /Rerolled: Skirmishers/);
+    assert.ok(text.indexOf("Round 3") < text.indexOf("Round 1"));
+    const box = await dialog.boundingBox();
+    assert.ok(box.y >= 0 && box.y + box.height <= h, JSON.stringify(box));
+    // Escape, X and the backdrop all close it.
+    await page.keyboard.press("Escape");
+    assert.equal(await page.getByRole("dialog").count(), 0);
+    await page
+      .getByRole("button", { name: "Table history", exact: true })
+      .click();
+    await page
+      .getByRole("button", { name: "Review latest battle dice" })
+      .click();
+    await page.getByRole("button", { name: "Close dialog" }).click();
+    assert.equal(await page.getByRole("dialog").count(), 0);
+    await page
+      .getByRole("button", { name: "Table history", exact: true })
+      .click();
+    await page.mouse.click(5, 5);
+    assert.equal(await page.getByRole("dialog").count(), 0);
+  }
   assert.deepEqual(errors, []);
   console.log(
     JSON.stringify({
       declarationContext: true,
       preservedAcrossTurns: true,
-      oldSaveCompatibility: true,
       endTurnGuard: true,
       choiceConsequences: true,
       hiddenCopy: true,
@@ -304,6 +368,7 @@ try {
       defenderContext: true,
       originSelectionLimit: true,
       battleReview: true,
+      battleChapters: true,
     }),
   );
 } catch (e) {

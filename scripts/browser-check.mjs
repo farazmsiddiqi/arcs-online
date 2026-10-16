@@ -2,7 +2,7 @@ import { chromium } from "@playwright/test";
 import assert from "node:assert/strict";
 const base = process.env.TEST_URL ?? "http://localhost:5173";
 const leaders = process.env.TEST_LEADERS === "yes";
-const browser = await chromium.launch();
+const browser = await chromium.launch({ channel: process.env.PW_CHANNEL });
 const contexts = await Promise.all([
   browser.newContext({ viewport: { width: 1512, height: 982 } }),
   browser.newContext({ viewport: { width: 1280, height: 900 } }),

@@ -1,4 +1,4 @@
-import React, { useRef } from "react";
+import { useRef } from "react";
 import {
   KeyRound,
   ChevronLeft,
@@ -28,6 +28,7 @@ function CapturedPieces({ kind, player, game }) {
     <section
       className={`mat-captured ${kind}`}
       aria-label={`${cap(kind)}: ${pieces.length}`}
+      title={`Returned to owners at chapter end if ${kind === "trophies" ? "Warlord" : "Tyrant"} was declared`}
     >
       <header>
         {cap(kind)} <b>{pieces.length}</b>
@@ -96,7 +97,7 @@ export default function PlayerTable({
                   summary:
                     "Resources in slots. Cities in reserve. Rival pieces below.",
                   detail:
-                    "Slot keys are the cost to steal a resource in a raid. Building cities opens resource slots; the last two cities also reveal scoring bonuses. Captured agents go in Captives, while trophies contribute to Warlord. Resource spending happens during Prelude; card abilities may change what a resource can do.",
+                    "Slot keys are the cost to steal a resource in a raid. Building cities opens resource slots; the last two cities also reveal scoring bonuses. Captured rival agents go in Captives (Tyrant); rival pieces you destroy go in Trophies (Warlord). Both return to their owners at chapter end only if that ambition was declared. Resource spending happens during Prelude; card abilities may change what a resource can do.",
                   page: 17,
                 }}
               />

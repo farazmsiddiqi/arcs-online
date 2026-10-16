@@ -1,4 +1,3 @@
-import React from "react";
 import { createRoot } from "react-dom/client";
 import App from "./App.jsx";
 import "./fonts.css";
@@ -16,3 +15,5 @@ import "./decision-objects.css";
 
 import "./player-table.css";
 import "./shared-board.css";
+
+import "./laptop-fit.css";

@@ -5,8 +5,9 @@ import { randomBytes, createHash, timingSafeEqual } from "node:crypto";
 import { mkdirSync, existsSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { createGame, viewFor, decision, RuleError } from "../game/engine.js";
+import { createGame, viewFor, RuleError } from "../game/engine.js";
 import { autoInput } from "../game/autoplay.js";
+import { migrateRoom, backupLegacyRooms } from "./migrate.js";
 import { resolveTimeout } from "./timeout.js";
 import {
   applyMovement,
@@ -23,14 +24,19 @@ import {
   followClock,
   assertClockOpen,
   changeClock,
+  addNotice,
 } from "./clock.js";
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const dir = process.env.DATA_DIR ?? path.join(root, "var");
 mkdirSync(dir, { recursive: true });
 const db = new DatabaseSync(path.join(dir, "arcs.sqlite"));
 db.exec(
-  "PRAGMA journal_mode=WAL; PRAGMA foreign_keys=ON; CREATE TABLE IF NOT EXISTS rooms(id TEXT PRIMARY KEY, invite_hash TEXT NOT NULL, host_hash TEXT NOT NULL, data TEXT NOT NULL, updated INTEGER NOT NULL); CREATE TABLE IF NOT EXISTS events(room TEXT NOT NULL, revision INTEGER NOT NULL, actor INTEGER, action TEXT NOT NULL, created INTEGER NOT NULL, PRIMARY KEY(room,revision));",
+  "PRAGMA busy_timeout=10000; PRAGMA journal_mode=WAL; PRAGMA foreign_keys=ON; CREATE TABLE IF NOT EXISTS rooms(id TEXT PRIMARY KEY, invite_hash TEXT NOT NULL, host_hash TEXT NOT NULL, data TEXT NOT NULL, updated INTEGER NOT NULL); CREATE TABLE IF NOT EXISTS events(room TEXT NOT NULL, revision INTEGER NOT NULL, actor INTEGER, action TEXT NOT NULL, created INTEGER NOT NULL, PRIMARY KEY(room,revision));",
 );
+if (backupLegacyRooms(db, dir))
+  console.log(
+    "Created pre-upgrade SQLite backup: backups/before-save-v1.sqlite",
+  );
 const app = express();
 app.disable("x-powered-by");
 app.set("trust proxy", 1);
@@ -87,7 +93,7 @@ app.use("/api", (req, res, next) => {
 const load = (id) => {
   const row = db.prepare("SELECT * FROM rooms WHERE id=?").get(id);
   if (!row) throw Object.assign(new Error("Table not found."), { status: 404 });
-  return { ...row, room: JSON.parse(row.data) };
+  return { ...row, room: migrateRoom(JSON.parse(row.data)) };
 };
 const save = (row) =>
   db
@@ -198,6 +204,10 @@ app.post("/api/rooms/:id/join", (req, res) => {
   const name = String(req.body.name ?? "").trim();
   if (!name || name.length > 32)
     return res.status(400).json({ error: "Enter a name (1–32 characters)." });
+  if (row.room.seats.some((x) => x.name.toLowerCase() === name.toLowerCase()))
+    return res
+      .status(409)
+      .json({ error: "That name is already taken at this table." });
   const key = token();
   row.room.seats.push({ name, keyHash: hash(key) });
   row.room.revision++;
@@ -405,13 +415,11 @@ const timeoutTimer = setInterval(() => {
       // Keep the last saved state and expose a recoverable stop, not a retry loop.
       const saved = load(id);
       saved.room.clock.paused = true;
-      saved.room.notices = [
-        ...(saved.room.notices ?? []),
-        {
-          text: "Automatic play could not resolve this decision. The table is paused; the host can add time and resume for a manual choice.",
-          at: Date.now(),
-        },
-      ].slice(-20);
+      addNotice(
+        saved.room,
+        "Automatic play could not resolve this decision. The table is paused; the host can add time and resume for a manual choice.",
+        saved.room.clock.actor,
+      );
       save(saved);
       broadcast(id);
       console.error("Timed-out turn paused:", id, e.message);

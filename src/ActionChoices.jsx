@@ -1,4 +1,3 @@
-import React from "react";
 import { Sparkles } from "lucide-react";
 import { ACTION_ICONS } from "./PlayChoices.jsx";
 import { ACTION_HELP } from "./learning.js";

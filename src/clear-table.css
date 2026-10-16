@@ -292,8 +292,7 @@
   font-weight: 400;
   color: #b6a695;
 }
-.app .hand-label > span:not(.eyebrow),
-.app .hand-private {
+.app .hand-label > span:not(.eyebrow) {
   display: none;
 }
 .app .hand-cards {
@@ -455,11 +454,6 @@
   background: none;
   font-size: 12px;
 }
-.app .choice-list {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
-  gap: 9px;
-}
 .app .command-choice {
   padding: 12px 14px;
   min-height: 58px;
@@ -467,17 +461,11 @@
   font-size: 14px;
   align-items: center;
 }
-.app .choice-row {
-  min-width: 0;
-}
 .app .choice-consequence {
   font-size: 12px;
   line-height: 1.5;
   margin-top: 6px;
   color: #d2c0a7;
-}
-.app .choice-category {
-  display: none;
 }
 .app .stage-categories {
   margin: 6px 0;
@@ -493,17 +481,6 @@
 }
 .app .stage-review h3 {
   font-size: 19px;
-}
-.app .selection-list {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 5px;
-  max-height: 145px;
-  overflow: auto;
-}
-.app .selection-list label {
-  margin: 0;
-  padding: 7px;
 }
 .app .movement-guide {
   padding: 6px 10px;
@@ -759,9 +736,6 @@
   .app .command-live {
     padding: 16px;
   }
-  .app .selection-list {
-    max-height: 220px;
-  }
   .app .hand-label {
     font-size: 12px;
   }
@@ -774,6 +748,24 @@
   .app .choose-card-prompt p {
     display: block;
     margin: 5px 0 0;
+  }
+}
+/* Phone tap targets: the small text links and icon buttons get at least a
+   28px hit area without changing the desktop layout. */
+@media (max-width: 600px) {
+  .app .court-discard-link,
+  .app .teaching-toggle,
+  .app .card-zoom,
+  .app .round-player-power,
+  .app .turn-beacon button,
+  .app .topbar .wordmark,
+  .app nav.owned-card-browse button,
+  .app .object-inspect,
+  .app .rule-help {
+    min-height: 28px;
+    min-width: 28px;
+    padding-top: 4px;
+    padding-bottom: 4px;
   }
 }
 @media (max-width: 520px) {
@@ -804,6 +796,14 @@
     width: 35px;
     height: 50px;
     flex-basis: 35px;
+    /* "Choosing…" and "Not played" wrap inside the small card instead of
+       running over the neighbouring seat's name. */
+    overflow: hidden;
+  }
+  .app .round-seat .empty-play {
+    font-size: 8px;
+    padding: 2px 1px;
+    overflow-wrap: anywhere;
   }
   .app .board-area:not(.expanded-board) {
     grid-template-columns: minmax(0, 1fr) 90px;
@@ -834,9 +834,6 @@
   .app .decision-history {
     right: 12px;
     width: 127px;
-  }
-  .app .choice-list {
-    grid-template-columns: 1fr;
   }
   .app .round-label > strong {
     font-size: 14px;

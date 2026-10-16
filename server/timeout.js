@@ -1,7 +1,7 @@
 import { timeoutInput } from "../game/timeout-policy.js";
 import { log } from "../game/engine.js";
 import { applyDecision } from "./history.js";
-import { clockView, settleClock, followClock } from "./clock.js";
+import { addNotice, clockView, settleClock, followClock } from "./clock.js";
 
 // One decision per tick lets every client see the result, and rechecks the
 // actor, host pause/extension and turn boundary before doing anything else.
@@ -25,7 +25,7 @@ export function resolveTimeout(room, now = Date.now()) {
   if (!copy.clock.takeovers?.includes(marker)) {
     const text = `${copy.seats[p].name}'s timer expired. AI is completing their remaining decisions.`;
     log(copy.game, text);
-    copy.notices = [...(copy.notices ?? []), { text, at: now }].slice(-20);
+    addNotice(copy, text, p, now);
     copy.clock.takeovers = [...(copy.clock.takeovers ?? []), marker].slice(-16);
   }
   const input = timeoutInput(copy.game);

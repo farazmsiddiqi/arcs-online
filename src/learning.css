@@ -204,12 +204,6 @@
   color: #b0a396;
   margin-top: 10px;
 }
-.app .action-rule-help {
-  align-self: center;
-  margin-left: 5px;
-  color: #c2aa86;
-  flex-shrink: 0;
-}
 .action-rail {
   display: flex;
   flex-wrap: wrap;
@@ -278,13 +272,6 @@
   font-size: 11px;
   color: #9e9388;
 }
-.app .choice-list {
-  max-height: none;
-  overflow: visible;
-}
-.app .choice-list:empty {
-  display: none;
-}
 .app .target-fallback {
   margin: 8px 0;
   color: #b8a992;
@@ -292,9 +279,6 @@
 }
 .target-fallback > summary {
   cursor: pointer;
-}
-.target-fallback .choice-list {
-  margin-top: 8px;
 }
 .map-instruction {
   display: flex;
@@ -602,9 +586,6 @@
 }
 .special-choices > summary {
   cursor: pointer;
-}
-.special-choices .choice-list {
-  margin: 8px 0;
 }
 .app .special-choices .command-choice {
   background: transparent;

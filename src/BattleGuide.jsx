@@ -1,4 +1,3 @@
-import React from "react";
 import { DICE, CARDS } from "../game/data.js";
 import { OUTCOMES, dieStats, poolStats, percent } from "./battleOdds.js";
 import { cap } from "./tableContext.js";

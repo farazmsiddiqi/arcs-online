@@ -59,7 +59,7 @@ const projection = () => ({
   clock: clockView(r),
   notices: r.notices ?? [],
 });
-const browser = await chromium.launch();
+const browser = await chromium.launch({ channel: process.env.PW_CHANNEL });
 const page = await browser.newPage({ viewport: { width: 1512, height: 982 } });
 const errors = [];
 page.on("pageerror", (e) => errors.push(e.message));
@@ -113,6 +113,11 @@ try {
     fullPage: true,
   });
   await page.getByRole("button", { name: /^Lead / }).click();
+  // A face-up play waits for its confirm step (M11, C-6).
+  assert.equal(r.game.phase, "card", "a face-up play is not sent unconfirmed");
+  await page
+    .getByRole("button", { name: "Confirm & play", exact: true })
+    .click();
   await choice("Finish Prelude").waitFor();
   assert.equal(await choice("Card actions").count(), 0);
   await choice("Finish Prelude").click();

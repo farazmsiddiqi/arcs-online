@@ -100,6 +100,10 @@ export const STATE_GUIDES = {
     "Choose the resource type for this gate city’s Tax.",
     "Gain that resource, then resolve the Tax effects.",
   ],
+  agitatorWeapon: [
+    "Choose which Weapon token to discard for the Agitator intercept.",
+    "Discard that slot’s Weapon, then the battle continues with the hits.",
+  ],
   cloudCost: [
     "Choose the matching resource to pay for the Cloud City.",
     "Spend that exact slot’s token and resolve the build.",

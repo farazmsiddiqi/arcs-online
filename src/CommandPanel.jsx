@@ -1,25 +1,46 @@
 import { DecisionChoices, DecisionGuide } from "./DecisionObjects.jsx";
 import SelectionObjects from "./SelectionObjects.jsx";
 import { dicePreset } from "./decisionGuide.js";
-import ResourceTray from "./ResourceTray.jsx";
 import ActionChoices from "./ActionChoices.jsx";
 import { MapPin } from "lucide-react";
 import PlayChoices from "./PlayChoices.jsx";
-import RuleHelp from "./RuleHelp.jsx";
-import { ACTION_HELP } from "./learning.js";
 import { PoolOdds, DiceSymbol } from "./BattleGuide.jsx";
 import { TurnStages, HistoryControls } from "./TurnFlow.jsx";
 import { useClock } from "./TurnTimers.jsx";
-import { cardImage } from "./Cards.jsx";
-import React, { useState, useEffect } from "react";
-import { Check, ChevronLeft, Send, Shield, Swords, Info } from "lucide-react";
-import { ACTION_CARDS, CARDS, MAP, SUITS } from "../game/data.js";
-import { choiceHint, cap } from "./tableContext.js";
+import { useState, useEffect, useRef } from "react";
+import { Swords } from "lucide-react";
+import { ACTION_CARDS, MAP } from "../game/data.js";
+import { cap } from "./tableContext.js";
+import { confirmFor } from "./confirmStep.js";
+// Item 16: declaring and seizing stay open after actions until the turn
+// reveals something new. Worded like the undo-history boundaries.
+const REVEALED = {
+  dice: "Dice were rolled or a deck was shuffled",
+  deck: "A deck changed or a card was revealed",
+  hand: "New hand information was revealed",
+  rival: "Another player responded",
+};
+function timingClosed(game) {
+  const t = game.turn;
+  if (!t?.acted || !t.revealed) return null;
+  const closed = [
+    t.mode === "lead" &&
+      !t.leadDeclared &&
+      game.markers.some((m) => !m.ambition) &&
+      "declaring",
+    !game.seized &&
+      game.initiative !== game.me &&
+      !t.seizeDecision &&
+      game.players[game.me].hand.length > 0 &&
+      "seizing",
+  ].filter(Boolean);
+  if (!closed.length) return null;
+  return `${REVEALED[t.revealed] ?? "New information was revealed"}; ${closed.join(" and ")} ${closed.length > 1 ? "are" : "is"} closed for this turn.`;
+}
 export default function CommandPanel({
   game,
   room,
   resourceFocus,
-  personalBoard = false,
   onAction,
   onBattleGuide,
   values,
@@ -33,6 +54,9 @@ export default function CommandPanel({
   onInspect,
   onClearCard,
   onClearSystem,
+  confirming = null,
+  onConfirm,
+  onCancelConfirm,
 }) {
   const [teaching, setTeachingState] = useState(
     localStorage.getItem("arcs-guidance") !== "off",
@@ -46,7 +70,8 @@ export default function CommandPanel({
   const d = game.decision,
     [dice, setDice] = useState({ skirmish: 0, assault: 0, raid: 0 }),
     [filter, setFilter] = useState(""),
-    [confirmEnd, setConfirmEnd] = useState(null);
+    [confirmEnd, setConfirmEnd] = useState(null),
+    confirmRef = useRef(null);
   useEffect(() => {
     setDice(
       d?.form?.kind === "dice"
@@ -63,10 +88,29 @@ export default function CommandPanel({
     if (resourceFocus && resourceFocus.revision === game.revision)
       setFilter(`Prelude · slot ${resourceFocus.index + 1}`);
   }, [resourceFocus, game.revision]);
+  // C-6: a one-click choice (pass, a face-up play, a Court or map click to
+  // secure or battle) is waiting here for the player to confirm it.
+  const confirmStep =
+      confirming === null
+        ? null
+        : confirmFor(
+            d?.choices?.find((c) => c.id === confirming),
+            game,
+          ),
+    waiting = confirmStep !== null;
+  useEffect(() => {
+    if (!waiting) return;
+    confirmRef.current?.focus({ preventScroll: true });
+    confirmRef.current?.scrollIntoView({ block: "nearest" });
+  }, [waiting]);
   if (!d) return null;
   const myTurn = d.actor === game.me,
     myCardTurn = game.current === game.me;
   const arranging = myTurn && !!game.resourceArrangement;
+  const closedNote =
+    myTurn && myCardTurn && !game.activity?.resolving
+      ? timingClosed(game)
+      : null;
   const choices = d.choices ?? [];
   const hasSelectedTargets =
     selected && choices.some((c) => c.system === selected);
@@ -88,6 +132,7 @@ export default function CommandPanel({
   const display = stagedChoices.filter(
     (c) =>
       confirmEnd === null &&
+      !waiting &&
       (game.phase !== "card" ||
         c.op !== "play" ||
         (picked && c.card === picked)) &&
@@ -169,7 +214,7 @@ export default function CommandPanel({
           ’s turn. Resolve this effect before their turn continues.
         </p>
       )}
-      {myTurn && !arranging && confirmEnd === null && (
+      {myTurn && !arranging && confirmEnd === null && !waiting && (
         <DecisionGuide
           game={game}
           teaching={teaching}
@@ -190,7 +235,7 @@ export default function CommandPanel({
         <p className="command-description">
           {game.lead
             ? `Match ${cap(game.lead.suit)} and beat ${game.lead.rank} to Surpass. Copy gives one lead-suit action; Pivot gives one action in a different suit.`
-            : "Select a card from your hand to lead. You may declare its ambition before taking any actions."}
+            : "Select a card from your hand to lead. You may declare its ambition before your actions, or after them until the turn reveals something new (a roll, a draw or a look at a hand)."}
         </p>
       )}
       {myTurn &&
@@ -203,6 +248,7 @@ export default function CommandPanel({
             commits it.
           </p>
         )}
+      {closedNote && <p className="timing-tip">{closedNote}</p>}
       {myTurn && game.phase === "card" && !picked && (
         <div className="choose-card-prompt">
           <strong>Choose a card from your hand</strong>
@@ -253,11 +299,15 @@ export default function CommandPanel({
           <p>
             {game.interaction.kind === "moveOrigin"
               ? "Click a highlighted origin on the map."
-              : game.decision.form?.kind === "pieces"
-                ? "Your fleet is selected when it fits the limit. Click ships to adjust it, then click a glowing destination to move."
-                : game.interaction.kind === "moveTo"
-                  ? "Click a glowing destination or drag your selected fleet there to move. Undo is available until a commitment boundary."
-                  : "Continue through a highlighted gate route, or finish the catapult move."}
+              : ["catapultSelect", "sprintSelect"].includes(
+                    game.interaction.kind,
+                  )
+                ? "Click ships to select them, then confirm your selection."
+                : game.decision.form?.kind === "pieces"
+                  ? "Your fleet is selected when it fits the limit. Click ships to adjust it, then click a glowing destination to move."
+                  : game.interaction.kind === "moveTo"
+                    ? "Click a glowing destination or drag your selected fleet there to move. Undo is available until a commitment boundary."
+                    : "Continue through a highlighted gate route, or finish the catapult move."}
           </p>
         </div>
       )}
@@ -381,13 +431,15 @@ export default function CommandPanel({
           setValues={setValues}
           busy={busy}
           onSubmit={submit}
+          onBack={() => onAction({ cancel: true })}
         />
       )}
       {myTurn &&
         game.turn?.prelude &&
         !game.activity?.resolving &&
         groups.length > 1 &&
-        confirmEnd === null && (
+        confirmEnd === null &&
+        !waiting && (
           <div className="stage-categories" aria-label="Choices in this stage">
             {groups.map((g) => (
               <button
@@ -465,6 +517,31 @@ export default function CommandPanel({
           </div>
         </div>
       )}
+      {waiting && myTurn && (
+        <div
+          ref={confirmRef}
+          tabIndex={-1}
+          className="confirm-end stage-review"
+          role="region"
+          aria-label="Confirm this choice"
+        >
+          <span className="eyebrow">REVIEW & CONFIRM</span>
+          <h3>{confirmStep.title}</h3>
+          <p>{confirmStep.body}</p>
+          <div>
+            <button
+              className="subtle"
+              disabled={busy}
+              onClick={onCancelConfirm}
+            >
+              Cancel
+            </button>
+            <button className="primary" disabled={busy} onClick={onConfirm}>
+              {confirmStep.confirm}
+            </button>
+          </div>
+        </div>
+      )}
       {myTurn && picked && game.phase === "card" && (
         <PlayChoices
           key={`${picked}-${game.revision}`}
@@ -501,15 +578,7 @@ export default function CommandPanel({
           </div>
         </div>
       )}
-      {arranging && !personalBoard && (
-        <ResourceTray
-          key={game.revision}
-          game={game}
-          busy={busy}
-          onAction={onAction}
-        />
-      )}
-      {arranging && personalBoard && (
+      {arranging && (
         <div className="map-instruction">
           <MapPin size={25} />
           <div>

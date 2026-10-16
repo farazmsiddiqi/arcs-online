@@ -92,7 +92,14 @@ export function cityTypes(s, piece) {
       ]
     : [planetType(s, piece.system)];
 }
+// Item 16 (lenient timing): records the first new information a turn reveals
+// (a roll or shuffle, a card drawn, a hand seen, a rival's response).
+// Declaring and seizing close once the turn has both acted and revealed.
+function reveal(s, reason) {
+  if (s.turn && !s.turn.revealed) s.turn.revealed = reason;
+}
 export function random(s) {
+  reveal(s, "dice");
   let a = (s.rng += 0x6d2b79f5);
   a = Math.imul(a ^ (a >>> 15), a | 1);
   a ^= a + Math.imul(a ^ (a >>> 7), a | 61);
@@ -106,9 +113,47 @@ export function shuffle(s, list) {
   }
   return a;
 }
+// `at` places an event in the table history: the chapter and round it
+// happened in and whose turn it was (the player in `current`).
 export const log = (s, text, detail = {}) =>
-  s.log.push({ id: ++s.eventId, text, ...detail });
+  s.log.push({
+    id: ++s.eventId,
+    text,
+    ...detail,
+    at: { chapter: s.chapter, round: s.round, player: s.current },
+  });
 const title = (id) => CARDS[id]?.name ?? id;
+// Dice faces are public. One short phrase per die type, for log lines.
+const faceText = (faces) => (faces.length ? faces.join("+") : "blank");
+const diceText = (dice) =>
+  Object.keys(DICE)
+    .flatMap((type) => {
+      const of = dice.filter((d) => d.type === type);
+      return of.length
+        ? [`${type} ${of.map((d) => faceText(d.faces)).join(", ")}`]
+        : [];
+    })
+    .join("; ") || "no dice";
+const copyDice = (dice) =>
+  dice.map((d) => ({ type: d.type, faces: [...d.faces] }));
+// `battles` keeps every roll of the game (the view groups it by chapter);
+// `lastBattle` stays the latest one for the live dice displays.
+function recordBattle(s, battle) {
+  s.lastBattle = battle;
+  s.battles.push({
+    ...battle,
+    dice: copyDice(battle.dice),
+    rerolls: [],
+    at: { chapter: s.chapter, round: s.round, player: s.current },
+  });
+}
+// Called after dice were rerolled in place: refresh the record and name it.
+function recordReroll(s, ability) {
+  const b = s.battles.at(-1);
+  if (!b) return;
+  b.dice = copyDice(s.lastBattle.dice);
+  b.rerolls.push(ability);
+}
 export function place(s, p, type, system, n = 1, damaged = false) {
   const ids = [];
   for (let i = 0; i < n && pool(s, p, type) > 0; i++) {
@@ -163,7 +208,8 @@ export function createGame(names, options = {}, seed = Date.now() >>> 0) {
     court: [],
     courtDeck: [],
     courtDiscard: [],
-    discard: [],
+    discardUp: [],
+    discardDown: [],
     markers: [
       { id: 0, high: 2, low: 0, flipped: false, ambition: null },
       { id: 1, high: 3, low: 2, flipped: false, ambition: null },
@@ -175,6 +221,7 @@ export function createGame(names, options = {}, seed = Date.now() >>> 0) {
     unions: [],
     log: [],
     lastBattle: null,
+    battles: [],
     scoreHistory: [],
   };
   s.initiative = options.initiative ?? Math.floor(random(s) * names.length);
@@ -274,27 +321,96 @@ function setupPlayers(s) {
 function deal(s) {
   const deck = shuffle(s, cardDeck(s.players.length));
   for (const p of s.players) p.hand = deck.splice(0, 6);
-  s.discard = shuffle(s, deck);
+  s.discardDown = shuffle(s, deck);
+  s.discardUp = [];
   if (s.players.length === 2)
     s.pending.push({ type: "mulligan", p: (s.initiative + 1) % 2 });
 }
+// Rulebook Fine Print, Split Discard Piles: cards played face up go to their
+// own pile (`discardUp`, kept with the round for the table's viewer); draws
+// take the bottom of the face-down pile, shuffling both piles together first
+// when it is short.
+function drawDiscard(s, n, meta = {}) {
+  if (s.discardDown.length < n && s.discardUp.length) {
+    const up = s.discardUp.length,
+      // These cards were played face up, so naming them leaks nothing. Only
+      // the face-up pile is recorded: never a face-down card or the order.
+      merge = {
+        chapter: s.chapter,
+        round: s.round,
+        cards: s.discardUp.map((x) => ({ ...x })),
+      };
+    s.discardDown = shuffle(s, [
+      ...s.discardDown,
+      ...s.discardUp.map((x) => x.card),
+    ]);
+    s.discardUp = [];
+    meta.merged = true;
+    log(
+      s,
+      `The face-down action discard is short: ${up} face-up ${up === 1 ? "card is" : "cards are"} shuffled into it.`,
+      { merge },
+    );
+  }
+  return s.discardDown.splice(0, n);
+}
+// What the table history records about a draw from the action discard: who,
+// how many, why, and whether the face-up pile was shuffled in first. Never
+// which cards.
+const drawRecord = (player, count, via, meta) => ({
+  player,
+  count,
+  via,
+  merged: !!meta.merged,
+});
 function gain(s, p, r) {
   if (!r || s.supply[r] <= 0) return false;
   s.players[p].needsArrange = true;
   s.supply[r]--;
-  const empty = s.players[p].resources.indexOf(null);
-  if (empty >= 0) s.players[p].resources[empty] = r;
-  else s.players[p].resources.push(r);
+  addToken(s.players[p], r);
   return true;
+}
+// Moves the resource on a card's slot with the card when it is stolen.
+function carryCardSlot(s, from, to) {
+  const f = s.players[from],
+    t = s.players[to];
+  if (!(f.cardSlot ?? true)) return;
+  const held = f.resources.pop() ?? null;
+  f.cardSlot = false;
+  t.resources.push(held);
+  t.cardSlot = true;
+}
+// Ancient Holdings (L13) adds a slot that is always the last index. `cardSlot`
+// records whether the array currently ends with it, so board slots can grow
+// and shrink around it without moving the token it holds.
+function addToken(pl, r) {
+  const empty = pl.resources.indexOf(null);
+  if (empty >= 0) pl.resources[empty] = r;
+  else pl.resources.splice(pl.resources.length - (pl.cardSlot ? 1 : 0), 0, r);
 }
 function cleanResources(s) {
   for (const p of s.players) {
-    const cap = capacity(s, p.id);
-    if (p.resources.length > cap) p.needsArrange = true;
-    if (p.resources.length < cap)
-      p.resources.push(...Array(cap - p.resources.length).fill(null));
-    while (p.resources.length > cap && p.resources.includes(null))
+    const card = has(s, p.id, "L13"),
+      cap = capacity(s, p.id),
+      boardCap = cap - (card ? 1 : 0),
+      had = p.cardSlot ?? card;
+    let held = had ? (p.resources.pop() ?? null) : null;
+    if (had && !card && held) {
+      // Rulebook: a card that is buried, discarded or scrapped returns its
+      // resources to the supply (a stolen card carries them; see steal).
+      s.supply[held]++;
+      held = null;
+    }
+    if (p.resources.length > boardCap) p.needsArrange = true;
+    if (p.resources.length < boardCap)
+      p.resources.push(...Array(boardCap - p.resources.length).fill(null));
+    while (p.resources.length > boardCap && p.resources.includes(null))
       remove(p.resources, null);
+    // An empty card slot absorbs a board token that would otherwise overflow.
+    if (card && !held && p.resources.length > boardCap)
+      held = p.resources.pop();
+    if (card) p.resources.push(held);
+    p.cardSlot = card;
     if (
       p.resources.length > cap &&
       !s.pending.some((t) => t.type === "overflow" && t.p === p.id)
@@ -368,8 +484,10 @@ function secure(s, p, index, ransack = false) {
   else refill(s, index);
 }
 function refill(s, i) {
-  if (!s.court[i].id && !s.court[i].temporary)
+  if (!s.court[i].id && !s.court[i].temporary) {
     s.court[i].id = s.courtDeck.shift() ?? null;
+    if (s.court[i].id) reveal(s, "deck");
+  }
 }
 function push(s, ...tasks) {
   s.pending.unshift(...tasks.filter(Boolean));
@@ -397,8 +515,6 @@ const sysName = (id) =>
   `${MAP[id].cluster} ${MAP[id].symbol === "gate" ? "Gate" : MAP[id].symbol === "arrow" ? "▲" : MAP[id].symbol === "hex" ? "⬡" : "☾"}`;
 const pieceName = (s, x) =>
   `${s.players[x.owner].name} ${x.damaged ? "damaged " : ""}${x.type} · ${sysName(x.system)}`;
-const ownedCards = (s, p) =>
-  [s.players[p].leader, ...s.players[p].cards].filter(Boolean);
 const copied = (s) => ["copy", "pivot"].includes(s.turn?.mode);
 function canSeize(s, p) {
   return !s.seized && s.initiative !== p;
@@ -416,10 +532,13 @@ function canDeclare(s, p) {
       s.players[p].cards.some((id) => CARDS[id].kind === "guild"))
   );
 }
-function declare(s, p, a, zero, paid = false) {
+// `lead` marks the lead-card declaration, which is limited to once per turn.
+// Declarations from Populist Demands and Tycoon's Ambition are separate cards
+// with their own limits, so they never use up the lead card's.
+function declare(s, p, a, zero, paid = false, lead = false) {
   ok(paid || canDeclare(s, p), "No ambition can be declared.");
   if (has(s, p, "LEAD07") && !paid) {
-    push(s, { type: "generous", p, ambition: a, zero });
+    push(s, { type: "generous", p, ambition: a, zero, lead });
     return;
   }
   const marker = s.markers
@@ -439,7 +558,7 @@ function declare(s, p, a, zero, paid = false) {
     zero: placesZero,
   };
   if (s.lead) (s.lead.declarations ??= []).push(declaration);
-  s.turn.declared = true;
+  if (lead) s.turn.leadDeclared = true;
   s.roundDeclared = true;
   log(s, `${s.players[p].name} declares ${a} (${marker.high}/${marker.low}).`, {
     declaration,
@@ -525,7 +644,7 @@ function resourceActions(s, p, r) {
   ];
 }
 function actionLabel(a, cost, r) {
-  return `${cap(a)}${cost === "pip" ? "" : cost === "free" ? "" : ` · spend ${r}`}`;
+  return `${cap(a)}${cost === "pip" ? "" : ` · spend ${r}`}`;
 }
 function eligibleCities(s, p) {
   return s.pieces
@@ -769,16 +888,19 @@ function mainChoices(s, p) {
     ];
   if (s.phase !== "turn") return [];
   const out = [];
-  if (!t.acted) {
+  let latticeListed = false;
+  // Item 16 (rulebook, Turn Etiquette): declaring and seizing come before
+  // actions, but stay open after them until the turn reveals something new.
+  if (!t.acted || !t.revealed) {
     const played = ACTION_CARDS[t.card];
-    if (
-      !t.declared &&
-      canDeclare(s, p) &&
-      (t.mode === "lead" ||
-        (has(s, p, "BC25") &&
-          ["surpass", "pivot"].includes(t.mode) &&
-          !s.roundDeclared))
-    ) {
+    // Upstart and Galactic Bards print "before taking any actions".
+    const lead = t.mode === "lead" && !(t.acted && has(s, p, "LEAD04")),
+      bards =
+        !t.acted &&
+        has(s, p, "BC25") &&
+        ["surpass", "pivot"].includes(t.mode) &&
+        !s.roundDeclared;
+    if (!t.leadDeclared && canDeclare(s, p) && (lead || bards)) {
       for (const ambition of played.rank === 7
         ? AMBITIONS
         : played.ambition
@@ -803,7 +925,9 @@ function mainChoices(s, p) {
             { group: "Before actions" },
           ),
         );
-      if (has(s, p, "BC16") && !pl.acquired.includes("BC16"))
+      // Lattice Spies: "Before any other actions".
+      if (!t.acted && has(s, p, "BC16") && !pl.acquired.includes("BC16")) {
+        latticeListed = true;
         out.push(
           choose(
             "Seize with Lattice Spies",
@@ -812,6 +936,7 @@ function mainChoices(s, p) {
             { group: "Before actions" },
           ),
         );
+      }
     }
   }
   const costs = [
@@ -847,7 +972,7 @@ function mainChoices(s, p) {
         );
       else if (
         actionTargets(s, p, action).length ||
-        specialTargets(s, p, action).length ||
+        specialTargets(s, p, action, cost).length ||
         (cost === "pip" &&
           copied(s) &&
           ((action === "secure" &&
@@ -871,7 +996,8 @@ function mainChoices(s, p) {
     }
   if (t.prelude)
     for (const card of pl.cards.filter((c) => !pl.acquired.includes(c)))
-      if (preludeAvailable(s, p, card))
+      // Lattice Spies is already listed under "Before actions" when it can seize.
+      if (!(card === "BC16" && latticeListed) && preludeAvailable(s, p, card))
         out.push(
           choose(
             title(card),
@@ -906,6 +1032,7 @@ export function decision(s, p) {
     return {
       actor,
       ...d,
+      ...(d.form && task.back ? { canCancel: true } : {}),
       context: {
         kind: task.type,
         source: CARDS[task.card ?? task.id] ? (task.card ?? task.id) : null,
@@ -941,7 +1068,10 @@ export function transition(state, p, input) {
   const s = structuredClone(state);
   const d = decision(s, p);
   ok(d.actor === p, "Wait for your turn.");
-  if (d.form) {
+  if (d.form && input.cancel) {
+    ok(d.canCancel, "There is nothing to go back to.");
+    cancelTask(s, s.pending.shift());
+  } else if (d.form) {
     resolveForm(s, s.pending.shift(), input.value);
   } else {
     ok(Number.isInteger(input.choice), "Choose a legal action.");
@@ -951,9 +1081,18 @@ export function transition(state, p, input) {
     else resolveMain(s, p, c);
   }
   pump(s);
+  // Another player now has a decision; what they choose is new information.
+  if ((s.pending[0]?.p ?? s.current) !== s.current) reveal(s, "rival");
   s.revision++;
   assertInvariants(s);
   return s;
+}
+// "Back" from a decision opened by choosing something earlier. Nothing is
+// paid or changed before the form is confirmed, so Back re-offers the parent
+// task exactly as it was (a `required` flag and its rollback ride along).
+function cancelTask(s, t) {
+  if (typeof t.actedBefore === "boolean") s.turn.acted = t.actedBefore;
+  if (t.back) push(s, t.back);
 }
 function resolveMain(s, p, c) {
   const pl = s.players[p];
@@ -1005,7 +1144,8 @@ function resolveMain(s, p, c) {
         mode: c.mode,
         prelude: true,
         acted: false,
-        declared: false,
+        revealed: false,
+        leadDeclared: false,
         taxed: [],
         built: [],
         used: [],
@@ -1022,6 +1162,12 @@ function resolveMain(s, p, c) {
     case "pass":
       s.passes.push(p);
       log(s, `${pl.name} passes initiative.`);
+      // The marker passes on even with the last pass, so the first passer
+      // opens the next chapter (and heads the game-end tie-break order).
+      for (let i = 0; i < s.players.length; i++) {
+        s.initiative = (s.initiative + 1) % s.players.length;
+        if (s.players[s.initiative].hand.length) break;
+      }
       if (
         s.players
           .filter((x) => x.hand.length)
@@ -1029,16 +1175,13 @@ function resolveMain(s, p, c) {
       )
         endChapter(s);
       else {
-        do {
-          s.initiative = (s.initiative + 1) % s.players.length;
-        } while (!s.players[s.initiative].hand.length);
         s.current = s.initiative;
         s.roundLeader = s.initiative;
         s.round++;
       }
       break;
     case "declare":
-      declare(s, p, c.ambition, c.zero);
+      declare(s, p, c.ambition, c.zero, false, true);
       break;
     case "seize":
       remove(pl.hand, c.card);
@@ -1056,9 +1199,6 @@ function resolveMain(s, p, c) {
       break;
     case "guild":
       usePrelude(s, p, c.card);
-      break;
-    case "reorder":
-      push(s, { type: "reorder", p, index: c.index });
       break;
     case "endPrelude":
       endPrelude(s);
@@ -1112,7 +1252,15 @@ function endRound(s) {
     }
   }
   s.unions = [];
-  s.discard.push(...s.played.map((x) => x.card));
+  for (const x of s.played)
+    if (x.faceup)
+      s.discardUp.push({
+        card: x.card,
+        player: x.player,
+        mode: x.mode,
+        round: s.round,
+      });
+    else s.discardDown.push(x.card);
   s.played = [];
   s.lead = null;
   s.seized = false;
@@ -1373,9 +1521,7 @@ function taskDecision(s, t) {
               (r, i) => i !== t.cost && r === planetType(s, c.system),
             ),
         ),
-        ...(t.standardOnly || t.cost === "free"
-          ? []
-          : specialTargets(s, p, t.action)),
+        ...(t.cost === "free" ? [] : specialTargets(s, p, t.action, t.cost)),
       ];
       titleText = `${cap(t.action)} · choose a target`;
       if (!t.required) {
@@ -1403,9 +1549,12 @@ function taskDecision(s, t) {
     case "moveTo":
       return {
         title: "Choose an adjacent destination",
-        choices: adjacent(t.system, s.clusters).map((system) =>
-          choose(`Move to ${sysName(system)}`, "moveTo", { system }),
-        ),
+        choices: [
+          ...adjacent(t.system, s.clusters).map((system) =>
+            choose(`Move to ${sysName(system)}`, "moveTo", { system }),
+          ),
+          ...(t.back ? [choose("Back", "cancel")] : []),
+        ],
       };
     case "catapult":
       return {
@@ -1617,6 +1766,20 @@ function taskDecision(s, t) {
           choose(cap(resource), "taxResource", { resource }),
         ),
       };
+    case "agitatorWeapon":
+      return {
+        title: "Agitator · discard a Weapon",
+        description: "Choose which Weapon to discard for the intercept.",
+        choices: pl.resources.flatMap((r, index) =>
+          r === "weapon"
+            ? [
+                choose(`Discard weapon · slot ${index + 1}`, "agitatorPay", {
+                  index,
+                }),
+              ]
+            : [],
+        ),
+      };
     case "cloudCost":
       return {
         title: "Pay for Cloud Cities",
@@ -1738,11 +1901,7 @@ function taskDecision(s, t) {
         choices: [
           ...s.players
             .filter((x) => x.id !== p)
-            .flatMap((x) =>
-              stealChoices(s, p, x.id, 99, false).filter(
-                (c) => !t.guildOnly || c.op === "stealCard",
-              ),
-            ),
+            .flatMap((x) => stealChoices(s, p, x.id, 99, false)),
           skip,
         ],
       };
@@ -1816,9 +1975,12 @@ function taskDecision(s, t) {
     case "relicFence":
       return {
         title: "Relic Fence · discard a resource",
-        choices: pl.resources.flatMap((r, index) =>
-          r ? [choose(`Discard ${r}`, "fence", { index })] : [],
-        ),
+        choices: [
+          ...pl.resources.flatMap((r, index) =>
+            r ? [choose(`Discard ${r}`, "fence", { index })] : [],
+          ),
+          choose("Back", "cancel"),
+        ],
       };
     case "reorder":
       return {
@@ -1842,8 +2004,15 @@ function resolveTask(s, t, c) {
   const p = t.p,
     pl = s.players[p];
   if (c.op === "skip" || c.op === "cancel") {
+    if (c.op === "cancel" && t.back) cancelTask(s, t);
     if (t.type === "catapult") finishMove(s, t);
     if (t.type === "vox") resolveVox(s, t, c);
+    if (c.op === "skip" && t.type === "raid" && !t.stolen)
+      log(
+        s,
+        `${pl.name} ends the raid on ${s.players[t.defender].name} without stealing.`,
+        { battle: true },
+      );
     return;
   }
   switch (t.type) {
@@ -1862,9 +2031,12 @@ function resolveTask(s, t, c) {
       break;
     case "mulligan": {
       const old = pl.hand;
-      pl.hand = s.discard.splice(0, 6);
-      s.discard = shuffle(s, [...s.discard, ...old]);
-      log(s, `${pl.name} takes a mulligan.`);
+      const meta = {};
+      pl.hand = drawDiscard(s, 6, meta);
+      s.discardDown = shuffle(s, [...s.discardDown, ...old]);
+      log(s, `${pl.name} takes a mulligan.`, {
+        draw: drawRecord(p, pl.hand.length, "mulligan", meta),
+      });
       break;
     }
     case "archivist":
@@ -1882,11 +2054,7 @@ function resolveTask(s, t, c) {
       break;
     case "action": {
       if (c.op.startsWith("bonus") || c.op === "withoutBonus") {
-        const again = {
-          ...t,
-          configured: true,
-          standardOnly: c.op !== "withoutBonus",
-        };
+        const again = { ...t, configured: true };
         if (c.op === "bonusBefore") {
           const rollback = structuredClone(s);
           push(
@@ -1900,15 +2068,22 @@ function resolveTask(s, t, c) {
             },
             { ...again, required: true, rollback },
           );
-        } else if (c.op === "bonusAfter")
-          push(s, again, {
-            type: "action",
-            p,
-            action: c.bonus,
-            cost: "free",
-            configured: true,
-          });
-        else push(s, again);
+        } else if (c.op === "bonusAfter") {
+          // Same guard as bonusBefore: once chosen, the paid action is
+          // mandatory, so the queued free bonus can never outlive it.
+          const rollback = structuredClone(s);
+          push(
+            s,
+            { ...again, required: true, rollback },
+            {
+              type: "action",
+              p,
+              action: c.bonus,
+              cost: "free",
+              configured: true,
+            },
+          );
+        } else push(s, again);
         break;
       }
       if (c.op === "special") {
@@ -1918,11 +2093,19 @@ function resolveTask(s, t, c) {
           card: c.card,
           cost: t.cost,
           action: t.action,
+          required: t.required,
+          back: t,
         });
         break;
       }
       if (c.op === "moveFrom") {
-        push(s, { type: "moveSelect", p, system: c.system, cost: t.cost });
+        push(s, {
+          type: "moveSelect",
+          p,
+          system: c.system,
+          cost: t.cost,
+          back: t,
+        });
         break;
       }
       if (c.op === "cloudTarget") {
@@ -1934,16 +2117,16 @@ function resolveTask(s, t, c) {
       break;
     }
     case "freeChoice":
-      resolveStandard(s, p, c, "free");
+      resolveStandard(s, p, c, "free", t);
       break;
     case "moveTo":
       executeMove(s, { ...t, to: c.system });
       break;
     case "catapult":
-      push(s, { ...t, type: "catapultSelect", to: c.system });
+      push(s, { ...t, type: "catapultSelect", to: c.system, back: t });
       break;
     case "sprinter":
-      push(s, { ...t, type: "sprintSelect", system: c.system });
+      push(s, { ...t, type: "sprintSelect", system: c.system, back: t });
       break;
     case "reroll":
       if (c.op === "resolve") {
@@ -1955,6 +2138,7 @@ function resolveTask(s, t, c) {
           ability: c.ability,
           dieType: c.dieType,
           max: c.max,
+          back: t,
         });
       }
       break;
@@ -1969,7 +2153,7 @@ function resolveTask(s, t, c) {
       break;
     case "raid": {
       steal(s, p, c, t.system);
-      push(s, { ...t, keys: t.keys - c.keys });
+      push(s, { ...t, keys: t.keys - c.keys, stolen: (t.stolen ?? 0) + 1 });
       break;
     }
     case "repairBonus":
@@ -1982,6 +2166,10 @@ function resolveTask(s, t, c) {
       break;
     case "taxType":
       taxGain(s, p, t.piece, c.resource, t.cost, t.repeat);
+      break;
+    case "agitatorWeapon":
+      ok(pl.resources[c.index] === "weapon", "Choose a Weapon.");
+      discardResource(s, p, c.index);
       break;
     case "cloudCost":
       discardResource(s, p, c.index);
@@ -2014,13 +2202,14 @@ function resolveTask(s, t, c) {
     case "generous":
       remove(pl.cards, c.card);
       s.players[c.to].cards.push(c.card);
-      declare(s, p, t.ambition, t.zero, true);
+      declare(s, p, t.ambition, t.zero, true, t.lead);
       break;
     case "bold":
       s.court[c.index].agents[p]++;
       push(s, { ...t, used: [...t.used, c.index] });
       break;
     case "farseersRival":
+      reveal(s, "hand");
       push(s, { type: "farseersSwap", p, rival: c.rival });
       break;
     case "farseersSwap":
@@ -2057,11 +2246,13 @@ function resolveTask(s, t, c) {
     case "union":
       remove(pl.cards, t.card);
       s.unions.push({ p, card: t.card, target: c.target });
+      s.turn.acted = true;
       break;
     case "relicFence":
       discardResource(s, p, c.index);
       gain(s, p, "relic");
       s.turn.used.push("BC24");
+      s.turn.acted = true;
       break;
     case "reorder":
       [pl.resources[t.index], pl.resources[c.index]] = [
@@ -2109,17 +2300,17 @@ function resolveForm(s, t, value) {
       freshAttack: piecesAt(s, t.system, p, "ship").filter((x) => !x.damaged)
         .length,
     };
-    s.lastBattle = {
+    recordBattle(s, {
       attacker: p,
       defender: t.defender,
       system: t.system,
       dice,
       revision: s.revision + 1,
-    };
+    });
     push(s, b);
     log(
       s,
-      `${s.players[p].name} rolls ${dice.length} dice against ${s.players[t.defender].name}.`,
+      `${s.players[p].name} rolls ${dice.length} dice against ${s.players[t.defender].name}: ${diceText(dice)}.`,
       { battle: true },
     );
     return;
@@ -2133,21 +2324,19 @@ function resolveForm(s, t, value) {
     "Select a valid set.",
   );
   if (t.type === "sprintSelect") {
-    push(
-      s,
-      {
-        type: "moveTo",
-        p,
-        system: t.system,
-        ids: value,
-        cost: "free",
-        paid: true,
-        extra: true,
-        visited: [t.system],
-        allIds: value,
-      },
-      { type: "sprinter", p, ids: t.ids.filter((id) => !value.includes(id)) },
-    );
+    // One group, one extra move: the other ships get no further sprint.
+    push(s, {
+      type: "moveTo",
+      p,
+      system: t.system,
+      ids: value,
+      cost: "free",
+      paid: true,
+      extra: true,
+      visited: [t.system],
+      allIds: value,
+      back: t,
+    });
     return;
   }
   if (t.type === "moveSelect") {
@@ -2158,6 +2347,7 @@ function resolveForm(s, t, value) {
       allIds: value,
       visited: [t.system],
       extra: false,
+      back: t,
     });
     return;
   }
@@ -2184,20 +2374,38 @@ function resolveForm(s, t, value) {
     return;
   }
   if (t.type === "rerollSelect") {
+    const before = value.map((id) => faceText(t.dice[Number(id)].faces));
     for (const id of value) {
       const i = Number(id);
       t.dice[i].faces = DICE[t.dice[i].type][Math.floor(random(s) * 6)];
     }
     s.lastBattle.dice = t.dice;
-    push(s, { ...t, type: "reroll", used: [...t.used, t.ability] });
+    if (value.length) {
+      recordReroll(s, t.ability);
+      log(
+        s,
+        `${s.players[p].name} rerolls ${value.length} ${value.length === 1 ? "die" : "dice"} (${t.ability}): ${value.map((id, k) => `${before[k]} → ${faceText(t.dice[Number(id)].faces)}`).join(", ")}.`,
+        { battle: true },
+      );
+    }
+    push(s, {
+      ...t,
+      type: "reroll",
+      used: value.length ? [...t.used, t.ability] : t.used,
+    });
     return;
   }
   if (t.type === "farseersDiscard") {
+    reveal(s, "deck");
     for (const id of value) remove(s.players[p].hand, id);
-    s.discard.push(...shuffle(s, value));
-    const drawn = s.discard.splice(0, value.length + 1);
+    // Discard, then draw: whether the face-down pile is short counts these.
+    s.discardDown.push(...shuffle(s, value));
+    const meta = {},
+      drawn = drawDiscard(s, value.length + 1, meta);
     s.players[p].hand.push(...drawn);
-    log(s, `${s.players[p].name} draws ${drawn.length} cards with Farseers.`);
+    log(s, `${s.players[p].name} draws ${drawn.length} cards with Farseers.`, {
+      draw: drawRecord(p, drawn.length, "farseers", meta),
+    });
     return;
   }
   if (t.type === "special") {
@@ -2206,7 +2414,7 @@ function resolveForm(s, t, value) {
   }
   throw new Error(`Unknown form ${t.type}`);
 }
-function resolveStandard(s, p, c, cost) {
+function resolveStandard(s, p, c, cost, parent) {
   if (c.op === "ruthlessEmptyBuild") {
     s.turn.used.push("ruthless");
     hit(
@@ -2255,7 +2463,13 @@ function resolveStandard(s, p, c, cost) {
   }
   if (c.op === "secureTarget") secure(s, p, c.index);
   if (c.op === "moveFrom")
-    push(s, { type: "moveSelect", p, system: c.system, cost: "free" });
+    push(s, {
+      type: "moveSelect",
+      p,
+      system: c.system,
+      cost: "free",
+      back: parent,
+    });
   if (c.op === "battleTarget") beginBattle(s, p, c.system, c.defender);
 }
 function taxGain(s, p, piece, r, cost, repeat = false) {
@@ -2478,8 +2692,12 @@ function resolveBattleDice(s, t) {
     ).length;
     if (has(s, t.defender, "LEAD15")) {
       hits = icons(s, t.defender, "weapon");
-      const idx = s.players[t.defender].resources.indexOf("weapon");
-      if (idx >= 0) discardResource(s, t.defender, idx);
+      const slots = s.players[t.defender].resources
+        .map((r, i) => (r === "weapon" ? i : -1))
+        .filter((i) => i >= 0);
+      if (slots.length === 1) discardResource(s, t.defender, slots[0]);
+      else if (slots.length > 1)
+        tasks.push({ type: "agitatorWeapon", p: t.defender });
     }
     if (hits)
       tasks.push({
@@ -2651,9 +2869,7 @@ function steal(s, p, c, system = null) {
     s.players[p].needsArrange = true;
     const r = s.players[c.defender].resources[c.index];
     s.players[c.defender].resources[c.index] = null;
-    const empty = s.players[p].resources.indexOf(null);
-    if (empty >= 0) s.players[p].resources[empty] = r;
-    else s.players[p].resources.push(r);
+    addToken(s.players[p], r);
     log(
       s,
       `${s.players[p].name} steals ${r} from ${s.players[c.defender].name}.`,
@@ -2669,6 +2885,7 @@ function steal(s, p, c, system = null) {
     );
   } else {
     remove(s.players[c.defender].cards, c.card);
+    if (c.card === "L13") carryCardSlot(s, c.defender, p);
     if (c.card === "BC22") s.courtDeck.push(c.card);
     else {
       s.players[p].cards.push(c.card);
@@ -2727,31 +2944,31 @@ function preludeAvailable(s, p, id) {
     return (
       active(s, "warlord") && pl.trophies.length > 0 && pool(s, p, "agent") > 0
     );
-  if (id === "L25")
-    return (
-      active(s, "tyrant") &&
-      pl.captives.length > 0 &&
-      actionTargets(s, p, "secure").length > 0
-    );
   if (id === "L27")
     return (
       active(s, "tycoon") &&
       !t.acted &&
+      !t.used.includes(id) &&
       canDeclare(s, p) &&
       AMBITIONS.some((a) => !active(s, a))
-    );
-  if (id === "L28")
-    return (
-      active(s, "tycoon") &&
-      pl.resources.some((r) => ["material", "fuel"].includes(r))
     );
   return false;
 }
 function usePrelude(s, p, card) {
   const pl = s.players[p];
   ok(preludeAvailable(s, p, card), "That ability is not available.");
-  if (!["BC16", "L27"].includes(card)) s.turn.acted = true;
-  if (["BC04", "BC05", "BC10", "BC11"].includes(card)) {
+  const union = ["BC04", "BC05", "BC10", "BC11"].includes(card);
+  // A Union, Relic Fence or a Lore Prelude is an action only once it does
+  // something; Skip, Done or Back backs out of it (C10). See resolveTask and
+  // resolvePrelude.
+  if (
+    !["BC16", "BC24", "L27", "L19", "L21", "L23", "L24", "L25", "L28"].includes(
+      card,
+    ) &&
+    !union
+  )
+    s.turn.acted = true;
+  if (union) {
     push(s, {
       type: "union",
       p,
@@ -2892,7 +3109,11 @@ function preludeDecision(s, t) {
         ),
       ),
     );
-  if (card === "L28" && active(s, "tycoon"))
+  if (
+    card === "L28" &&
+    active(s, "tycoon") &&
+    pl.resources.some((r) => ["material", "fuel"].includes(r))
+  )
     choices.push(
       choose("Trade Material and Fuel for new resources", "tycoonTrade"),
     );
@@ -2902,6 +3123,14 @@ function preludeDecision(s, t) {
 function resolvePrelude(s, t, c) {
   const p = t.p,
     pl = s.players[p];
+  // Using a Lore Prelude is an action (Tycoon's Ambition's declaration is not).
+  const actedBefore = s.turn.acted;
+  if (
+    ["clearOutrage", "spendTrophy", "spendCaptive", "tycoonTrade"].includes(
+      c.op,
+    )
+  )
+    s.turn.acted = true;
   if (c.op.startsWith("steal")) steal(s, p, c);
   if (c.op === "gatekeeper") {
     place(s, p, "ship", c.system);
@@ -2937,10 +3166,12 @@ function resolvePrelude(s, t, c) {
       if (["material", "fuel"].includes(r)) discardResource(s, p, i);
     });
     declare(s, p, c.ambition, false);
-    s.turn.acted = true;
+    s.turn.used.push("L27");
   }
   if (c.op === "tycoonTrade")
     push(s, {
+      actedBefore,
+      back: t,
       type: "special",
       p,
       card: "L28",
@@ -2996,6 +3227,7 @@ function voxDecision(s, t) {
 }
 function resolveVox(s, t, c) {
   const p = t.p;
+  const queued = s.pending.length;
   if (c.op === "uprising") {
     const ids = systems(s).filter((x) => MAP[x].cluster === c.cluster);
     if (pool(s, p, "ship") < 4)
@@ -3013,16 +3245,36 @@ function resolveVox(s, t, c) {
     if (canSeize(s, p)) push(s, { type: "freedomSeize", p });
   }
   if (c.op === "stealCard") steal(s, p, c);
-  if (c.op === "call" && s.discard.length)
-    s.players[p].hand.push(s.discard.shift());
+  if (c.op === "call" && s.discardDown.length + s.discardUp.length) {
+    reveal(s, "deck");
+    const meta = {},
+      drawn = drawDiscard(s, 1, meta);
+    s.players[p].hand.push(...drawn);
+    log(
+      s,
+      `${s.players[p].name} draws ${drawn.length} ${drawn.length === 1 ? "card" : "cards"} with Call to Action.`,
+      { draw: drawRecord(p, drawn.length, "call", meta) },
+    );
+  }
   if (t.id === "BC30") {
     const guilds = s.courtDiscard.filter((id) => CARDS[id].kind === "guild");
     s.courtDiscard = s.courtDiscard.filter((id) => CARDS[id].kind !== "guild");
     s.courtDeck = shuffle(s, [...s.courtDeck, ...guilds]);
   }
-  finishVox(s, t, t.id === "BC29");
+  // Anything the effect queued (a declaration's Noble/Bold/Farseers/Generous,
+  // Uprising's Prelude, Freedom's seize) is part of resolving the card, so the
+  // discard and Court refill wait behind it.
+  const deferred = s.pending.length - queued;
+  if (deferred)
+    s.pending.splice(deferred, 0, {
+      type: "voxFinish",
+      p,
+      id: t.id,
+      index: t.index,
+    });
+  else finishVox(s, t, t.id === "BC29");
 }
-function specialTargets(s, p, action) {
+function specialTargets(s, p, action, cost) {
   const pl = s.players[p],
     out = [];
   const add = (id, label, condition = true) => {
@@ -3086,7 +3338,7 @@ function specialTargets(s, p, action) {
     );
   }
   if (action === "tax")
-    add("BC23", "Trade · Elder Broker", tradePairs(s, p).length > 0);
+    add("BC23", "Trade · Elder Broker", tradePairs(s, p, cost).length > 0);
   if (action === "repair")
     add(
       "L10",
@@ -3122,7 +3374,9 @@ function specialTargets(s, p, action) {
   }
   return out;
 }
-function tradePairs(s, p) {
+// `cost` is the slot index when the Trade is paid with a resource. That token
+// is spent before the swap, so it cannot also be the one given away.
+function tradePairs(s, p, cost) {
   const pl = s.players[p],
     choices = [];
   for (const city of piecesAt(s, null, undefined, "city").filter(
@@ -3133,6 +3387,7 @@ function tradePairs(s, p) {
         if (s.players[city.owner].resources[take] === r)
           for (let give = 0; give < pl.resources.length; give++)
             if (
+              give !== cost &&
               pl.resources[give] &&
               !hasResource(s, city.owner, pl.resources[give])
             )
@@ -3181,7 +3436,7 @@ function specialDecision(s, t) {
           ]
         : [],
     );
-  if (id === "BC23") choices = tradePairs(s, p);
+  if (id === "BC23") choices = tradePairs(s, p, t.cost);
   if (id === "L01")
     choices = piecesAt(s, null, undefined, "city")
       .filter((x) => control(s, x.system) === p)
@@ -3337,18 +3592,25 @@ function specialDecision(s, t) {
   return {
     title: title(id),
     description: CARDS[id]?.text?.replaceAll("*", ""),
-    ...(form ? { form } : { choices: [...choices, choose("Back", "cancel")] }),
+    ...(form
+      ? { form }
+      : {
+          choices: [
+            ...choices,
+            ...(t.required ? [] : [choose("Back", "cancel")]),
+          ],
+        }),
   };
 }
 function resolveSpecial(s, t, c) {
   const p = t.p,
     pl = s.players[p];
   if (c.op === "rifles") {
-    push(s, { ...t, stage: "dice", ...c });
+    push(s, { ...t, stage: "dice", back: t, ...c });
     return;
   }
   if (c.op === "guide") {
-    push(s, { ...t, stage: "ships", ...c });
+    push(s, { ...t, stage: "ships", back: t, ...c });
     return;
   }
   pay(s, p, t.cost, t.action);
@@ -3400,16 +3662,21 @@ function resolveSpecial(s, t, c) {
       type: "skirmish",
       faces: DICE.skirmish[Math.floor(random(s) * 6)],
     }));
-    s.lastBattle = {
+    recordBattle(s, {
       attacker: p,
       defender: t.defender,
       system: t.target,
       dice,
       revision: s.revision + 1,
       rifles: true,
-    };
+    });
+    log(
+      s,
+      `${pl.name} fires ${dice.length} skirmish ${dice.length === 1 ? "die" : "dice"} at ${s.players[t.defender].name}: ${diceText(dice)}.`,
+      { battle: true },
+    );
     if (has(s, p, "L19") && active(s, "empath"))
-      push(s, { ...t, stage: "reroll", dice });
+      push(s, { ...t, stage: "reroll", dice, back: undefined });
     else rifleHits(s, t, dice);
   }
   log(s, `${pl.name} uses ${title(t.card)}.`);
@@ -3432,9 +3699,18 @@ function resolveSpecialForm(s, t, value) {
   const p = t.p,
     pl = s.players[p];
   if (t.card === "L02") {
+    const before = value.map((id) => faceText(t.dice[Number(id)].faces));
     for (const id of value)
       t.dice[Number(id)].faces = DICE.skirmish[Math.floor(random(s) * 6)];
     s.lastBattle.dice = t.dice;
+    if (value.length) {
+      recordReroll(s, "Empath’s Vision");
+      log(
+        s,
+        `${pl.name} rerolls ${value.length} ${value.length === 1 ? "die" : "dice"} (Empath’s Vision): ${value.map((id, k) => `${before[k]} → ${faceText(t.dice[Number(id)].faces)}`).join(", ")}.`,
+        { battle: true },
+      );
+    }
     rifleHits(s, t, t.dice);
     return;
   }
@@ -3487,6 +3763,7 @@ function pump(s) {
         s.pending.shift();
         const id = s.courtDeck.shift();
         if (id) {
+          reveal(s, "deck");
           const index = s.court.length;
           s.court.push({ id, agents: s.players.map(() => 0), temporary: true });
           secure(s, t.p, index);
@@ -3495,7 +3772,8 @@ function pump(s) {
       }
       case "railgun":
         s.pending.shift();
-        if (piecesAt(s, t.system, t.p, "ship").some((x) => !x.damaged))
+        if (piecesAt(s, t.system, t.p, "ship").some((x) => !x.damaged)) {
+          reveal(s, "rival"); // The defender's card responds.
           push(s, {
             type: "hits",
             p: t.attacker,
@@ -3507,33 +3785,14 @@ function pump(s) {
             battle: true,
             attackers: t.attackers,
           });
+        }
         break;
-      case "autoSecure":
-        s.pending.shift();
-        secure(s, t.p, t.index);
-        break;
-      case "battlePrepare":
-        s.pending.shift();
-        if (
-          has(s, t.defender, "L12") &&
-          piecesAt(s, t.system, t.defender, "ship").some((x) => !x.damaged)
-        )
-          push(
-            s,
-            {
-              type: "hits",
-              p: t.p,
-              target: t.p,
-              dealer: t.defender,
-              system: t.system,
-              left: 1,
-              kind: "self",
-              battle: true,
-              attackers: t.attackers,
-            },
-            { ...t, type: "dice" },
-          );
-        else push(s, { ...t, type: "dice" });
+      case "reroll":
+        if (t.dice.length) auto = false;
+        else {
+          s.pending.shift();
+          resolveBattleDice(s, t);
+        }
         break;
       case "dice":
         if (!piecesAt(s, t.system, t.p, "ship").length) {
@@ -3564,17 +3823,35 @@ function pump(s) {
         else auto = false;
         break;
       }
-      case "raid":
-        if (
-          !piecesAt(s, t.system, t.p, "ship").some(
+      case "raid": {
+        const alive = piecesAt(s, t.system, t.p, "ship").some(
             (x) => !t.attackers || t.attackers.includes(x.id),
-          ) ||
-          t.keys <= 0 ||
-          !stealChoices(s, t.p, t.defender, t.keys, true).length
-        )
+          ),
+          affordable = stealChoices(s, t.p, t.defender, t.keys, true).length;
+        if (!alive || t.keys <= 0 || !affordable) {
           s.pending.shift();
-        else auto = false;
+          // Say why a raid came to nothing; one that stole something is
+          // already in the log.
+          if (!t.stolen) {
+            const who = s.players[t.p].name,
+              from = s.players[t.defender].name;
+            log(
+              s,
+              `${who}’s raid on ${from} steals nothing: ${
+                !alive
+                  ? "no attacking ship survived"
+                  : t.keys <= 0
+                    ? "no keys left"
+                    : stealChoices(s, t.p, t.defender, 99, true).length
+                      ? `nothing ${from} holds costs ${t.keys} key${t.keys === 1 ? "" : "s"} or fewer`
+                      : `${from} has nothing that can be stolen`
+              }.`,
+              { battle: true },
+            );
+          }
+        } else auto = false;
         break;
+      }
       case "battleEnd": {
         s.pending.shift();
         const tasks = [];
@@ -3611,6 +3888,10 @@ function pump(s) {
         pushEffects(s, tasks);
         break;
       }
+      case "voxFinish":
+        s.pending.shift();
+        finishVox(s, t, t.id === "BC29");
+        break;
       case "ruthlessRepeat":
         s.pending.shift();
         if (t.action === "tax") {
@@ -3688,11 +3969,11 @@ function publicActivity(s) {
     reorder: "Arranging resources",
     overflow: "Choosing resources to keep",
     farseersRival: "Using Farseers",
-    farseersDraw: "Using Farseers",
+    farseersDiscard: "Using Farseers",
     farseersSwap: "Using Farseers",
     farseersGive: "Using Farseers",
     generous: "Giving a Guild before declaring",
-    effectOrder: "Choosing effect order",
+    effects: "Choosing effect order",
   };
   return {
     label: t
@@ -3741,13 +4022,22 @@ export function viewFor(s, p) {
     court: s.court.filter((c) => !c.temporary),
     courtDeckCount: s.courtDeck.length,
     courtDiscard: s.courtDiscard,
+    // Every face-up card shown is certainly in the pile; the face-down pile
+    // is a count only. Read defensively: saved games may predate the split.
+    discardUp: (s.discardUp ?? []).reduce((rounds, { round, ...card }) => {
+      if (rounds.at(-1)?.round !== round) rounds.push({ round, cards: [] });
+      rounds.at(-1).cards.push(card);
+      return rounds;
+    }, []),
+    discardDownCount: s.discardDown.length,
     supply: s.supply,
     markers: s.markers,
     neutral: s.neutral,
     overrides: s.overrides,
     controls: Object.fromEntries(systems(s).map((id) => [id, control(s, id)])),
-    log: s.log.slice(-150),
+    log: s.log,
     lastBattle: s.lastBattle,
+    battles: s.battles,
     scoreHistory: s.scoreHistory,
     winner: s.winner,
     options: s.options,
@@ -3908,7 +4198,8 @@ export function assertInvariants(s) {
   const cards = [
     ...s.players.flatMap((p) => p.hand),
     ...s.played.map((x) => x.card),
-    ...s.discard,
+    ...s.discardUp.map((x) => x.card),
+    ...s.discardDown,
   ];
   if (s.phase !== "draft" && s.phase !== "setup")
     ok(new Set(cards).size === cards.length, "An action card is duplicated.");

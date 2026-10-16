@@ -28,7 +28,7 @@ function room() {
   return {
     game,
     seats: [{ name: "A" }, { name: "B" }],
-    options: { timer: { mode: "live", seconds: 300, expiry: "overtime" } },
+    options: { timer: { mode: "live", turn: 300, expiry: "overtime" } },
   };
 }
 function choose(r, op) {
@@ -92,6 +92,25 @@ test("new information, rolls, handoffs and chapter changes form history boundari
   }
   assert.equal(historyBoundary(before, structuredClone(before), 0, {}), null);
 });
+// M7: with the action discard split in two, a draw from the face-down pile
+// (or anything reaching the face-up pile) still commits earlier steps.
+test("a face-down discard draw or a face-up pile change forms a history boundary", () => {
+  const before = room().game;
+  for (const mutate of [
+    (s) => s.discardDown.shift(),
+    (s) =>
+      s.discardUp.push({
+        card: s.discardDown.pop(),
+        player: 0,
+        mode: "lead",
+        round: 1,
+      }),
+  ]) {
+    const after = structuredClone(before);
+    mutate(after);
+    assert.match(historyBoundary(before, after, 0, {}), /A deck changed/);
+  }
+});
 test("clock never resets per action/undo; handoffs charge the responder; next card turn resets", () => {
   const r = room();
   initClock(r, 1000);
@@ -130,6 +149,15 @@ test("pause/resume freezes all clocks; expiry stops at zero, extensions grant us
   assert.throws(() => assertClockOpen(r, 500000));
   changeClock(r, 0, { operation: "extend", seconds: 60 }, 500000);
   assert.equal(clockView(r, 500000).remainingMs, 60000);
+  // Each notice says whose clock it touches, so that player's tab can flash.
+  assert.deepEqual(
+    r.notices.map((x) => [x.at, x.p]),
+    [
+      [10000, r.clock.actor],
+      [100000, r.clock.actor],
+      [500000, r.clock.actor],
+    ],
+  );
   const loaded = JSON.parse(JSON.stringify(r));
   assert.equal(clockView(loaded, 510000).remainingMs, 50000);
   assert.throws(() => changeClock(r, 1, { operation: "pause" }, 510000));
@@ -142,9 +170,9 @@ test("overtime permits actions; timer inputs are validated; configure is explici
   for (const config of [
     null,
     { mode: "bad" },
-    { mode: "live", seconds: 59 },
-    { mode: "async", seconds: 604801 },
-    { mode: "live", seconds: NaN },
+    { mode: "live", turn: 59 },
+    { mode: "async", turn: 604801 },
+    { mode: "live", turn: NaN },
   ])
     assert.throws(() => validateTimer(config));
   changeClock(
@@ -152,12 +180,58 @@ test("overtime permits actions; timer inputs are validated; configure is explici
     0,
     {
       operation: "configure",
-      config: { mode: "async", seconds: 3600, expiry: "pause" },
+      config: { mode: "async", turn: 3600, expiry: "pause" },
     },
     400000,
   );
   assert.equal(clockView(r, 400000).remainingMs, 3600000);
   assert.ok(r.notices.length);
+  assert.equal(
+    r.notices.at(-1).text,
+    "Timer set to 1 hour per turn (async). Current allowance restarted.",
+  );
+});
+test("every notice's `at` is later than the one before it, and the newest 20 are kept", () => {
+  const r = room();
+  initClock(r, 0);
+  // Two changes in the same millisecond, then one with a clock that went back.
+  changeClock(r, 0, { operation: "pause" }, 5000);
+  changeClock(r, 0, { operation: "resume" }, 5000);
+  changeClock(r, 0, { operation: "pause" }, 4000);
+  assert.deepEqual(
+    r.notices.map((x) => x.at),
+    [5000, 5001, 5002],
+  );
+  for (let i = 0; i < 30; i++)
+    changeClock(r, 0, { operation: i % 2 ? "pause" : "resume" }, 6000);
+  assert.equal(r.notices.length, 20);
+  const ats = r.notices.map((x) => x.at);
+  assert.deepEqual(
+    ats,
+    [...ats].sort((a, b) => a - b),
+  );
+  assert.equal(new Set(ats).size, 20);
+});
+test("notices word durations in the unit a player would say", () => {
+  const say = (seconds, config) => {
+    const r = room();
+    initClock(r, 0);
+    changeClock(
+      r,
+      0,
+      config
+        ? { operation: "configure", config: { mode: "async", ...config } }
+        : { operation: "extend", seconds },
+      1000,
+    );
+    return r.notices.at(-1).text;
+  };
+  assert.match(say(30), /added 30 seconds to A/);
+  assert.match(say(60), /added 1 minute to A/);
+  assert.match(say(120), /added 2 minutes to A/);
+  assert.match(say(3600), /added 1 hour to A/);
+  assert.match(say(86400), /added 24 hours to A/);
+  assert.match(say(0, { turn: 86400, expiry: "pause" }), /24 hours per turn/);
 });
 test("undo a completed build restores pieces, pools, pips and turn usage; redo restores all together", () => {
   const r = room();

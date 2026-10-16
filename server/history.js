@@ -2,6 +2,7 @@ import { decision, transition, RuleError, log } from "../game/engine.js";
 const actorOf = (s) =>
   s?.phase === "over" ? null : (s?.pending[0]?.p ?? s?.current);
 const equal = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+const discardPiles = (s) => [s.discardDown, s.discardUp];
 export function historyBoundary(before, after, actor, choice) {
   if (
     choice?.op === "endTurn" ||
@@ -17,7 +18,7 @@ export function historyBoundary(before, after, actor, choice) {
     return "Dice were rolled or a deck was shuffled. Earlier decisions are committed.";
   if (
     !equal(before.courtDeck, after.courtDeck) ||
-    !equal(before.discard, after.discard)
+    !equal(discardPiles(before), discardPiles(after))
   )
     return "A deck changed or a card was revealed. Earlier decisions are committed.";
   if (
@@ -44,9 +45,11 @@ export function applyDecision(room, actor, input) {
     after,
     choice,
     choice?.label ??
-      (d.form?.kind === "dice"
-        ? "Roll battle dice"
-        : `${d.title} · ${Array.isArray(input.value) ? input.value.length : ""} selected`),
+      (input.cancel
+        ? "Back"
+        : d.form?.kind === "dice"
+          ? "Roll battle dice"
+          : `${d.title} · ${Array.isArray(input.value) ? input.value.length : ""} selected`),
   );
 }
 function recordDecision(room, actor, before, after, choice, label) {

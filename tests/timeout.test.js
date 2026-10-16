@@ -28,7 +28,7 @@ function room(game = fixtures.card.raw) {
   const r = {
     game: structuredClone(game),
     seats: game.players.map((p) => ({ name: p.name })),
-    options: { timer: { mode: "live", seconds: 60, expiry: "auto" } },
+    options: { timer: { mode: "live", turn: 60, expiry: "auto" } },
   };
   initClock(r, 0);
   return r;
@@ -56,6 +56,8 @@ test("timeout finishes only this card turn, commits history, logs AI and gives t
     r.notices.filter((x) => x.text.includes("timer expired")).length,
     1,
   );
+  // The takeover notice names the seat whose clock expired.
+  assert.equal(r.notices.find((x) => x.text.includes("timer expired")).p, p);
 });
 test("off, overtime, pause-on-expiry, manual pause and host extensions never trigger automatic moves", () => {
   for (const patch of [
@@ -128,7 +130,15 @@ for (let seed = 1; seed <= 12; seed++)
       seed,
     );
     let count = 0;
-    while (s.phase !== "over" && count++ < 5000)
-      s = transition(s, s.pending[0]?.p ?? s.current, timeoutInput(s));
+    while (s.phase !== "over" && count++ < 5000) {
+      const p = s.pending[0]?.p ?? s.current,
+        input = timeoutInput(s);
+      assert.ok(
+        !s.turn?.revealed ||
+          decision(s, p).choices[input.choice]?.op !== "declare",
+        "the timeout policy declared after a reveal",
+      );
+      s = transition(s, p, input);
+    }
     assert.equal(s.phase, "over", `failed after ${count} decisions`);
   });

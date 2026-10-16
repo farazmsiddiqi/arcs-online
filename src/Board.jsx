@@ -1,9 +1,9 @@
 import useMapCamera from "./useMapCamera.js";
 import { ZoomIn, ZoomOut, Scan, Focus } from "lucide-react";
 import CombatEffects from "./CombatEffects.jsx";
-import React, { useRef, useState, useEffect } from "react";
+import { useRef, useState, useEffect } from "react";
 import { MAP } from "../game/data.js";
-export const CENTERS = {
+const CENTERS = {
   "1-gate": [1300, 550],
   "1-arrow": [1050, 360],
   "1-crescent": [1320, 130],

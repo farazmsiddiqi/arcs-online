@@ -19,7 +19,7 @@ const game = viewFor(raw, p),
 const room = {
   game: raw,
   seats: raw.players.map((p) => ({ name: p.name })),
-  options: { timer: { mode: "live", seconds: 60, expiry: "auto" } },
+  options: { timer: { mode: "live", turn: 60, expiry: "auto" } },
 };
 initClock(room);
 let expired = false,
@@ -35,7 +35,7 @@ const projection = () => ({
   clock: clockView(room, expired ? room.clock.since + 60000 : room.clock.since),
   history: { canUndo: false, canRedo: false, steps: [] },
 });
-const browser = await chromium.launch(),
+const browser = await chromium.launch({ channel: process.env.PW_CHANNEL }),
   page = await browser.newPage(),
   errors = [];
 page.on("pageerror", (e) => errors.push(e.message));

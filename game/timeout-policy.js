@@ -97,6 +97,9 @@ export function timeoutInput(s) {
       if (c.op === "endPrelude") return 100; // Keep saved resources and Guilds.
       if (c.op === "action") return actionValue(s, p, c);
       if (c.op === "declare") {
+        // Never declare once the turn has revealed anything (item 16), even
+        // where the printed "before actions" window still allows it.
+        if (s.turn.revealed) return -10;
         const values = ambitionValues(s, c.ambition);
         return values[p] >
           Math.max(
@@ -125,6 +128,14 @@ export function timeoutInput(s) {
     if (c.op === "skip" || c.op === "resolve" || c.op === "withoutBonus")
       return 0;
     if (c.op === "cancel" || c.op === "arrangePick") return -20;
+    // Rerolling with no blank dice would select nothing and not spend the
+    // ability, so only reroll when there is a blank die to replace.
+    if (c.op === "reroll")
+      return t.dice.some(
+        (x) => !x.faces.length && (c.dieType === "any" || x.type === c.dieType),
+      )
+        ? 1
+        : -1;
     if (t.type === "action" || t.type === "freeChoice")
       return targetValue(s, p, c);
     if (c.op === "moveTo") {
