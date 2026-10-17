@@ -1,0 +1,21 @@
+scripts/arcy-eval.mjs
+  s_dc116501f82d39::t_09d5f2ceac3bde 217-218
+server/arcy.js
+  s_dc116501f82d39::t_9b3bece8bc60d8 14
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "bf431a887f7629238305e9dada0ae2a50c1ddeab",
+  "prompts": {},
+  "sessions": {
+    "s_dc116501f82d39": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0feb0-6bcc-7a61-b57d-5b785a6c2cc5",
+        "model": "gpt-6-astra"
+      },
+      "human_author": "farazmsiddiqi <70923196+farazmsiddiqi@users.noreply.github.com>"
+    }
+  }
+}
