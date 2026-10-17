@@ -1,0 +1,19 @@
+src/CourtSlot.jsx
+  s_dc116501f82d39::t_5bf4051c6751ae 1,28-50
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "47093e6ad0bf831c47d674e8085c97ecb646d4ae",
+  "prompts": {},
+  "sessions": {
+    "s_dc116501f82d39": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0feb0-6bcc-7a61-b57d-5b785a6c2cc5",
+        "model": "gpt-6-astra"
+      },
+      "human_author": "farazmsiddiqi <70923196+farazmsiddiqi@users.noreply.github.com>"
+    }
+  }
+}
