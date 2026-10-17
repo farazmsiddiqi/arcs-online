@@ -1,0 +1,45 @@
+docs/action-feedback.md
+  s_dc116501f82d39::t_381bdda0fe2eee 1-41
+game/engine.js
+  s_dc116501f82d39::t_85090cd4cdc5de 2499
+server/history.js
+  s_dc116501f82d39::t_aab3f656117925 125
+src/ActionAnimations.jsx
+  s_dc116501f82d39::t_2038d79b91e998 1-241
+src/App.jsx
+  s_dc116501f82d39::t_5b981600ff071c 1-2,264,813,815-817,822,842-845,937,973-977,1194,1817-1822
+src/Board.jsx
+  s_dc116501f82d39::t_0585556d86c269 1,12,66,71-83,85-101,103-111,494,498,510
+src/CombatEffects.jsx
+  s_dc116501f82d39::t_0189defc38f686 9-14,41,46-48,50-57
+src/PlayerTable.jsx
+  s_dc116501f82d39::t_8ca9d4a5db90bd 82
+src/ResourceDetails.jsx
+  s_dc116501f82d39::t_640e7b4f1584b5 1-114
+src/TableStory.jsx
+  s_dc116501f82d39::t_dd643d07a8beff 47
+src/action-animations.css
+  s_dc116501f82d39::t_e78d42a402fab1 1-235
+src/actionAnimations.js
+  s_dc116501f82d39::t_d961a6a4fc1ac4 1-115
+src/main.jsx
+  s_dc116501f82d39::t_4fbd9df2164bbe 22-23
+tests/action-animations.test.js
+  s_dc116501f82d39::t_f743a8f55e60c2 1-139
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "ac485aaeb4929e29ef3f6f155aedd060e285ff9a",
+  "prompts": {},
+  "sessions": {
+    "s_dc116501f82d39": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0feb0-6bcc-7a61-b57d-5b785a6c2cc5",
+        "model": "gpt-6-astra"
+      },
+      "human_author": "farazmsiddiqi <70923196+farazmsiddiqi@users.noreply.github.com>"
+    }
+  }
+}
