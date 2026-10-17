@@ -1,0 +1,39 @@
+server/index.js
+  s_dc116501f82d39::t_f79f903dbe0e74 1-2,172-191,195-219,222,226
+server/replay.js
+  s_dc116501f82d39::t_52507a6ba12027 95-119
+src/ActionAnimations.jsx
+  s_dc116501f82d39::t_b316075d41ed79 21-24,84-87
+src/App.jsx
+  s_dc116501f82d39::t_962c4509f082ad 159,2074
+src/Board.jsx
+  s_dc116501f82d39::t_12b14347b6bb89 107,117-118
+src/ReplayViewer.jsx
+  s_dc116501f82d39::t_af03c5eca7d7d5 1,20,23-40,50,53-55,61-74,77,79-80,82,97,100-128,131-134,139-143,149,152-163,166-168,184,209,211-214,239,249,267,274,306,310,315-319,342-346,369,412,417,447
+src/replayCache.js
+  s_dc116501f82d39::t_c6b61fd17e5ab5 1-66
+src/useMapCamera.js
+  s_dc116501f82d39::t_f62179b65d5c88 35-39
+tests/replay-cache.test.js
+  s_dc116501f82d39::t_dc351b9977705e 1-87
+tests/replay.test.js
+  s_dc116501f82d39::t_9f27aa3b4b1771 101-110
+tests/server.test.js
+  s_dc116501f82d39::t_d39edeae5cc0c8 740,756,766-807
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "bd83daa2dedc63471f6c89da25c47d1ec551454c",
+  "prompts": {},
+  "sessions": {
+    "s_dc116501f82d39": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0feb0-6bcc-7a61-b57d-5b785a6c2cc5",
+        "model": "gpt-6-astra"
+      },
+      "human_author": "farazmsiddiqi <70923196+farazmsiddiqi@users.noreply.github.com>"
+    }
+  }
+}
