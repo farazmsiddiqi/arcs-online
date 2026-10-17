@@ -214,7 +214,8 @@ async function worker() {
       start = Date.now();
     try {
       const answer = await generateRuling({
-        question: `@arcy ${c.question}`,
+        question:
+          c.id === "draft-followup" ? c.question : `@arcy ${c.question}`,
         context: c.context ?? context,
         conversation: c.conversation ?? [],
       });
