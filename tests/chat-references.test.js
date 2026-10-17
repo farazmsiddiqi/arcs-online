@@ -93,3 +93,106 @@ test("references are bounded and exact, not email addresses or partial player na
     "Waiting in the lobby",
   );
 });
+
+test("Arcy questions use player/state mentions as context without attaching snapshots", async () => {
+  const db = new DatabaseSync(":memory:");
+  const requests = [];
+  let time = 100000;
+  const s = createChatService(db, {
+    load: () => ({ room }),
+    broadcast: () => {},
+    enabled: () => true,
+    now: () => time,
+    generate: async (request) => {
+      requests.push(request);
+      return {
+        status: "ruling",
+        paragraphs: [],
+        assumptions: [],
+        followUp: "",
+      };
+    },
+  });
+  try {
+    const text = "@arcy what did @Bo do last round? @turn";
+    const sent = s.send("room", 0, { text, clientId: "arcy-mentions-context" });
+    const question = sent.messages.find((m) => m.role === "player");
+    assert.deepEqual(question.references, []);
+    assert.equal(sent.messages.filter((m) => m.role === "arcy").length, 1);
+    await s.idle();
+    assert.equal(requests[0].question, text);
+    assert.ok(requests[0].context.players.some((p) => p.name === "Bo"));
+    const saved = JSON.parse(
+      db
+        .prepare("SELECT payload FROM chat_messages WHERE id=?")
+        .get(question.id).payload,
+    );
+    assert.deepEqual(saved.references, []);
+
+    // Conversational follow-ups in a referee thread also avoid card clutter.
+    time += 16000;
+    s.send("room", 0, {
+      text: "And what about @Ada?",
+      clientId: "arcy-mentions-followup",
+      replyTo: question.id,
+    });
+    await s.idle();
+    assert.equal(requests.length, 2);
+    assert.deepEqual(
+      s
+        .view("room", undefined, question.id, 0)
+        .messages.find((m) => m.text === "And what about @Ada?").references,
+      [],
+    );
+
+    const privateQuestion = s.send("room", 1, {
+      text: "Can @Ada use @court this turn?",
+      clientId: "arcy-private-mentions",
+      private: true,
+    });
+    await s.idle();
+    assert.deepEqual(
+      privateQuestion.messages.find((m) => m.private && m.role === "player")
+        .references,
+      [],
+    );
+    assert.equal(requests.length, 3);
+    assert.equal(
+      s.view("room", undefined, null, 0).messages.some((m) => m.private),
+      false,
+    );
+  } finally {
+    await s.idle();
+    db.close();
+  }
+});
+
+test("saved Arcy questions hide legacy snapshots without deleting the conversation", () => {
+  const db = new DatabaseSync(":memory:");
+  const s = createChatService(db, {
+    load: () => ({ room }),
+    broadcast: () => {},
+    enabled: () => false,
+  });
+  try {
+    const text = "@ARCY explain @Bo and @turn";
+    const question = s
+      .send("room", 0, { text, clientId: "legacy-arcy-snapshots" })
+      .messages.find((m) => m.role === "player");
+    const legacy = { references: chatReferences(room, 0, "@Bo @turn") };
+    db.prepare("UPDATE chat_messages SET payload=? WHERE id=?").run(
+      JSON.stringify(legacy),
+      question.id,
+    );
+    const visible = s.view("room", undefined, null, 0).messages;
+    assert.equal(visible.find((m) => m.id === question.id).text, text);
+    assert.deepEqual(visible.find((m) => m.id === question.id).references, []);
+    assert.ok(visible.some((m) => m.role === "arcy"));
+    const standalone = s
+      .send("room", 0, { text: "@Bo @turn", clientId: "ordinary-snapshots-ok" })
+      .messages.at(-1);
+    assert.equal(standalone.references.length, 2);
+  } finally {
+    db.close();
+  }
+});

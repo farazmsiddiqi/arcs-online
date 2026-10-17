@@ -67,6 +67,11 @@ export function createChatService(
     threadId: row.thread_id,
     private: row.private_seat !== null,
     ...JSON.parse(row.payload),
+    // Older saved messages may already contain cards. Keep their original text
+    // and referee reply, but omit snapshot clutter when addressed to Arcy.
+    ...(row.role === "player" && mentionsArcy(row.text)
+      ? { references: [] }
+      : {}),
   });
   function view(
     id,
@@ -286,7 +291,6 @@ export function createChatService(
     )
       fail(429, "Please slow down—20 messages per minute is the table limit.");
     const room = load(id).room;
-    const references = chatReferences(room, seat, text);
     const ask =
       mentionsArcy(text) ||
       (!referenceOnly(text, room.seats) &&
@@ -297,6 +301,9 @@ export function createChatService(
                 "SELECT id FROM chat_messages WHERE room=? AND thread_id=? AND role='arcy' LIMIT 1",
               )
               .get(id, threadId))));
+    // Mentions in a referee question are context for that question. Standalone
+    // references still produce deterministic cards, including in private chat.
+    const references = ask ? [] : chatReferences(room, seat, text);
     if (ask && enabled()) checkAI(id, seat);
     const context = ask ? refereeContext(room, seat) : null;
     let replyId;
