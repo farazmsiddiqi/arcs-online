@@ -1,0 +1,21 @@
+server/chat.js
+  s_dc116501f82d39::t_7b2dc077a7b253 70-74,304-306
+tests/chat-references.test.js
+  s_dc116501f82d39::t_0a7879f1094ce0 96-198
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "55c48c9fd28fdd91171f87e529610e15ba304c61",
+  "prompts": {},
+  "sessions": {
+    "s_dc116501f82d39": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0feb0-6bcc-7a61-b57d-5b785a6c2cc5",
+        "model": "gpt-6-astra"
+      },
+      "human_author": "farazmsiddiqi <70923196+farazmsiddiqi@users.noreply.github.com>"
+    }
+  }
+}
