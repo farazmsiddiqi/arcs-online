@@ -376,9 +376,18 @@ app.use(
   }),
 );
 if (existsSync(path.join(root, "dist"))) {
-  app.use(express.static(path.join(root, "dist"), { maxAge: "1h" }));
+  app.use(
+    express.static(path.join(root, "dist"), {
+      maxAge: "1h",
+      setHeaders: (res, file) => {
+        if (file.endsWith(".html")) res.setHeader("Cache-Control", "no-store");
+      },
+    }),
+  );
   app.get("/{*path}", (req, res) =>
-    res.sendFile(path.join(root, "dist/index.html")),
+    res.sendFile(path.join(root, "dist/index.html"), {
+      headers: { "Cache-Control": "no-store" },
+    }),
   );
 }
 app.use((err, req, res, next) => {

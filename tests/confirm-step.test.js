@@ -44,7 +44,6 @@ test("pass, face-up plays, secure and battle get a confirm; Copy plays, End turn
     "bold",
     "skip",
     "cancel",
-    "draft",
   ])
     assert.equal(confirmFor({ op }, table()), null, op);
   assert.equal(confirmFor(undefined, table()), null);
@@ -125,4 +124,40 @@ test("on real views from played games: every pass, face-up play, secure and batt
     "battleTarget",
   ])
     assert.ok(seen[key] > 0, `no ${key} reached in the sample games`);
+});
+
+test("every shared draft pick confirms the exact card and handoff, including the final double-Lore pick", () => {
+  for (const doubleLore of [false, true]) {
+    let state = createGame(
+      ["Ada", "Bo", "Cy"],
+      { leaders: true, doubleLore },
+      23,
+    );
+    let picks = 0;
+    while (state.phase === "draft") {
+      const actor = state.current,
+        view = viewFor(state, actor),
+        choice = decision(state, actor).choices[0];
+      const before = structuredClone(state),
+        review = confirmFor(choice, view);
+      assert.equal(review.card, choice.card);
+      assert.match(review.title, new RegExp(CARDS[choice.card].name));
+      assert.deepEqual(state, before); // Preparing or cancelling a review never commits a pick.
+      const after = transition(state, actor, { choice: choice.id });
+      if (after.phase === "draft") {
+        assert.ok(
+          review.body.includes(
+            `${after.players[after.current].name} picks next`,
+          ),
+        );
+        assert.equal(review.confirm, "Confirm pick & pass");
+      } else {
+        assert.match(review.body, /finishes the shared draft/);
+        assert.equal(review.confirm, "Confirm & finish draft");
+      }
+      state = after;
+      picks++;
+    }
+    assert.equal(picks, 3 * (doubleLore ? 3 : 2));
+  }
 });

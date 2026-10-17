@@ -9,7 +9,8 @@ import { TurnStages, HistoryControls } from "./TurnFlow.jsx";
 import { useClock } from "./TurnTimers.jsx";
 import { useState, useEffect, useRef } from "react";
 import { Swords } from "lucide-react";
-import { ACTION_CARDS, MAP } from "../game/data.js";
+import { cardImage } from "./Cards.jsx";
+import { ACTION_CARDS, MAP, CARDS } from "../game/data.js";
 import { cap } from "./tableContext.js";
 import { confirmFor } from "./confirmStep.js";
 // Item 16: declaring and seizing stay open after actions until the turn
@@ -527,6 +528,22 @@ export default function CommandPanel({
         >
           <span className="eyebrow">REVIEW & CONFIRM</span>
           <h3>{confirmStep.title}</h3>
+          {confirmStep.card && (
+            <button
+              className="draft-confirm-card"
+              onClick={() => onInspect(confirmStep.card)}
+              aria-label={`Inspect ${CARDS[confirmStep.card]?.name}`}
+            >
+              <img
+                src={cardImage(confirmStep.card)}
+                alt={CARDS[confirmStep.card]?.name}
+              />
+              <span>
+                Inspect selected{" "}
+                {CARDS[confirmStep.card]?.kind === "leader" ? "Leader" : "Lore"}
+              </span>
+            </button>
+          )}
           <p>{confirmStep.body}</p>
           <div>
             <button

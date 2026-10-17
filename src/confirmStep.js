@@ -1,4 +1,5 @@
 import { CARDS } from "../game/data.js";
+import { draftOrder } from "./draftOrder.js";
 
 // C-6: one-click choices that commit, or reveal a card, before the player has
 // had a second look. `confirmFor` returns the wording of the confirm step for
@@ -11,6 +12,7 @@ import { CARDS } from "../game/data.js";
 // undoing it reveals nothing) and the End turn button (it already has its own
 // review in CommandPanel).
 export const CONFIRM_OPS = [
+  "draft",
   "pass",
   "play",
   "secureTarget",
@@ -25,6 +27,21 @@ const owns = (game, seat, id) =>
 export function confirmFor(choice, game) {
   if (!choice || !CONFIRM_OPS.includes(choice.op) || isCopy(choice))
     return null;
+  if (choice.op === "draft") {
+    const card = CARDS[choice.card];
+    const order = draftOrder(game);
+    const next = order.chips[order.made + 1];
+    return {
+      title: `Draft ${card?.name ?? "this card"}?`,
+      card: choice.card,
+      body: `This becomes your ${card?.kind === "leader" ? "Leader" : "Lore"} and ends this draft pick. ${
+        next
+          ? `${game.players[next.seat].name} picks next.`
+          : "This finishes the shared draft and deploys the fleets. Any remaining setup choices resolve before the first turn."
+      } You can inspect the card or go back before confirming.`,
+      confirm: next ? "Confirm pick & pass" : "Confirm & finish draft",
+    };
+  }
   if (choice.op === "pass")
     return {
       title: "Pass the initiative?",
