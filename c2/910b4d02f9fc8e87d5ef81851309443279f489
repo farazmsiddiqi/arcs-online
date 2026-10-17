@@ -1,0 +1,39 @@
+src/App.jsx
+  s_dc116501f82d39::t_60c2678812091b 584-586
+  s_dc116501f82d39::t_e7542f64d135a0 587-589
+tests/server.test.js
+  s_dc116501f82d39::t_eabe172c5fee4f 533,545-546,550,554
+  s_dc116501f82d39::t_98eda13efe7130 664-737
+server/index.js
+  s_dc116501f82d39::t_60c2678812091b 321,332-346
+  s_dc116501f82d39::t_44ba6cbe0c539c 347,350-355
+server/clock.js
+  s_dc116501f82d39::t_60c2678812091b 85,144-145,152-156,293-297,309-322
+  s_dc116501f82d39::t_b8c32fa96009e3 329-341,360-376,381
+src/TurnTimers.jsx
+  s_dc116501f82d39::t_bf375115dfce4d 33-34,91-93,173-175,177-202,417
+  s_dc116501f82d39::t_20b68ea2738583 203-215,227-229,411-416
+src/table-ux.css
+  s_dc116501f82d39::t_98378c1ed5e32e 1225,1229-1235,1248,1253
+  s_dc116501f82d39::t_20909e1cc2789e 1236-1247,1249-1252,1254
+README.md
+  s_dc116501f82d39::t_61e7653285faa0 23-28
+tests/time-bank.test.js
+  s_dc116501f82d39::t_fb196ecb4d56e6 356-418
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "c2910b4d02f9fc8e87d5ef81851309443279f489",
+  "prompts": {},
+  "sessions": {
+    "s_dc116501f82d39": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0feb0-6bcc-7a61-b57d-5b785a6c2cc5",
+        "model": "gpt-6-astra"
+      },
+      "human_author": "farazmsiddiqi <70923196+farazmsiddiqi@users.noreply.github.com>"
+    }
+  }
+}
