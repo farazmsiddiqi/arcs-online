@@ -257,7 +257,19 @@ export default function App() {
   const game = room?.game ?? demo,
     me = game.players[game.me ?? 0],
     live = !!room?.game;
-  const effectiveDockHeight = dockHeight ?? autoDockHeight;
+  const preferredDockHeight = dockHeight ?? autoDockHeight;
+  // A draft pick passes play immediately. Keep its review and confirmation
+  // visible even when the player previously shortened the action area, then
+  // restore their preference when this temporary review closes.
+  const reviewingDraft =
+    game.phase === "draft" && pendingConfirm?.revision === game.revision;
+  const effectiveDockHeight =
+    reviewingDraft && innerWidth > 1000
+      ? Math.max(
+          preferredDockHeight ?? 250,
+          Math.min(350, Math.max(220, innerHeight - 200)),
+        )
+      : preferredDockHeight;
   // Every player sees each new timer notice as a toast; the player it is
   // about also gets the tab title flashed while the tab is in the background.
   const { toasts, dismiss: dismissToast } = useNoticeToasts(room, (fresh) => {
