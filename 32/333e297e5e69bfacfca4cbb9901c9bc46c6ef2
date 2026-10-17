@@ -1,0 +1,67 @@
+README.md
+  s_dc116501f82d39::t_4b793970eedcaf 31,35,41
+docs/arcy-referee.md
+  s_dc116501f82d39::t_a4439797fe9366 3,21,29,46-49
+game/chat-mentions.js
+  s_dc116501f82d39::t_639d44ee19742e 127-137
+server/arcy-context.js
+  s_dc116501f82d39::t_081269bf82c792 5
+server/chat-references.js
+  s_dc116501f82d39::t_ee8c85a8edf909 1-232
+server/chat.js
+  s_dc116501f82d39::t_e50b52b28358ae 1,40-47,56,68,71-85,90,92,99,101,104,106,140,232-237,256-260,262-264,272-276,278,288-289,291-299,314,316,331,341,349-353,370
+server/index.js
+  s_dc116501f82d39::t_20aa8594bb1713 131,145,156-164
+src/App.jsx
+  s_dc116501f82d39::t_32d1e8be130c81 1-2,325-329,334-344,719-723,1179,1295-1318,2093-2098
+src/Board.jsx
+  s_dc116501f82d39::t_0b423e86258cb6 6,181-186
+src/PlayerTable.jsx
+  s_dc116501f82d39::t_fa90afc0dcee89 57-58,68-73,75-77,79,82-83,90,94-111,139,212,243,256-259,268,278,322-326,329,333,336-350
+src/SystemDetails.jsx
+  s_dc116501f82d39::t_e36625de0b0f28 1-140
+src/TableChat.jsx
+  s_dc116501f82d39::t_44cb167d808b91 5,18,22,106-163,170-171,194-195,197-205,255-270,304,307,335-338,340,348,354-355,387,402-429,454-488,538,549-568,573-577,584-588,597-601,622,627-629,712-719,808,813,822-828,938-941,944-947
+src/TableStory.jsx
+  s_dc116501f82d39::t_460a34f5773d1c 105,108,118-124
+src/connection.js
+  s_dc116501f82d39::t_4183bba5d0cf60 1-158
+src/inspection.css
+  s_dc116501f82d39::t_584dcad5e7ce58 1-397
+src/main.jsx
+  s_dc116501f82d39::t_18306e19ddb699 20-21
+src/mapGeometry.js
+  s_dc116501f82d39::t_7dfec4f653a11d 1-80
+src/table-chat.css
+  s_dc116501f82d39::t_8ddfd164ff31ee 623-831
+tests/arcy.test.js
+  s_dc116501f82d39::t_fbb5796e153ce7 349
+tests/chat-mentions.test.js
+  s_dc116501f82d39::t_e8aea1bd3d4139 77-98
+tests/chat-private.test.js
+  s_dc116501f82d39::t_310a0e61c9a6c4 1-135
+tests/chat-references.test.js
+  s_dc116501f82d39::t_0193463f75cee8 1-95
+tests/chat-server.test.js
+  s_dc116501f82d39::t_02b184aa4b8a5d 194-268
+tests/connection.test.js
+  s_dc116501f82d39::t_a0f14c60b14fca 1-105
+tests/mapGeometry.test.js
+  s_dc116501f82d39::t_9acc6cad3aee6b 1-69
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "32333e297e5e69bfacfca4cbb9901c9bc46c6ef2",
+  "prompts": {},
+  "sessions": {
+    "s_dc116501f82d39": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0feb0-6bcc-7a61-b57d-5b785a6c2cc5",
+        "model": "gpt-6-astra"
+      },
+      "human_author": "farazmsiddiqi <70923196+farazmsiddiqi@users.noreply.github.com>"
+    }
+  }
+}
