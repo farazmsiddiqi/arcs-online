@@ -1,0 +1,21 @@
+src/ActionAnimations.jsx
+  s_dc116501f82d39::t_b8210e2cfeeeaf 70-74,200
+src/useMapCamera.js
+  s_dc116501f82d39::t_e1a415a85a4fe3 87-89
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "5d76a67c4e9fcc287270641f22ece5cf38f90329",
+  "prompts": {},
+  "sessions": {
+    "s_dc116501f82d39": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0feb0-6bcc-7a61-b57d-5b785a6c2cc5",
+        "model": "gpt-6-astra"
+      },
+      "human_author": "farazmsiddiqi <70923196+farazmsiddiqi@users.noreply.github.com>"
+    }
+  }
+}
