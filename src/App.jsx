@@ -1,4 +1,5 @@
 import PlayChoices from "./PlayChoices.jsx";
+import TableChat from "./TableChat.jsx";
 import { setupImage, setupsFor } from "./setupPreview.js";
 import { draftOrder } from "./draftOrder.js";
 import PlayerBoardResize, { clampPlayerWidth } from "./PlayerBoardResize.jsx";
@@ -724,6 +725,15 @@ export default function App() {
           </span>
         </div>
         <nav>
+          {room && (
+            <TableChat
+              key={room.id}
+              room={room}
+              game={room.game}
+              request={request}
+              onInspect={setDetail}
+            />
+          )}
           <button onClick={() => setModal("players")} aria-label="Players">
             <Users size={16} />
             <span>Players</span>

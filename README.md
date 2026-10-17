@@ -20,6 +20,20 @@ Open `http://localhost:3001`. Saved games are written to `var/` by default. For 
 
 Create a table, share its invitation link, and join from separate browsers. Seat credentials are stored in the joining browser. Keep invitation links and browser storage private. Practice opponents and timeout resolution use a local heuristic policy; they are not expert players.
 
+## Table chat and @arcy
+
+Open **Chat @arcy** in a table to talk with the other players. Mention `@arcy` anywhere in a message to ask the referee, for example: `@arcy Why is the lead 0, and what can I do now?` Everyone sees the answer and its supporting rule excerpts. The panel can be resized from its left edge; Enter sends and Shift+Enter adds a line.
+
+Player chat works without an API key. To enable the optional GPT referee, set `OPENAI_API_KEY` **on the server only**. On Railway, add it to the service's production variables. For local use, copy `.env.example` to `.env`, add the key there, and run `node --env-file=.env server/index.js`. Never put secrets in a `VITE_` variable, client code, or a commit.
+
+Arcy uses the OpenAI Responses API with `gpt-6-astra` by default (`ARCY_MODEL` overrides it). It retrieves publisher rules, card text, FAQ and errata from the bundled corpus, can search further for related rules, and checks its draft in a separate review pass. Supporting quotes and source IDs are validated before an answer is shown. It sees **only the public board**, recent public events and recent shared chat, captured at question time. It never sees hands, face-down cards, deck order, seat keys, or undo snapshots. Chat and public game information are sent to OpenAI only on invocation, with `store: false`; provider retention policies still apply. Never post private information in shared chat.
+
+Answers identify their chapter/round and flag when the board has changed. Ambiguous or unsupported questions should get a clarification rather than a confident guess. Arcy cannot change play or pause timers. It is an unofficial AI rules helper, not a guarantee of correctness; the publisher rules remain authoritative.
+
+Defaults limit Arcy to one active question per table, four across the server, 60 questions per table per rolling 24 hours and 300 across the server. Set `ARCY_TABLE_DAILY_LIMIT` and `ARCY_DAILY_LIMIT` to change the daily caps. Limits survive restarts; retries count. Configure an OpenAI project budget separately. Chat persists in the same private SQLite database as games. A server restart turns an interrupted question into a retryable message instead of charging automatically again.
+
+Run `node --test tests/arcy.test.js tests/chat-server.test.js` for offline checks. `node --env-file=.env scripts/arcy-eval.mjs` runs **paid** evaluations on synthetic game states and writes answers to ignored `work/arcy-live-eval.json`; inspect their meaning, not just the automated source/status checks. See [Arcy architecture and verification](docs/arcy-referee.md) for corpus provenance, limits and maintenance.
+
 ## Updating an existing checkout
 
 ```sh

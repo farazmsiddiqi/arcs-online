@@ -9,6 +9,7 @@ import { createGame, viewFor, RuleError } from "../game/engine.js";
 import { autoInput } from "../game/autoplay.js";
 import { migrateRoom, backupLegacyRooms } from "./migrate.js";
 import { resolveTimeout } from "./timeout.js";
+import { createChatService } from "./chat.js";
 import {
   applyMovement,
   applyResourceArrangement,
@@ -127,6 +128,7 @@ function publicRoom(row, p) {
     clock: clockView(row.room),
     notices: row.room.notices ?? [],
     game: row.room.game ? viewFor(row.room.game, p) : null,
+    chat: chat.view(row.id),
   };
 }
 const connections = new Map();
@@ -137,6 +139,31 @@ function broadcast(id) {
   for (const c of cs)
     if (c.ws.readyState === 1) c.ws.send(JSON.stringify(publicRoom(row, c.p)));
 }
+const chat = createChatService(db, { load, broadcast });
+app.get("/api/rooms/:id/chat", (req, res) => {
+  const row = load(req.params.id);
+  auth(row, getKey(req));
+  const before =
+    req.query.before === undefined
+      ? Number.MAX_SAFE_INTEGER
+      : Number(req.query.before);
+  if (!Number.isSafeInteger(before) || before < 1)
+    return res.status(400).json({ error: "Invalid message cursor." });
+  res.json(chat.view(row.id, before));
+});
+app.post("/api/rooms/:id/chat", (req, res) => {
+  const row = load(req.params.id),
+    p = auth(row, getKey(req));
+  res.status(201).json(chat.send(row.id, p, req.body ?? {}));
+});
+app.post("/api/rooms/:id/chat/:messageId/retry", (req, res) => {
+  const row = load(req.params.id),
+    p = auth(row, getKey(req));
+  const id = Number(req.params.messageId);
+  if (!Number.isSafeInteger(id) || id < 1)
+    return res.status(400).json({ error: "Invalid message." });
+  res.json(chat.retry(row.id, p, id));
+});
 app.get("/api/health", (req, res) =>
   res.json({ ok: true, version: "0.1.0", storage: "sqlite" }),
 );

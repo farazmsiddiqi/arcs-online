@@ -1,0 +1,1688 @@
+{
+  "source": "https://rules.buriedgiant.com/?product=arcs&locale=en-US&printing=p1",
+  "retrievedAt": "2026-10-17",
+  "publisherRevision": "Updated Oct 8th, 2025",
+  "sourceBundle": "https://rules.buriedgiant.com/chunk-WZM3UTAU.js",
+  "sha256": "0ea41a6a28ec15f3201a7890384dce29f0dcd1d1491ac99ec92e3596a2ad6599",
+  "scope": "Base game and Leaders & Lore; campaign chapters excluded. Publisher clarifications may mention campaign differences.",
+  "rules": [
+    {
+      "name": "Introduction",
+      "color": "#000000",
+      "pretext": "In Arcs, you lead a spacefaring society through an epic saga, as you try to survive in the harsh and dangerous Reach at the galaxy's edge. A game of Arcs lasts until someone has enough **Power**—essentially points. In games with 4 players, someone needs to have at least **27 Power**. With 3 players, **30 Power**. With 2 players, **33 Power**. When the game ends, the player with the most Power wins.<br><br>\nYou gain Power by completing **ambitions**, which are objectives that you declare in play. These are scored at the end of the **chapter**, when everyone runs out of action cards. The game lasts a varying number of chapters, usually three to five.<br><br>\nYour first game of Arcs will take about 45 minutes per player. After you play a few times, a game should take about 30 minutes per player.<br><br>\nIf you want to learn Arcs by watching a video, click **[here](https://buriedgiantstudios.com/pages/how-to-play-arcs)**.\n",
+      "number": "1"
+    },
+    {
+      "name": "What's in the Box",
+      "color": "#000000",
+      "children": [
+        {
+          "name": "Map",
+          "pretext": "The map of the Reach is where the action happens. You can move your ships around it, battle Rivals for control over its systems, and tax resources from the cities you build on its planets.\n"
+        },
+        {
+          "name": "Player Pieces",
+          "pretext": "Each player has the following pieces. The box contains pieces for 4 players.",
+          "children": [
+            {
+              "name": "Player Board.",
+              "text": "This board holds resources, your unbuilt cities, and Rival pieces you take as Trophies and Captives.\n"
+            },
+            {
+              "name": "Starports.",
+              "text": "Starports are built on planets and are used to build ships. Each player has **5 starports**.\n"
+            },
+            {
+              "name": "Cities.",
+              "text": "Cities are built on planets and can be taxed to gain resource tokens onto your player board. Each player has **5 cities**.\n"
+            },
+            {
+              "name": "Ships.",
+              "text": "Ships can move around the map and engage in battles. Each player has **15 ships**.\n"
+            },
+            {
+              "name": "Agents.",
+              "text": "Agents are placed on cards in the Court, a card row next to the map. Once you have the most agents on a card in the Court, you can take it. Each player has **10 agents**.\n"
+            },
+            {
+              "name": "Power Marker.",
+              "text": "This marker tracks your current Power on the bottom map edge. The second marker is used in expansions to track negative Power and very high Power. Each player has **2 power markers**.\n"
+            },
+            {
+              "name": "Objective Marker.",
+              "text": "This shows how close you are to completing your Fate's objective.\n"
+            },
+            {
+              "name": "Flagship Piece.",
+              "text": "Some Fates turn you into a Flagship, adding this piece to the map.\n"
+            },
+            {
+              "name": "Flagship Board.",
+              "text": "Some Fates turn you into a Flagship, giving you this board.\n"
+            }
+          ]
+        },
+        {
+          "name": "Cards",
+          "children": [
+            {
+              "name": "Action.",
+              "text": "These cards are played to take actions and declare ambitions. With 2 or 3 players, you don't use the “1” and “7” action cards. There are **28 action cards**.\n"
+            },
+            {
+              "name": "Setup.",
+              "text": "One of these cards is used in setup to place players' starting pieces and cover parts of the map. There are **12 setup cards**, 4 each for 2-4 players.\n"
+            },
+            {
+              "name": "Leader.",
+              "text": "These cards give special powers and show a player's starting pieces and resources. They are used in Leaders & Lore mode (`rule-relative:Leaders & Lore`). There are **8 leader cards** in the base game and **8 leader cards** in the Leaders & Lore pack.\n"
+            },
+            {
+              "name": "Guild.",
+              "text": "These cards represent the support of guildmasters and task forces. They are gained from the Court, often give new actions, and can be stolen.\n",
+              "children": [
+                {
+                  "name": "Base Game.",
+                  "text": "There are **25 Guild cards** for the base game, marked “BC” in their bottom-left corner.\n"
+                },
+                {
+                  "name": "Campaign.",
+                  "text": "There are **10 Guild cards** for the campaign game, marked “CC” in their bottom-left corner.\n"
+                }
+              ]
+            },
+            {
+              "name": "Vox.",
+              "text": "These cards represent incidents in the Reach that you can turn to your own ends. They are gained from the Court and resolve immediately.\n",
+              "children": [
+                {
+                  "name": "Base Game.",
+                  "text": "There are **6 Vox cards** for the base game, marked “BC” in their bottom-left corner.\n"
+                },
+                {
+                  "name": "Campaign.",
+                  "text": "There are **5 Vox cards** for the campaign game, marked “CC” in their bottom-left corner.\n"
+                }
+              ]
+            },
+            {
+              "name": "Lore.",
+              "text": "These cards represent long-lost technologies and the intangible qualities of leadership, charm, and rank. They are used in Leaders & Lore mode (`rule-relative:Leaders & Lore`). There are 14 lore cards in the base game and 14 lore cards in the Leaders & Lore pack.\n"
+            },
+            {
+              "name": "Event.",
+              "text": "Two or three of these new action cards are added to the action deck during campaign setup. There are **3 Event cards**.\n"
+            },
+            {
+              "name": "Imperial Council.",
+              "text": "This new card in the Court during campaign lets players take advantage of Imperial politics. It is marked `symbol:diamond`01.\n"
+            },
+            {
+              "name": "Edict.",
+              "text": "These are put in the rules booklet and may resolve during events. They are marked `symbol:diamond`02–05. There are **4 Edict cards**.\n"
+            },
+            {
+              "name": "Regent/Outlaw Title.",
+              "text": "In the campaign, every player starts as an Imperial Regent and might become an Outlaw. They are marked `symbol:diamond`06–09. There are **4 Regent/Outlaw Title cards**.\n"
+            },
+            {
+              "name": "Flagship Upgrades (4).",
+              "text": "These aid cards give the rules for Flagship Upgrades, marked `symbol:diamond`10–13. There are **4 Flagship Upgrades cards**.\n"
+            }
+          ]
+        },
+        {
+          "name": "Fates",
+          "children": [
+            {
+              "name": "Cards.",
+              "text": "These tarot-size cards show your Fate, which can change over time. There are **24 Fate cards**, 8 each of A, B, and C.\n"
+            },
+            {
+              "name": "Sets.",
+              "text": "Each Fate has a set of many cards and pieces you will use in play.\n"
+            },
+            {
+              "name": "Set Dividers.",
+              "text": "Each Fate Set is stored behind the divider of matching number.\n"
+            }
+          ]
+        },
+        {
+          "name": "Other Pieces",
+          "children": [
+            {
+              "name": "Resource Tokens.",
+              "text": "Resources represent both assets and the people skilled in using them. They add to ambitions and can be spent for special actions. There are **25 resource tokens**, 5 each of Material, Fuel, Weapons, Relics, and Psionic.\n"
+            },
+            {
+              "name": "Battle Dice.",
+              "text": "These dice are used to resolve battle. There are **18 battle dice**, 6 each of Assault, Skirmish, and Raid.\n"
+            },
+            {
+              "name": "Chapter Marker.",
+              "text": "This marker tracks the current chapter of the game on the map.\n"
+            },
+            {
+              "name": "Ambition Markers.",
+              "text": "These markers show which ambitions are currently declared. They start on their blue side with lower numbers. There are **3 ambition markers**.\n"
+            },
+            {
+              "name": "Zero Marker.",
+              "text": "This marker covers the card number of the lead card, making it 0, when an ambition is declared.\n"
+            },
+            {
+              "name": "Initiative Marker.",
+              "text": "This marker shows which player will take the first turn of a round.\n"
+            },
+            {
+              "name": "Path Markers.",
+              "text": "These are added to the map during setup. They cover gates, making them out of play and connecting the gates of neighboring clusters. There are **4 path markers**, 2 each of long and short.\n"
+            },
+            {
+              "name": "Out-of-play Markers.",
+              "text": "These are added to the map during setup. They cover planets, making them out of play for the game. There are **6 out-of-play markers**.\n"
+            },
+            {
+              "name": "Blight Tokens.",
+              "text": "The Blight is a mysterious entity spreading through the Reach. There are **24 Blight tokens**.\n"
+            },
+            {
+              "name": "Free Cities & Starports.",
+              "text": "Players can act with Free buildings they control. There are **28 Free cities** and **14 Free starports**.\n"
+            },
+            {
+              "name": "Imperial Ships.",
+              "text": "These ships control systems for the Empire, and Regents can act with them. There are **15 Imperial ships**.\n"
+            },
+            {
+              "name": "Number & Event Dice.",
+              "text": "These are rolled in setup and during some events in play.\n"
+            },
+            {
+              "name": "Chapter Track Tile.",
+              "text": "This double-sided tile covers the chapter track on the map.\n"
+            },
+            {
+              "name": "First Regent Tile.",
+              "text": "This shows which Regent is the First Regent and holds the Imperial Trust.\n"
+            },
+            {
+              "name": "Rules Booklet.",
+              "text": "This booklet holds various cards that are added in play.\n"
+            },
+            {
+              "name": "Overflow Markers.",
+              "text": "These hold pieces from crowded parts of the map between sessions. There are **4 overflow markers**.\n"
+            },
+            {
+              "name": "Other Dividers.",
+              "text": "You can store cards and pieces behind these dividers (`rule-relative:Intermission$Next Act?$Next Act.$Packing Up.`). There are **6 other dividers**.\n"
+            },
+            {
+              "name": "Aid Sheets.",
+              "children": [
+                {
+                  "name": "Base Game.",
+                  "text": "These sheets summarize how to play and what actions you can take. There are **4 aid sheets** for the base game.\n"
+                },
+                {
+                  "name": "Campaign.",
+                  "text": "These aids give rules for campaign play, ending games, and setting up later games. There are **2 aid sheets** for the campaign.\n"
+                }
+              ]
+            },
+            {
+              "name": "Log Sheet Pad.",
+              "text": "These sheets record players' details between games.\n"
+            }
+          ]
+        }
+      ],
+      "number": "2"
+    },
+    {
+      "name": "Setup",
+      "color": "#000000",
+      "children": [
+        {
+          "name": "Base Game",
+          "pretext": "If you are starting a non-campaign game, use this section. This section assumes that  you are not using Leaders & Lore (`rule-relative:Leaders & Lore$Setup`).\n",
+          "children": [
+            {
+              "name": "Step 1. Set Up Table",
+              "children": [
+                {
+                  "name": "Map, Dice, and Tokens.",
+                  "text": "Place the map and collect the 18 battle dice and 25 resource tokens.\n"
+                },
+                {
+                  "name": "Initiative Marker.",
+                  "text": "Give the initiative marker to a random player.\n"
+                },
+                {
+                  "name": "Action Deck.",
+                  "text": "Shuffle the 20 action cards marked \"2\" through \"6\" to start the action deck.\n"
+                },
+                {
+                  "name": "Action Deck (4 Players Only).",
+                  "text": "Shuffle the 8 action cards marked \"1\" and \"7\" into the action deck. (Otherwise, return them to the box.)\n"
+                },
+                {
+                  "name": "Ambition Markers.",
+                  "text": "Place the 3 ambition markers on their blue, lower-numbered sides in the Available Markers section of the map.\n"
+                },
+                {
+                  "name": "Chapter Marker.",
+                  "text": "Place the chapter marker on the \"1\" space of the Chapter track on the map.\n"
+                },
+                {
+                  "name": "Zero Marker.",
+                  "text": "Place the zero marker in the Ambition Declared slot on the map.\n"
+                },
+                {
+                  "name": "Court Deck and Row.",
+                  "text": "Shuffle all 6 Vox and 25 Guild cards to make the Court deck. Draw **3 cards (2 players)** or **4 cards (3–4 players)** from this deck to make a face-up Court row.\n"
+                },
+                {
+                  "name": "Setup Card.",
+                  "text": "Shuffle the setup cards that list your number of players. Draw 1 setup card.\n"
+                },
+                {
+                  "name": "Path and Out-of-Play Markers.",
+                  "text": "In the **2 clusters (2–3 players)** or **1 cluster (4 players)** on the map marked Out of Play on the setup card, place a path marker over its numbered gate and place 3 out-of-play markers over the planets touching that gate.\n"
+                },
+                {
+                  "name": "Resources on Ambitions (2 Players Only).",
+                  "text": "Place the 6 resource tokens matching the 6 planets covered by out-of-play markers onto the ambition boxes:<br> \\- Material and Fuel go on Tycoon.<br> \\- Weapons go on Warlord.<br> \\- Relics go on Keeper.<br> \\- Psionics go on Empath.\n"
+                }
+              ]
+            },
+            {
+              "name": "Step 2. Set Up Players",
+              "children": [
+                {
+                  "name": "Player Pieces.",
+                  "text": "Each player chooses a color, collects the matching player board, 5 cities, 5 starports, 15 ships, and 10 agents, and places the cities in the triangle slots along the top of their player board.\n"
+                },
+                {
+                  "name": "Power Marker.",
+                  "text": "Each player puts their Power marker on the \"0\" Power track space on the map.\n"
+                },
+                {
+                  "name": "Starting Placement.",
+                  "text": "Players simultaneously place their starting pieces onto the map as follows. The player with the initiative marker performs the following steps. Then, going clockwise from the player with initiative, the 2nd, 3rd, and 4th players set up in the same way in the systems marked 2A–C, 3A–C, and 4A–C on the setup card, respectively.<br>\n  \\- Place **3 ships and 1 city** in the system marked 1A on the setup card.\n    Place the leftmost city from your player board.<br>\n  \\- Place **3 ships and 1 starport** in the system marked 1B.<br>\n  \\- Place **2 ships** in the system (3–4 players) or 2 systems (2 players)\n    marked 1C.\n"
+                },
+                {
+                  "name": "Starting Resources.",
+                  "text": "Each player gains the 2 resource tokens matching the planet icons in their A and B systems, putting them in the leftmost and next leftmost circle slots on their player board, respectively.\n"
+                },
+                {
+                  "name": "Starting Hand.",
+                  "text": "Each player draws 6 action cards into their hand.<br> ***2 Players Only:*** The player without initiative may  discard all 6 action cards in their hand and draw 6 new ones.\n"
+                },
+                {
+                  "name": "Action Discard Pile.",
+                  "text": "Discard all action cards not in players' hands into a facedown action discard pile on the map, then shuffle it.\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Campaign (Act I)",
+          "pretext": "If you are starting a campaign from the beginning, use this section. Otherwise, use Act II & III Setup (`rule:3.2`). Campaign setup is very different from single session setup. Here are the important changes:\n\n  - Do not use setup cards. No clusters will be out of play, and players place\n    their starting pieces differently.\n  - Use the Guild and Vox cards specific to the campaign Court (marked \"CC\"). Do\n    not use the cards for the base Court (marked \"BC\").\n  - Use the same deck of lore cards as the base game (marked \"L\"), but you will\n    shuffle lore into the Court deck after dealing the Court.\n",
+          "children": [
+            {
+              "name": "Step 1. Set Up Table",
+              "children": [
+                {
+                  "name": "Map, Dice, Tokens, and Free Pieces.",
+                  "text": "Place the map on the table and collect the 18 battle dice, 25 resource tokens, 24 Blight tokens, 28 Free cities, and 14 Free starports.\n"
+                },
+                {
+                  "name": "Initiative Marker.",
+                  "text": "Give the initiative marker to a random player.\n"
+                },
+                {
+                  "name": "Action Deck .",
+                  "text": "Shuffle the 20 action cards marked \"2\" through \"6\" to start the action deck.\n"
+                },
+                {
+                  "name": "Action Deck (4 Players Only).",
+                  "text": "Shuffle the 8 action cards marked \"1\" and \"7\" into the action deck.\n"
+                },
+                {
+                  "name": "Event Cards.",
+                  "text": "Shuffle 2 Event action cards (2–3 players) or 3 Event action cards (4 players) into the action deck.\n"
+                },
+                {
+                  "name": "Ambition Markers.",
+                  "text": "Place the 3 ambition markers on their blue, lower-numbered sides in the Available Markers section of the map.\n"
+                },
+                {
+                  "name": "Chapter Track Tile and Marker.",
+                  "text": "Place the Chapter track tile to cover the chapter track on the map, with its \"Act I & II\" side face up, and place the chapter marker on its \"1\" space.\n"
+                },
+                {
+                  "name": "Zero Marker.",
+                  "text": "Place the zero marker in the Ambition Declared slot on the map.\n"
+                },
+                {
+                  "name": "Court Deck and Row.",
+                  "text": "Shuffle all 15 campaign Vox and Guild cards (marked \"CC\") to make the Court deck. Deal 3 cards (2 players) or 4 cards (3–4 players) from it into the Court row.\n"
+                },
+                {
+                  "name": "Lore Cards.",
+                  "text": "Shuffle 1 lore card per player at random from the lore deck into the Court deck. _Use the same lore deck as you use in the base game. You can add any lore cards you want from expansion packs._\n"
+                },
+                {
+                  "name": "Imperial Council Card.",
+                  "text": "Place the Imperial Council card (`symbol:diamond`01) on its In Session side as the leftmost Court card.\n"
+                },
+                {
+                  "name": "Guild Envoys Depart (2 Players Only).",
+                  "text": "Slide the Guild Envoys Depart edict card (`symbol:diamond`02) into the first slot in the rules booklet.\n"
+                },
+                {
+                  "name": "Govern Edict Cards.",
+                  "text": "Shuffle the 3 Govern the Imperial Reach edict cards (`symbol:diamond`03–05) face down, flip them all over, and slide them all face up into the first available slot in the rules booklet.\n"
+                },
+                {
+                  "name": "Imperial Ships.",
+                  "text": "Roll the number die, then set up the 2 Imperial clusters—in the rolled cluster and the next clockwise cluster, place 1 Imperial ship in each system. _(8 total.)_\n"
+                },
+                {
+                  "name": "Free Cities.",
+                  "text": "Roll the event die. Place 1 Free city on each planet of the rolled planet ID symbol outside the Imperial clusters.\n"
+                },
+                {
+                  "name": "Damaged Blight.",
+                  "text": "Place 1 damaged Blight _(shaded side)_ in each system outside the Imperial clusters.\n"
+                },
+                {
+                  "name": "Resources on Ambitions (2 Players Only).",
+                  "text": "Place the 6 resource tokens matching the planets in Imperial clusters onto the ambition boxes:<br>\n  \\- Material and Fuel go on Tycoon.<br>\n  \\- Weapons go on Warlord.<br>\n  \\- Relics go on Keeper.<br>\n  \\- Psionics go on Empath.\n"
+                }
+              ]
+            },
+            {
+              "name": "Step 2. Set Up Players",
+              "children": [
+                {
+                  "name": "Player Pieces.",
+                  "text": "Each player chooses a color, collects the player board, 15 ships, 5 cities, 5 starports, and 10 agents of that color, and places those cities in the 5 triangle slots along the top of their player board.\n"
+                },
+                {
+                  "name": "Fate Cards and Sets.",
+                  "text": "Each player draws 2 \"A\" Fate cards (\"A\" on card back) and chooses one secretly. After everyone chooses, reveal them and take the matching Fate Sets (`rule-relative:What's in the Box$Fates`).\n"
+                },
+                {
+                  "name": "Objective Card Setup.",
+                  "text": "Each player sets up based on the Setup side of their objective card—the first card in their Fate Set—then flips the card to its Objective side.\n"
+                },
+                {
+                  "name": "Objective Marker.",
+                  "text": "Each player places their objective marker on the Power track space shown by the large clock on their objective card.\n"
+                },
+                {
+                  "name": "Power Marker.",
+                  "text": "Each player puts their Power marker on the \"0\" Power track space on the map.\n"
+                },
+                {
+                  "name": "Regent/Outlaw Title Card.",
+                  "text": "Each player takes a Regent/Outlaw title card (`symbol:diamond`06–09) and tucks it partially under their Fate card with its Regent side up. If no one has the First Regent tile from their setup, the player with initiative takes it.\n"
+                },
+                {
+                  "name": "First Placement.",
+                  "text": "In turn order, each player places 3 ships and 1 building in an empty building slot at a planet with an Imperial ship and gains 1 resource token of that planet type. _(The planet can have Rival pieces.)_\n"
+                },
+                {
+                  "name": "Second Placement.",
+                  "text": "Repeat the previous step but in reverse turn order—start with the last player in turn order and go counterclockwise.\n"
+                },
+                {
+                  "name": "Remaining Free Cities.",
+                  "text": "Place Free cities in all empty building slots on planets with Imperial ships. _(With 4 players, you might not place any.)_\n"
+                },
+                {
+                  "name": "Starting Hand.",
+                  "text": "Each player draws 6 action cards into their hand.<br> ***2 Players Only:*** The player without initiative may discard all of the  action cards in their hand except Events and draw the same number of new cards  from the action deck.\n"
+                },
+                {
+                  "name": "Action Discard Pile.",
+                  "text": "Discard all action cards not in players' hands into the action discard pile on the map.\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Campaign (Act II & III)",
+          "pretext": "Set up Act II or III so it's the same as the previous Act, including Power, with these changes:\n",
+          "children": [
+            {
+              "name": "Ambition Markers.",
+              "text": "In Act II, flip the lowest-Power ambition marker to its higher-Power side. In Act III, flip the two lowest-Power ones to their higher-Power sides. The others start on their lower-Power sides.\n"
+            },
+            {
+              "name": "Court Deck and Imperial Council.",
+              "text": "Shuffle the Court deck and deal 3 cards (2 players) or 4 cards (3–4 players) from it into the Court. Flip the Imperial Council card to In Session.\n"
+            },
+            {
+              "name": "Blight on Gates.",
+              "text": "Place 1 damaged Blight on each gate that has no Blight and no ships.\n"
+            },
+            {
+              "name": "Blight on Planets.",
+              "text": "Roll the event die. In each cluster, place 1 damaged Blight at the planet with the rolled ID symbol if it has no Blight. If it does have Blight, place 1 damaged Blight at each planet in its cluster with no Blight.\n"
+            },
+            {
+              "name": "Resources on Ambitions (2 Players Only).",
+              "text": "Roll the number die twice. Place the 6 resource tokens matching the planets in the 2 rolled clusters onto ambition boxes as in `rule:3.2.1.17`. _(If the resource supply empties, just place as much as you can.)_\n"
+            },
+            {
+              "name": "Objective Card Setup and Resources.",
+              "text": "Each player sets up using the Setup side of their objective card, then flips it to its Objective side. Each player may also rearrange their resource tokens. If player setups affect each other, resolve them in turn order. _(To speed up setup, feel free to do all this simultaneously!)_\n"
+            },
+            {
+              "name": "Objective Marker.",
+              "text": "Each player places their objective marker on the Power track space as shown at the top of their objective card. In Act III, only players with a \"C\" Fate do this step.\n"
+            },
+            {
+              "name": "Chapter Track and Action Cards.",
+              "text": "Place the Chapter track tile on its side that lists the current Act. Place the chapter marker on its \"1\" space. Draw and discard action cards exactly as in `rule:3.2.2.10`-`rule:3.2.2.11`.\n"
+            }
+          ]
+        }
+      ],
+      "number": "3"
+    },
+    {
+      "name": "Core Concepts",
+      "color": "#000000",
+      "children": [
+        {
+          "name": "The Arc of Play",
+          "pretext": "In a game of Arcs, you play through a number of **chapters**, usually three to five. Each chapter is made up of several **rounds**.<br><br>\nBroadly, in a round, each player will take one **turn** by playing an action card to do various actions, starting with the player who has initiative. After everyone takes a turn, players check who gets initiative for the next round. You'll learn more in **Playing a Chapter** (`rule-relative:Playing a Chapter`)!<br><br>\nKeep playing rounds until everyone runs out of action cards in their hand. At this point, the chapter ends, players gain Power from ambitions they fulfilled, and everyone draws a new hand of cards. You'll learn more in **Ending a Chapter** (`rule-relative:Ending a Chapter`)!\n"
+        },
+        {
+          "name": "Power & Ambitions",
+          "pretext": "Players gain Power by fulfilling **ambitions**. The player with the initiative marker may choose to declare the ambition shown on the action card they play on their turn, marking the matching ambition box on the right map edge.<br><br>\nAt the end of the chapter, players gain Power from declared ambitions that they fulfilled best. It doesn't matter whether another player declared an ambition—anyone can fulfill it.\n"
+        },
+        {
+          "name": "The Map",
+          "children": [
+            {
+              "name": "Clusters.",
+              "text": "The map is made of 6 **clusters**. Each cluster has 4 **systems**: 3 **planets** and 1 **gate**, which lists the cluster number.\n"
+            },
+            {
+              "name": "Adjacency.",
+              "text": "A system is **adjacent** to other systems sharing a thin border. Adjacency is most important when moving (`rule-relative:Standard Actions$Move`).\n",
+              "children": [
+                {
+                  "name": "Gates.",
+                  "text": "Each gate is adjacent to the 3 planets in its cluster and to the gates of its 2 neighboring clusters.\n"
+                },
+                {
+                  "name": "Planets.",
+                  "text": "Each planet is adjacent to the gate in its cluster, and it is adjacent to one or both neighboring planets. Planets separated by a thick, irregular border are not adjacent.\n"
+                }
+              ]
+            },
+            {
+              "name": "Planets.",
+              "text": "Each **planet** has a **planet type**, along with 1 or 2 **building slots** where you can build cities and starports. _(Each planet also has an ***ID symbol*** of `symbol:arrow`, `symbol:hex`, or `symbol:moon`, used in expansions.)_\n"
+            },
+            {
+              "name": "Out of Play.",
+              "text": "In setup, 1 or 2 clusters are covered with **out-of-play markers** on its planets and a **path marker** on its gate. These clusters are out of play in every way. The path marker joins together the gates of the two neighboring clusters, allowing for movement between them in a single move. The center of the map with the Arcs logo is not in play.\n"
+            }
+          ]
+        },
+        {
+          "name": "Resources & Cities",
+          "pretext": "There are 5 types of **resources** matching the 5 planet types. Usually, you gain them by taxing cities (**Tax**, `rule-relative:Standard Actions$Tax`) and raiding Rivals in battle (**Battle**, `rule-relative:Standard Actions$Battle`).<br><br>\nResources can be spent for various actions (**Resources**, `rule-relative:Resources`), and some of them add to the **Tycoon**, **Keeper**, and **Empath** ambitions (`rule:6.2.1`).<br><br>\nYou hold resource tokens in the **resource slots** on your player board. As you build **cities**, you open resource slots and uncover Power bonuses for winning ambitions.\n"
+        },
+        {
+          "name": "Agents & The Court",
+          "pretext": "Your agents are the bureaucrats and diplomats that administer your cities and influence powerful interests in the Reach.<br><br>\nThrough play, you can place agents on cards in the **Court**, a row of cards along the edge of the map (**Influence**, `rule-relative:Standard Actions$Influence`). If you have the most agents on a card in the Court, you can take it (**Secure**, `rule-relative:Standard Actions$Secure`).\n"
+        },
+        {
+          "name": "Damage & Control",
+          "children": [
+            {
+              "name": "Fresh.",
+              "text": "Pieces start off **fresh**—ships are fresh when standing upright, and buildings are fresh on their fully colored side.\n"
+            },
+            {
+              "name": "Damaged and Destroyed.",
+              "text": "By battling, fresh pieces can become **damaged**, shown by flipping or tipping it over. If a damaged piece is damaged again, it is **destroyed**, removing it from the map.\n"
+            },
+            {
+              "name": "Control.",
+              "text": "You **control** a system and its contents if you have ***more fresh ships*** there than each **Rival** _(other player)_. On a tie, no one controls the system.\n",
+              "children": [
+                {
+                  "name": "Benefits of Control.",
+                  "text": "Controlling a system lets you tax Rival cities there and capture their agents, restricts how their ships move, and damages pieces they build (`rule-relative:Standard Actions$Tax`-`rule-relative:Standard Actions$Move`).\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Trophies & Captives",
+          "children": [
+            {
+              "name": "Trophies.",
+              "text": "If you **destroy** a Rival's pieces, put them in the **Trophies box** on your player board. Trophies add to the **Warlord** ambition. Actions such as Battle (`rule-relative:Standard Actions$Battle`) let you destroy Rival pieces.\n"
+            },
+            {
+              "name": "Captives.",
+              "text": "If you **capture** a Rival's agents, put them in the **Captives box** on your player board. Captives add to the **Tyrant** ambition. Actions such as Tax (`rule-relative:Standard Actions$Tax`) and Secure (`rule-relative:Standard Actions$Secure`) let you capture Rival agents.\n"
+            }
+          ]
+        }
+      ],
+      "number": "4"
+    },
+    {
+      "name": "Playing a Chapter",
+      "color": "#000000",
+      "pretext": "A game of Arcs lasts up to 5 **chapters**. In each chapter, you play some number of **rounds**. In a round, each player takes one **turn**, starting with the player with the initiative marker. Broadly, on your turn, you must play 1 **action card**, which lets you take one or more actions. At the end of the round, the initiative marker might go to a new player based on which cards were played. Keep playing rounds until everyone runs out of action cards. At this point, the chapter ends (`rule-relative:Ending a Chapter`).",
+      "children": [
+        {
+          "name": "Step 1: Player with Initiative Takes Turn",
+          "children": [
+            {
+              "name": "Lead Card.",
+              "text": "As the player with initiative, you must play one action card face up as the **lead card**. You may take one action (`rule-relative:Standard Actions`) for each **action pip** on the lead card based on its suit:\n\n  - **Administration** pips can **tax**, **repair**, or **influence**.\n  - **Aggression** pips can **battle**, **move**, or **secure**.\n  - **Construction** pips can **build** or **repair**.\n  - **Mobilization** pips can **move** or **influence**.\n\nPlace the card in the “Lead” card slot on the left map edge, so players can reference it during the round.\n"
+            },
+            {
+              "name": "Passing Initiative.",
+              "text": "If you have the initiative, but you have no cards in your hand or just choose to skip your turn, you must **pass the initiative**. When you pass the initiative, give the initiative marker to the next clockwise player who has any cards in their hand, then immediately end the round. The player who now has initiative will play the lead card of the new round.\n",
+              "children": [
+                {
+                  "name": "Early Chapter End.",
+                  "text": "If everyone with cards in their hand passes consecutively, discard all action cards and end the chapter (`rule-relative:Ending a Chapter`).\n"
+                }
+              ]
+            },
+            {
+              "name": "Declaring an Ambition.",
+              "text": "If you have the initiative, you may declare the ambition shown on your lead card before taking ***any*** actions. Then, place the zero marker onto the lead card to cover the **card number** in its top-left corner—its card number is now 0.\n",
+              "children": [
+                {
+                  "name": "Declaration.",
+                  "text": "To **declare an ambition**, take the highest-number ambition marker from the Available Markers section on the right map edge, and place it in the ambition box of the declared ambition.\n"
+                },
+                {
+                  "name": "Ambitions by Card.",
+                  "text": "Most action cards have an ambition, depending on their card number:<br>\n  \\- The “1” cards have ***no*** ambition. _(Four players only.)_<br>\n  \\- The “2” through 6” cards let you declare the ***matching*** ambition. _(They\n    are listed in\n    `rule:6.2.1`.)_<br>\n  \\- The “7” cards let you declare ***any*** ambition. _(Four players only.)_\n"
+                },
+                {
+                  "name": "Ambitions are Limited.",
+                  "text": "You cannot declare an ambition if all ambitions markers are already placed.\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Step 2: Other Players Take Turns",
+          "children": [
+            {
+              "name": "Turn Order.",
+              "text": "After the player with initiative takes their turn, each other player in clockwise order takes a turn. Players with no cards in their hand skip their turn.\n"
+            },
+            {
+              "name": "Non-Lead Card.",
+              "text": "On your turn, you must play an action card in one of three ways: Surpass, Copy, or Pivot. Place the card in the “Surpass, Copy, or Pivot” card slot on the left map edge, so players can reference it during the round.\n",
+              "children": [
+                {
+                  "name": "Surpass.",
+                  "text": "Play an action card face up of the lead card's suit. Its card number must be higher than the lead card. You may take actions up to the number of action pips on ***your card***.\n"
+                },
+                {
+                  "name": "Copy.",
+                  "text": "Play any action card face down. You may take only one action of ***the lead card***.\n"
+                },
+                {
+                  "name": "Pivot.",
+                  "text": "Play an action card face up that is not of the lead card's suit. It can have any card number. You may take only one action on ***your card***.\n"
+                }
+              ]
+            },
+            {
+              "name": "Seizing the Initiative.",
+              "text": "When you play a card, before taking **any** actions, you can **seize the initiative** from the player who holds it by doing one of the following:\n\n  - **You may choose to play an extra action card.** Place it face down beside the card\n    you played as a reminder. You do not get actions for it.\n  - **You Surpass with a “7” action card.** You still get to take its actions. _(Only\n    four-player games have “7” cards.)_\n",
+              "children": [
+                {
+                  "name": "Seize the Initiative.",
+                  "text": "To **seize the initiative**, take the initiative marker and lay it down to show it is seized. For the rest of this round, players cannot seize the initiative.\n"
+                },
+                {
+                  "name": "No Self Seize.",
+                  "text": "The player with initiative cannot seize the initiative.\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Step 3: Check Initiative",
+          "pretext": "After everyone has taken a turn, check whether the initiative marker goes to a new player.\n",
+          "children": [
+            {
+              "name": "Surpassed.",
+              "text": "If no one seized the initiative this round, give the initiative to the player who ***Surpassed with the highest card number.*** If no one Surpassed, the initiative stays with its holder.\n"
+            },
+            {
+              "name": "Seized.",
+              "text": "If someone seized the initiative this round, that player keeps the initiative.\n"
+            }
+          ]
+        },
+        {
+          "name": "Step 4: Discard Cards & Check for New Round",
+          "children": [
+            {
+              "name": "Discard Cards.",
+              "text": "Discard all played action cards, and any action card used to seize the initiative, into the action discard pile on the map ***face down***.\n"
+            },
+            {
+              "name": "End of Round.",
+              "text": "If any players have any action cards left in their hand, start the next round. Otherwise, end the chapter (`rule-relative:Ending a Chapter`).\n"
+            }
+          ]
+        }
+      ],
+      "number": "5"
+    },
+    {
+      "name": "Ending a Chapter",
+      "color": "#000000",
+      "children": [
+        {
+          "name": "End Condition",
+          "pretext": "The chapter ends when everyone runs out of action cards or when everyone with cards passes the initiative.\n"
+        },
+        {
+          "name": "End Procedure",
+          "pretext": "When the chapter ends, resolve the following steps:\n",
+          "children": [
+            {
+              "name": "Step 1: Score Ambitions.",
+              "text": "Score each ambition that has any number of ambition markers in its ambition box on the map:\n\n  - **Tycoon.** Have the most total Fuel and Material icons from resources and Guild\n    cards.\n  - **Tyrant.** Have the most Captives on your player board _(gained from_ **taxing**\n    _and_ **securing**_)._\n  - **Warlord.** Have the most Trophies on your player board _(gained in_\n    **battle**_)._\n  - **Keeper.** Have the most Relic icons from resources and Guild cards.\n  - **Empath.** Have the most Psionic icons from resources and Guild cards.\n\nThe player who gets ***first place*** for the ambition gains the higher Power shown on all its ambition markers. The player who gets ***second place*** for it gains the lower Power shown on all its ambition markers. Show the Power you gained by advancing your Power marker on the Power track on the bottom edge of the map.\n",
+              "children": [
+                {
+                  "name": "Ties.",
+                  "text": "On a tie for first place, all tied players get second place. _(Other players do not place and gain no Power.)_  On a tie for second place, the tied players do not place and gain no Power.\n"
+                },
+                {
+                  "name": "Qualifying.",
+                  "text": "You cannot gain Power from an ambition if you have none of the thing it is counting. _(For example, if Warlord is declared and nobody has Trophies, nobody gains Power.)_\n"
+                },
+                {
+                  "name": "Bonus City Power.",
+                  "text": "Each time you get first place in an ambition _(not tied)_, gain 2 extra Power if the “+2 to won ambitions” city slot on your player board is uncovered, or gain 5 extra if both the “+2 to won ambitions” and “+3 to won ambitions” city slots on your player board are uncovered.\n"
+                },
+                {
+                  "name": "Two-Player Scoring.",
+                  "text": "During setup with 2 players, 6 resources matching the planets with out-of-play markers are placed on the ambition boxes. For scoring, count these resources as if a third player had them. Weapons on the Warlord box count as Trophies. Otherwise, these resources are out of play.\n"
+                }
+              ]
+            },
+            {
+              "name": "Step 2: Clean Up & Flip Ambition.",
+              "text": "Resolve the following steps:\n",
+              "children": [
+                {
+                  "name": "Step 1: Warlord and Tyrant.",
+                  "text": "If Warlord was scored, return all Trophies. If Tyrant was scored, return all Captives.\n"
+                },
+                {
+                  "name": "Step 2: Return Ambitions.",
+                  "text": "Return all ambition markers to the Available Markers spaces on the map.\n"
+                },
+                {
+                  "name": "Step 3: Flip Ambition.",
+                  "text": "Flip over the ambition marker with the ***lowest Power*** that hasn't been flipped yet to its side with more Power.\n"
+                }
+              ]
+            },
+            {
+              "name": "Step 3: End Game or Advance Chapter.",
+              "text": "The game ends if any player has at least ***27 Power*** (4 players), ***30 Power*** (3 players), or ***33 Power*** (2 players), or if the chapter marker is currently on Chapter 5.\n",
+              "children": [
+                {
+                  "name": "Determining a Winner.",
+                  "text": "If the game ends, the player with the most Power is the winner. On a tie, the tied player earliest in turn order is the winner.\n"
+                },
+                {
+                  "name": "Next Chapter.",
+                  "text": "If the game does not end, advance the chapter marker to the next space.\n"
+                }
+              ]
+            },
+            {
+              "name": "Step 4: Draw Cards.",
+              "text": "Shuffle all of the action cards. Each player draws a hand of ***6 action cards***. Discard all action cards not in players' hands into the action discard pile on the map ***face down***, then shuffle it. The player with initiative starts the next chapter.\n",
+              "children": [
+                {
+                  "name": "Two-Player Mulligans.",
+                  "text": "In games with 2 players, after drawing, the player ***without*** initiative may discard their hand of 6 action cards to draw a new hand of 6 action cards. They must accept this new hand.\n"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "number": "6"
+    },
+    {
+      "name": "Standard Actions",
+      "color": "#000000",
+      "children": [
+        {
+          "name": "Tax",
+          "pretext": "The Tax action appears on Administration cards.\n",
+          "children": [
+            {
+              "name": "Tax.",
+              "text": "To take this action, resolve the following steps:\n",
+              "children": [
+                {
+                  "name": "Step 1.",
+                  "text": "Choose a Loyal city or choose a Rival city you control.\n"
+                },
+                {
+                  "name": "Step 2.",
+                  "text": "Gain 1 resource of the city's planet type from the supply.\n"
+                },
+                {
+                  "name": "Step 3.",
+                  "text": "If you tax a Rival city, you also capture 1 agent of that Rival from their supply, even if you didn't gain the resource.\n",
+                  "children": [
+                    {
+                      "name": "Captives.",
+                      "text": "Place captured agents in the Captives box on your player board. They add to your **Tyrant** ambition (`rule-relative:Ending a Chapter`).\n"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "Tax Limit.",
+              "text": "You cannot tax a city more than once per turn.\n"
+            }
+          ]
+        },
+        {
+          "name": "Build",
+          "pretext": "The Build action appears on Construction cards.\n",
+          "children": [
+            {
+              "name": "Build.",
+              "text": "You may build a **building** or a **ship**:\n\n  - **Building:** Place 1 starport or city in an empty building slot in a system with a\n    Loyal piece. When building a city, use the leftmost city on your player board.\n  - **Ship:** Place 1 ship at a Loyal starport. Each starport can only build one ship\n    per turn.\n"
+            },
+            {
+              "name": "Control.",
+              "text": "When you build anything in a system that is controlled by anyone other than you, place the piece damaged.\n"
+            }
+          ]
+        },
+        {
+          "name": "Move",
+          "pretext": "The Move action appears on Mobilization and Aggression cards.\n",
+          "children": [
+            {
+              "name": "Move.",
+              "text": "Move any number of Loyal ships from one system to an adjacent system.\n"
+            },
+            {
+              "name": "Catapult Move.",
+              "text": "If you move from a system with a Loyal starport, you may take **Catapult moves**—keep moving the ships as much as you want, dropping them off as you want, until they move to a gate controlled by anyone else or they move to any planet.\n"
+            },
+            {
+              "name": "Out-of-Play Clusters.",
+              "text": "You cannot move into any systems in out-of-play clusters. The path marker placed on out-of-play gates makes its two neighboring gates adjacent.\n"
+            }
+          ]
+        },
+        {
+          "name": "Repair",
+          "pretext": "The Repair action appears on Construction and Administration cards.\n",
+          "children": [
+            {
+              "name": "Repair.",
+              "text": "Stand up 1 damaged Loyal ship, or flip over 1 damaged Loyal building. _(This can be anywhere on the map!)_\n"
+            }
+          ]
+        },
+        {
+          "name": "Influence",
+          "pretext": "The Influence action appears on Mobilization and Administration cards.\n",
+          "children": [
+            {
+              "name": "Influence.",
+              "text": "Place 1 agent on any card in the Court. _(The Court is the card row along the map edge.)_\n"
+            }
+          ]
+        },
+        {
+          "name": "Secure",
+          "pretext": "The Secure action appears on Aggression cards.\n",
+          "children": [
+            {
+              "name": "Secure.",
+              "text": "To take this action, resolve the following steps:\n",
+              "children": [
+                {
+                  "name": "Step 1.",
+                  "text": "Take 1 card from the Court if you have more Loyal agents on it than each Rival. Return all Loyal agents on it to your supply, and capture all Rival agents from the secured card.\n",
+                  "children": [
+                    {
+                      "name": "Captives.",
+                      "text": "Put agents you capture in the Captives box on your player board. They add to your **Tyrant** ambition (`rule-relative:Ending a Chapter`).\n"
+                    }
+                  ]
+                },
+                {
+                  "name": "Step 2.",
+                  "text": "Resolve its **When Secured** action, if any. If it says to discard it, place it in a face-up Court discard pile near the Court deck.\n"
+                },
+                {
+                  "name": "Step 3.",
+                  "text": "Draw a card from the Court deck and place it face up in the Court in the same spot as the secured card.\n"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Battle",
+          "pretext": "The Battle action appears on Aggression cards.\n",
+          "children": [
+            {
+              "name": "Battle.",
+              "text": "To take this action, resolve the following steps:\n",
+              "children": [
+                {
+                  "name": "Step 1: Choose Battle System.",
+                  "text": "Choose 1 system that has any Loyal ships. This is the battle system. These are your **attacking ships**.\n"
+                },
+                {
+                  "name": "Step 2: Choose Defender.",
+                  "text": "Choose 1 Rival whose pieces are in the battle system. These are their **defending pieces**.\n"
+                },
+                {
+                  "name": "Step 3: Collect Dice.",
+                  "text": "For each attacking ship, you may collect 1 assault, skirmish, or raid die.<br>\n  \\- **Assault dice** damage the defender quickly at some cost to you.<br>\n  \\- **Skirmish dice** damage the defender slowly but keep you safe.<br>\n  \\- **Raid dice** steal stuff from the defender and might damage them but are risky.\n",
+                  "children": [
+                    {
+                      "name": "Raid Dice Limit.",
+                      "text": "You can only collect raid dice if there are ***defending buildings*** or if the defender has no Loyal buildings in any systems on the map.\n"
+                    }
+                  ]
+                },
+                {
+                  "name": "Step 4: Roll and Resolve Dice.",
+                  "text": "Roll the collected dice. You must resolve all rolled faces in this order:\n",
+                  "children": [
+                    {
+                      "name": "Step 1.",
+                      "text": "Hit any of your ***attacking ships*** once per `symbol:selfhit`.\n"
+                    },
+                    {
+                      "name": "Step 2.",
+                      "text": "If you rolled any number of `symbol:intercept`, the defender **intercepts** you—hit any of your ***attacking ships*** once per fresh defending ship. _(This can only happen once per battle!)_\n"
+                    },
+                    {
+                      "name": "Step 3.",
+                      "text": "Hit any of their ***defending ships*** once per `symbol:hit`. Once no defending ships remain, hit any of their defending buildings instead.\n"
+                    },
+                    {
+                      "name": "Step 4.",
+                      "text": "Hit any of their ***defending buildings*** once per `symbol:buildinghit`.\n"
+                    },
+                    {
+                      "name": "Step 5.",
+                      "text": "Raid their ***resources and cards*** by spending `symbol:key`, if you have any attacking ships left (**Raiding**, `rule-relative:Standard Actions$Battle$Raiding.`).\n"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "Damaging Pieces.",
+              "text": "If you hit a fresh piece, it becomes **damaged**—tip it over if it's a ship or flip it over if it's a building.\n"
+            },
+            {
+              "name": "Destroying Pieces.",
+              "text": "If you hit a damaged piece, it is **destroyed**—remove it. The attacker takes destroyed defending pieces as Trophies. The defender takes destroyed attacking pieces as Trophies.\n",
+              "children": [
+                {
+                  "name": "Trophies.",
+                  "text": "Place pieces taken as Trophies in the Trophies box on the respective player board. These add to the **Warlord** ambition (`rule-relative:Ending a Chapter`).\n"
+                }
+              ]
+            },
+            {
+              "name": "Destroying Cities.",
+              "text": "If you destroy a city—even outside battle—do the following:\n",
+              "children": [
+                {
+                  "name": "Step 1: Provoke Outrage.",
+                  "text": "Discard all resources and Guild cards you have of that city's planet type, placing the discarded cards in a face-up Court discard pile near the Court deck. Place an agent to cover the Outrage icon of that city's planet type on your player board—that resource is now **Outraged**.\n",
+                  "children": [
+                    {
+                      "name": "Outrage.",
+                      "text": "You cannot spend Outraged resources for their normal Prelude action (`rule-relative:Standard Actions$Battle$Destroying Cities.`).\n"
+                    }
+                  ]
+                },
+                {
+                  "name": "Step 2: Ransack the Court.",
+                  "text": "Secure any card that has ***any number*** of the defender's agents. Take all Rival agents on the card as ***Trophies***, not Captives.\n"
+                }
+              ]
+            },
+            {
+              "name": "Raiding.",
+              "text": "If any attacking ships remain after taking hits, you may spend `symbol:key` you rolled to steal resources and Guild cards from the defender, one at a time, by spending the number `symbol:key` of in its **raid cost**, shown above the resource slot on the player board or in the top-left corner of the Guild card (`rule-relative:Guild Cards$Card Anatomy$Raid Cost.`).\n"
+            }
+          ]
+        }
+      ],
+      "number": "7"
+    },
+    {
+      "name": "Other Actions",
+      "color": "#000000",
+      "children": [
+        {
+          "name": "Prelude Actions",
+          "pretext": "Many cards and all resources (`rule-relative:Resources`) give **Prelude actions**. On cards, these actions begin with **“Prelude:”**\n",
+          "children": [
+            {
+              "name": "Timing.",
+              "text": "Your Prelude begins once you play an action card and ends once you spend an action pip from your played card.\n"
+            },
+            {
+              "name": "Limits.",
+              "text": "You can take any number of Prelude actions, with two limits:\n  - Resources spent in Prelude return to the supply at the ***end*** of your Prelude,\n    so you cannot regain them until then.\n  - You cannot use Prelude actions on cards that you secured from the Court in the same\n    Prelude.\n"
+            },
+            {
+              "name": "Discarding Cards.",
+              "text": "Some Prelude actions on cards make you discard the card. Place it in a face-up Court discard pile near the Court deck.\n"
+            }
+          ]
+        },
+        {
+          "name": "New Actions",
+          "pretext": "Cards can give you a **new action** followed by the name of a standard action in parentheses, such as **Assassinate (Battle)**. When you would take the standard action by spending an action pip or resource, you may instead take the new action.\n"
+        },
+        {
+          "name": "Modifiers",
+          "pretext": "Cards can give you **modifiers** to standard actions, which are shown in **bold**, such as “In **battle**, collect 1 extra die.”\n",
+          "children": [
+            {
+              "name": "New Actions.",
+              "text": "Modifiers do not modify new actions, but they do modify standard actions that are within new actions.\n"
+            },
+            {
+              "name": "Play Steps.",
+              "text": "Modifiers can also affect critical play steps, such as **setup** (`rule:3.1`), **scoring** (`rule:6.2.1`), **declare an ambition** (`rule:5.1`), and **seize the initiative** (`rule:5.2.3`).\n"
+            }
+          ]
+        }
+      ],
+      "number": "8"
+    },
+    {
+      "name": "Resources",
+      "color": "#000000",
+      "children": [
+        {
+          "name": "Prelude Actions",
+          "pretext": "In your turn's Prelude (`rule-relative:Other Actions$Prelude Actions`), you may spend any number and mix of your resource tokens to optionally use their actions:\n  - **Material:** Take a Build or Repair action.\n  - **Fuel:** Take a Move action.\n  - **Weapon:** This turn, you may spend any action pips from your card play to take Battle\n    actions.\n  - **Relic:** Take a Secure action.\n  - **Psionic:** Take an action listed on the lead card.\n"
+        },
+        {
+          "name": "Slots",
+          "pretext": "Resources are held in resource slots.\n",
+          "children": [
+            {
+              "name": "Placing Resources.",
+              "text": "When you take a resource, place it in an empty resource slot of yours. At this time, you may rearrange any resources in your resource slots, but you must discard resources you cannot hold.\n",
+              "children": [
+                {
+                  "name": "Returning Cities.",
+                  "text": "If a city returns to your player board and covers a resource slot, rearrange and discard resources as described in `rule-relative:Resources$Slots$Placing Resources.`.\n"
+                }
+              ]
+            },
+            {
+              "name": "Raid Cost.",
+              "text": "Each resource slot has a **raid cost**: the number of `symbol:key` attacker in battle must spend to steal the resource.\n"
+            }
+          ]
+        },
+        {
+          "name": "Resources on Cards",
+          "children": [
+            {
+              "name": "Access.",
+              "text": "Some cards say they hold resources. These resources can be spent and add to ambitions,  but they cannot be stolen in battle unless explicitly allowed. If a card holding resources  is stolen, the resources on the card stay on it. If it is buried, discarded, or scrapped,  the resources on it return to the supply.\n"
+            },
+            {
+              "name": "Removal.",
+              "text": "If a card holding resources is stolen, the resources on the card stay on it. If it is buried, discarded or scrapped, the resources on it return to the supply.\n"
+            }
+          ]
+        }
+      ],
+      "number": "9"
+    },
+    {
+      "name": "Guild Cards",
+      "color": "#000000",
+      "children": [
+        {
+          "name": "Acquisition",
+          "pretext": "You can gain Guild cards by influencing them in the Court and then securing them (`rule-relative:Standard Actions$Secure`).\n"
+        },
+        {
+          "name": "Card Anatomy",
+          "pretext": "Guild cards have 3 parts: their **suit**, **rules**, and **raid cost**.\n",
+          "children": [
+            {
+              "name": "Suit.",
+              "text": "This suit icon matches 1 of the 5 resources. It adds to ambitions just like resources—Material and Fuel cards add to the Tycoon ambition, Relic cards add to the Keeper ambition, and Psionic cards add to the Empath ambition. Weapon cards do not add to any ambitions.\n"
+            },
+            {
+              "name": "Rules.",
+              "text": "Guild cards give new actions and modifiers (`rule-relative:Other Actions$New Actions`-`rule-relative:Other Actions$Modifiers`).\n"
+            },
+            {
+              "name": "Raid Cost.",
+              "text": "This shows how many `symbol:key` an attacker must spend in battle in order to steal the card.\n"
+            }
+          ]
+        }
+      ],
+      "number": "10"
+    },
+    {
+      "name": "Leaders & Lore",
+      "color": "#000000",
+      "pretext": "After playing a game or two, you're ready to play with **Leaders and Lore**! This mode gives players wild, unique abilities, but they can be hard to handle if you're starting out. ***Really, don't play your first game with Leaders and Lore.***\n\n  - Your **leader card** gives you unique powers, starting pieces, and starting resources.\n  - **Lore cards** give persistent powers. They don't have a guild icon or raid cost, so they\n    do not add to ambitions and cannot be stolen.\n",
+      "children": [
+        {
+          "name": "Setup",
+          "pretext": "Replace the Starting Placement (`rule:3.1.2.3`) and Starting Resources (`rule:3.1.2.4`) steps of the base game setup with the following:\n",
+          "children": [
+            {
+              "name": "Step 1.",
+              "text": "Lay out **lore cards** and **leader cards** in face-up rows, each with cards equal to the ***players plus one***.\n"
+            },
+            {
+              "name": "Step 2.",
+              "text": "In reverse turn order—start with the player to the right of the player with initiative, and go counterclockwise—each player may take 1 leader or lore card.\n"
+            },
+            {
+              "name": "Step 3.",
+              "text": "Continue this until each player has 1 leader card and 1 lore card. You cannot take a leader card if you already have one, and you cannot take a lore card if you already have one.\n",
+              "children": [
+                {
+                  "name": "Extra Lore.",
+                  "text": "If you want to increase chaos and uniqueness even more, you can let players choose a second lore card. Just add 1 extra lore card per player to the starting row, and keep choosing cards until each player has 1 leader card and 2 lore cards.\n"
+                }
+              ]
+            },
+            {
+              "name": "Step 4.",
+              "text": "Each player places their starting pieces onto the map in the systems marked on the setup card as shown in the ***A, B, and C boxes shown on their leader card.*** _Pips under a ship icon show how many ships to place._\n"
+            },
+            {
+              "name": "Step 5.",
+              "text": "Each player gains the ***2 resource tokens shown on their leader card***, placing them in their 2 leftmost resource slots in the order shown.\n"
+            },
+            {
+              "name": "Step 6.",
+              "text": "If any leaders have extra setup steps, players perform them in turn order.\n"
+            }
+          ]
+        }
+      ],
+      "number": "11"
+    },
+    {
+      "name": "Fine Print",
+      "color": "#000000",
+      "pretext": "This section covers some technical parts of play.\n",
+      "children": [
+        {
+          "name": "Tiebreakers & Choice Order",
+          "children": [
+            {
+              "name": "Tiebreakers.",
+              "text": "If you have a tie and its tiebreaker is not specified, break the tie in turn order. Likewise, if players must make a decision in an unclear order, resolve it in turn order. _(Start with the player with initiative and go clockwise.)_\n"
+            },
+            {
+              "name": "Choice Order.",
+              "text": "If multiple things happen at the same time but must be resolved in order, the player taking their turn chooses their order. If no one is taking a turn, the player with initiative chooses.\n"
+            }
+          ]
+        },
+        {
+          "name": "Elimination & Concession",
+          "children": [
+            {
+              "name": "Elimination.",
+              "text": "Rarely, a player will have no starports or ships on the map. If this happens, they place 3 fresh ships in any gate at the end of their turn.\n"
+            },
+            {
+              "name": "Concession.",
+              "text": "Sometimes, usually in games with 2 players, it may become clear that a player has won. Feel free to concede!\n"
+            }
+          ]
+        },
+        {
+          "name": "Pieces & Piece Limits",
+          "children": [
+            {
+              "name": "Limits.",
+              "text": "Pieces are limited by the contents of the box with one exception: if you need an agent to place on an Outrage slot but none are in your supply, use a placeholder piece until an agent enters your supply, then place the agent.\n"
+            },
+            {
+              "name": "Loyal by Default.",
+              "text": "If a rule makes you **place** pieces, this refers to fresh Loyal pieces by default.\n"
+            },
+            {
+              "name": "Origins.",
+              "text": "Pieces that you **place** and **return** come from and go to their original supply by default except for cities: cities come from the leftmost filled city slot on their original  player board, and go to the rightmost empty city slot. _(Remember, pieces often go to Trophies and Captives instead of back to supplies.)_\n"
+            },
+            {
+              "name": "Do as Much as Possible.",
+              "text": "If you must **place** or **return** more pieces than possible, do the maximum possible.\n"
+            },
+            {
+              "name": "Replace.",
+              "text": "If you **replace** a piece, return it and place another piece in its place. If the old piece was damaged, the new piece is placed damaged. _(Replacing a piece does not destroy it.)_\n"
+            }
+          ]
+        },
+        {
+          "name": "Rules Hierarchy",
+          "children": [
+            {
+              "name": "Rulebook.",
+              "text": "This rulebook supersedes the aid sheets and player boards.\n"
+            },
+            {
+              "name": "Cards.",
+              "text": "Cards supersede this rulebook, but any rule that uses the term **cannot** is absolute—it cannot be superseded unless explicitly named using the term **ignore**. _(For example, “You ignore Outrage when spending Material for its Prelude action.”)_\n"
+            },
+            {
+              "name": "Clarifications.",
+              "text": "Sidebars as well as text written in italics and parentheses _(like this)_ are clarifications and reminders, which are superseded by the core rules they reference.\n"
+            }
+          ]
+        },
+        {
+          "name": "Negotiations",
+          "children": [
+            {
+              "name": "Agreements.",
+              "text": "Players may make deals and promises, but they are not binding.\n"
+            },
+            {
+              "name": "Transfer of Pieces.",
+              "text": "Players cannot give each other pieces unless a rule allows it.\n"
+            }
+          ]
+        },
+        {
+          "name": "Private Information",
+          "children": [
+            {
+              "name": "Hands.",
+              "text": "Players cannot show the action cards in their hand to anyone else.\n"
+            }
+          ]
+        },
+        {
+          "name": "Turn Etiquette",
+          "children": [
+            {
+              "name": "Sequencing.",
+              "text": "Though declaring an ambition and seizing the initiative happen before any other actions, we usually let people do them during their turn as long as new info hasn't been revealed—such as rolling dice or drawing a card—and any relevant modifiers are followed. Don't get bogged down in technicalities unless it changes the game. _Arcs_ thrives when the game flows!\n"
+            }
+          ]
+        },
+        {
+          "name": "Split Discard Piles",
+          "pretext": "Normally, all action cards are discarded face down, even ones played face up. This speeds up play but it favors players with good memory. If you're running a tournament or want a more strategic but slower game, you can split the action discard into two piles — one for cards played face down, and one for cards played face up.\n",
+          "children": [
+            {
+              "name": "Drawing.",
+              "text": "If you're prompted to draw from the action discard pile, draw from the facedown pile. In the rare circumstance that it doesn't have enough cards, shuffle the piles together first.\n"
+            }
+          ]
+        }
+      ],
+      "number": "22"
+    },
+    {
+      "name": "Appendix",
+      "color": "#000000",
+      "children": [
+        {
+          "name": "Glossary",
+          "children": [
+            {
+              "name": "Adjacent.",
+              "text": "Shares a thin border (**The Map**, `rule-relative:Core Concepts$The Map$Adjacency.`).\n"
+            },
+            {
+              "name": "Building.",
+              "text": "Cities and starports.\n"
+            },
+            {
+              "name": "Bury.",
+              "text": "Place on the bottom of the Court deck.\n"
+            },
+            {
+              "name": "Capture.",
+              "text": "Place the prompted piece in the Captives box on your player board.\n"
+            },
+            {
+              "name": "Chapter.",
+              "text": "The time in which players play rounds until they all run out of action cards.\n"
+            },
+            {
+              "name": "Clear.",
+              "text": "Return all pieces from the prompted area.\n"
+            },
+            {
+              "name": "Control.",
+              "text": "You control a system and its contents if you have more fresh ships there than each Rival. On a tie, no one controls the system.\n"
+            },
+            {
+              "name": "Damaged.",
+              "text": "Not ***fresh***—a tipped ship or a building on its darker side.\n"
+            },
+            {
+              "name": "Destroy.",
+              "text": "Return a fresh or damaged piece from the map. _(It often goes to a Trophies box.)_\n"
+            },
+            {
+              "name": "Empty.",
+              "text": "Has no pieces in or on it.\n"
+            },
+            {
+              "name": "Fresh.",
+              "text": "Not ***damaged***—an upright ship or a building on its lighter side.\n"
+            },
+            {
+              "name": "Gain.",
+              "text": "Add the specified piece to your play area ***from its supply***. _(You can't gain it if its supply is empty.)_\n"
+            },
+            {
+              "name": "Give.",
+              "text": "Add the specified piece to a Rival play area.\n"
+            },
+            {
+              "name": "Hit.",
+              "text": "Tip over a fresh piece on the map, or remove a damaged piece from the map.\n"
+            },
+            {
+              "name": "Loyal.",
+              "text": "Of your player color.\n"
+            },
+            {
+              "name": "Out of Play.",
+              "text": "Cannot be interacted with.\n"
+            },
+            {
+              "name": "Piece.",
+              "text": "Any component in the game.\n"
+            },
+            {
+              "name": "Place.",
+              "text": "See **Pieces & Piece Limits** (`rule-relative:Fine Print$Pieces & Piece Limits`).\n"
+            },
+            {
+              "name": "Play Area.",
+              "text": "On and around your player board. _(Most pieces go in specific parts of your play area.)_\n"
+            },
+            {
+              "name": "Prelude.",
+              "text": "See **Prelude Actions** (`rule-relative:Other Actions$Prelude Actions`).\n"
+            },
+            {
+              "name": "Replace, Return.",
+              "text": "See **Pieces & Piece Limits** (`rule-relative:Fine Print$Pieces & Piece Limits`).\n"
+            },
+            {
+              "name": "Rival.",
+              "text": "Of another player's color. When used alone, refers to another player.\n"
+            },
+            {
+              "name": "Round.",
+              "text": "The time in which each player takes a turn.\n"
+            },
+            {
+              "name": "Scrap.",
+              "text": "Make ***out of play*** permanently.\n"
+            },
+            {
+              "name": "Seize the Initiative.",
+              "text": "Take the initiative marker. You cannot do this if you have the initiative marker or if someone has already seized the initiative this round.\n"
+            },
+            {
+              "name": "Spend.",
+              "text": "When referring to a resource, return the spent resource to its supply.\n"
+            },
+            {
+              "name": "Steal.",
+              "text": "Add the specified piece to your play area ***from a Rival's play area***. _(This is distinct from ***take*** because some rules prevent stealing.)_\n"
+            },
+            {
+              "name": "Supply.",
+              "text": "The general supply holds resources and other shared pieces, and players' supplies hold their Loyal ships and agents.\n"
+            },
+            {
+              "name": "Swap.",
+              "text": "Give the prompted piece and take the prompted piece at the same time.\n"
+            },
+            {
+              "name": "Take.",
+              "text": "Add the specified piece to your play area.\n"
+            },
+            {
+              "name": "Turn.",
+              "text": "The time in which a player plays an action card and may take actions.\n"
+            },
+            {
+              "name": "Turn Order.",
+              "text": "Starting with the player with initiative and going clockwise.\n"
+            }
+          ]
+        }
+      ],
+      "number": "23"
+    }
+  ],
+  "faq": [
+    {
+      "q": "Which planets on cluster borders are adjacent or not to each other?",
+      "a": "The planets on the borders of clusters 5 and 6 as well as the planets bordering clusters 2 and 3 are adjacent, unlike the other clusters with irregular borders.",
+      "rules": [
+        "4.3.2.2"
+      ]
+    },
+    {
+      "q": "Do I resolve hits simultaneously and then Provoke Outrage, or do I resolve them one by one?",
+      "a": "Resolve all of your hits, remove all pieces, then Provoke Outrage. If you destroyed multiple cities, resolve Outrage  and Ransack for the first city before Outrage, then Ransack for the next. In the campaign, resolve all hits first before resolving effects that trigger from **harm**.\n",
+      "rules": [
+        "7.7.1"
+      ]
+    },
+    {
+      "q": "If I have more than two resource slots open, can I put my starting resources in different slots?",
+      "a": "No. They always go in your two leftmost slots.",
+      "rules": [
+        "3.1.2.4"
+      ]
+    },
+    {
+      "q": "When a rule lets me use a building 'like they are Loyal,' what does this mean?",
+      "a": "This is a shorthand that essentially means 'you do not need to control the buildings' and in the case of taxing  'you don't take a Captive.' Other cards may refer to abilities you can do with Loyal buildings, but those abilities  do not apply to buildings you are using 'like they are Loyal.' (i.e. You cannot use Living Structures to replace a  building that you are only treating like it is Loyal. This ability only applies to buildings that are actually Loyal.)\n",
+      "rules": [
+        "23.1.15"
+      ]
+    },
+    {
+      "q": "Do I have to use all the pips on my action card?",
+      "a": "Nope! For example, if you have 3 action pips, you could take only 1 action.",
+      "rules": [
+        "5."
+      ]
+    },
+    {
+      "q": "If I convert a standard action into a new action, do modifiers of the standard action apply?",
+      "a": "Nope! Action modifiers only change the listed standard action. However, if a new action __contains__ a standard action,  then modifiers of that standard action apply, unless explicitly ignored (e.g., Force Beams).\n",
+      "rules": [
+        "8.2"
+      ]
+    },
+    {
+      "q": "When a card says 'when you Copy or Pivot to' do a specific action, what triggers this?",
+      "a": "Only spending the card pip to Copy or Pivot for that action. It does not trigger from Prelude actions.<br> An ability that says “When you Copy or Pivot to battle” does trigger if you spent a Weapon to let you battle from your  Copy or Pivot action pip.<br> You can trigger the ability if you Copy or Pivot to use a new action containing the listed standard action. For example,  the Nurture action on Living Structures contains the Tax action, so if you took the Nurture action with a Copy or Pivot,  it would trigger an ability that says “If you Copy or Pivot to tax…”\n",
+      "rules": [
+        "5.2.2"
+      ]
+    },
+    {
+      "q": "Can I tax a city even if there are no resources of its type to tax?",
+      "a": "Yes. For example, you could still gain a Captive by taxing a Rival city in this way.",
+      "rules": [
+        "7.1"
+      ]
+    },
+    {
+      "q": "If I choose to collect fewer dice than the maximum, are those ships still 'in the battle' and can they take hits?",
+      "a": "Yes. All your Loyal ships are attacking ships and can take hits from self-hits and intercepts.",
+      "rules": [
+        "7.7.1.3"
+      ]
+    },
+    {
+      "q": "Can I attempt to battle somewhere even without a legal defender?",
+      "a": "No.",
+      "rules": [
+        "7.7"
+      ]
+    },
+    {
+      "q": "Can I attempt to secure a card even without a legal target?",
+      "a": "No.",
+      "rules": [
+        "7.6"
+      ]
+    },
+    {
+      "q": "When exactly do I need to stop with a Catapult move?",
+      "a": "When you reach a planet (regardless of control) or a gate that is controlled  by a Rival (counted just before your ships move in). As long as you have not  stopped, you may backtrack while dropping off ships. For example, you could  Catapult from a planet in cluster 3, drop ships off in gate 3, then in gate 4,  then finally stop at a planet in cluster 3.\n",
+      "rules": [
+        "7.3.2"
+      ]
+    },
+    {
+      "q": "Can you summarize the whole turn structure?",
+      "a": "Here is the turn structure:<br> 1. Play an action card.<br> 2. If you're leading, you may declare an ambition. If you're not leading, you may seize the initiative.<br> (In rare situations where you can do both, you may declare and seize in either order.) <br> 3. Prelude window begins. You may use the Prelude actions of cards and resources.<br> 4. Prelude window ends. Return spent resources to the supply.<br> 5. Perform actions by spending action pips from your played card.<br><br>\n",
+      "rules": [
+        "5."
+      ]
+    },
+    {
+      "q": "In my Prelude, can I regain a resource that I spent in my Prelude?",
+      "a": "No. Resources only return to their supplies at the end of Prelude.",
+      "rules": [
+        "9.1"
+      ]
+    },
+    {
+      "q": "Can I use *non*-Prelude actions on cards that I secured from the Court during my current Prelude?",
+      "a": "Yes!",
+      "rules": [
+        "8.1.2"
+      ]
+    },
+    {
+      "q": "Can I use Prelude actions on cards in the same Prelude I gained them if I took them from places other than the Court?",
+      "a": "Yes! For example, if you stole a card using Silver-Tongues, you could immediately use it.",
+      "rules": [
+        "8.1.2"
+      ]
+    },
+    {
+      "q": "Is seizing mandatory if I Surpass with a '7' card?",
+      "a": "Yes. As normal, though, you cannot seize the initiative if someone else already did this round.",
+      "rules": [
+        "5.2.3"
+      ]
+    },
+    {
+      "q": "Can I spend resources in my Prelude without effect?",
+      "a": "Yes, even if you have Outrage of the resource types.",
+      "rules": [
+        "9.1"
+      ]
+    },
+    {
+      "q": "Can I rearrange resources when I lose a resource?",
+      "a": "No, only when gaining.",
+      "rules": [
+        "9.2.1"
+      ]
+    },
+    {
+      "q": "When I spend a resource for an action, can I also spend a Weapon to change this action to battle?",
+      "a": "No. Weapons only let you modify actions you take from your action card pips.",
+      "rules": [
+        "9.1"
+      ]
+    },
+    {
+      "q": "To be clear, does Provoking Outrage discard anything I take from Ransacking the Court or raiding in the same battle?",
+      "a": "Nope!",
+      "rules": [
+        "7.7.4"
+      ]
+    },
+    {
+      "q": "How strict do I need to be with this rule?",
+      "a": "In theory, once you spend an action pip from the played action card, you cannot use any more Prelude actions.  In practice, as long as your actions do not reveal new information (e.g., battle/secure), it is fine to rewind  to the Prelude.\nSome players might not consent to an undo. For example, if the acting player is collaborating with another player  or kingmaking, rewinding can effectively reveal private information to the table, giving advantage to the  person they are helping. For example, playing an action card reveals the card to other players, but the acting  player does not gain new info, so it can be undone with the consent of the table.\n",
+      "rules": [
+        "8.1.1"
+      ]
+    },
+    {
+      "q": "Are the lore cards secret or known before shuffling them in?",
+      "a": "They are secret.\n",
+      "rules": [
+        "3.2.1.10"
+      ]
+    },
+    {
+      "q": "Can I see a summary of ending a chapter in the Blighted Reach campaign?",
+      "a": "**1. Score Ambitions**<br> a. Resolve effects that happen **at the start of scoring**.<br> b. Score ambitions. (In Act 3, also score grand ambitions.)<br> c. Advance objectives that happen **at the end of a chapter**.<br> d. Resolve effects that happen **after scoring**. If more than one needs to be resolved, the player with the initiative decides their order.<br> **2. Clean Up & Flip Ambition Marker**<br> **3. End Game or Advance Chapter**<br> a. If any final objectives are met, the game ends.<br> b. If it was the last chapter, the game ends.<br> c. Resolve effects that happen **at end of game**.<br> d. Advance the chapter marker.<br> **4. Draw Cards**\n",
+      "rules": [
+        "6."
+      ]
+    },
+    {
+      "q": "If I can put resources on a card, is it in a \"resource slot?\"",
+      "a": "Yes, other than for Cartels or Monopolies that hold supplies. These cards that \"hold\" or let you \"place\" resources  on them effectively “have resource slots” reserved only for those resources. This is mostly relevant for  interactions with Golems, particularly the Golem Hearth, or the Pirate Hoard.\n",
+      "rules": [
+        "9.3.1"
+      ]
+    },
+    {
+      "q": "What happens if an effect tells me to replace, but I can't either return and/or place the corresponding pieces?",
+      "a": "You don't do anything to the piece. You cannot replace if the targeted piece cannot be removed, and/or if the  corresponding supply to place a piece from is empty.\n",
+      "rules": [
+        "22.3.5"
+      ]
+    },
+    {
+      "q": "What are some examples of multiple things happening at the same time that must be resolved in order?",
+      "a": "- After rolling dice in battle: Skirmishers and Empath’s Vision<br> - After a battle: Repair Drones and the Quartermaster’s Resilient ability\n",
+      "rules": [
+        "22.1.2"
+      ]
+    },
+    {
+      "q": "If I wish to trigger build modifiers, can I build even if the corresponding building or ship supply is empty?",
+      "a": "Yes, since you do the maximum possible when you can't place enough pieces ('rule:22.3.4').\n",
+      "rules": [
+        "7.2.1"
+      ]
+    },
+    {
+      "q": "It looks like several keywords (steal, gain, and give) also add a piece to my play area. Are these all considered a form of 'take' as well?",
+      "a": "Yes, stealing, gaining and giving overlap with you \"taking\" the piece for the purposes of cards or rules that mention it.\n",
+      "rules": [
+        "23.1.30"
+      ]
+    },
+    {
+      "q": "Can I take, give, or steal a resource directly from a supply, including a supply held on a Cartel or a Monopoly in the campaign?",
+      "a": "No. Gain is the only keyword that lets you add a piece to your play area directly from a supply.\n",
+      "rules": [
+        "23.1.12"
+      ]
+    }
+  ],
+  "errata": [
+    {
+      "text": "Edited to: \"Discard all action cards not in players' hands into a facedown action discard pile on the map, **then shuffle it**.\" <br> *There are a couple situations where discard order matters.*\n",
+      "versions": [
+        "v1"
+      ],
+      "rules": [
+        "3.1.2.6"
+      ]
+    },
+    {
+      "text": "This text was added to clarify when leader setup happens.\n",
+      "versions": [
+        "v1"
+      ],
+      "rules": [
+        "11.1.6"
+      ]
+    },
+    {
+      "text": "Edited to: \"Discard all action cards not in players' hands into the action discard pile on the map face down, **then shuffle it**.\" <br> *There are a couple situations where discard order matters.*\n",
+      "versions": [
+        "v1"
+      ],
+      "rules": [
+        "6.2.4"
+      ]
+    },
+    {
+      "text": "Edited to: \"Some cards say they hold resources. These resources can be spent and add to ambitions, **but they cannot be stolen in battle unless explicitly allowed.** If a card holding resources is stolen, the resources on the card stay on it. If it is buried, discarded, **or scrapped,** the resources on it return to the supply.\" <br> *(NOT YET IN PRINT) This clarifies some card interactions with raiding, Blighted Reach cards, and with cards like Silver-Tongues. Yes, you can steal resources off cards with Silver-Tongues!*\n",
+      "versions": [
+        "v1"
+      ],
+      "rules": [
+        "9.3.1"
+      ]
+    },
+    {
+      "text": "Edited \"To do this\" to \"At this time\" to clarify that you can always rearrange when you take a resource.<br> *(NOT YET IN PRINT)*\n",
+      "versions": [
+        "v1"
+      ],
+      "rules": [
+        "9.2.1"
+      ]
+    },
+    {
+      "text": "Fixed this to say that they come from the **leftmost** slot.<br> *(NOT YET IN PRINT)*\n",
+      "versions": [
+        "v1"
+      ],
+      "rules": [
+        "22.3.3"
+      ]
+    }
+  ]
+}
