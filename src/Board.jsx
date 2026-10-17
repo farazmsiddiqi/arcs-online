@@ -1,3 +1,5 @@
+import LivingBoard from "./LivingBoard.jsx";
+import { useAtmosphere } from "./useAtmosphere.js";
 import { piecePoint } from "./pieceMotion.js";
 import { MapActionEffects } from "./ActionAnimations.jsx";
 import useMapCamera from "./useMapCamera.js";
@@ -18,7 +20,9 @@ export default function Board({
   onAction,
   onInspect,
   interactive = true,
+  ambient = true,
 }) {
+  const atmosphere = useAtmosphere() && ambient;
   const camera = useMapCamera(
     game.battleContext?.system,
     CENTERS,
@@ -154,7 +158,11 @@ export default function Board({
     ? { a: CENTERS[movement.from], b: CENTERS[movement.to] }
     : null;
   return (
-    <div className="map-viewport" data-zoom={camera.camera.z.toFixed(2)}>
+    <div
+      className="map-viewport"
+      data-atmosphere={atmosphere && !game._replay ? "on" : "off"}
+      data-zoom={camera.camera.z.toFixed(2)}
+    >
       <div className="map-camera-controls" aria-label="Map camera">
         <button
           aria-label="Follow action camera"
@@ -237,6 +245,13 @@ export default function Board({
           </filter>
         </defs>
         <image href="/assets/map-no-slots.webp" width="2528" height="1776" />
+        <LivingBoard
+          clusters={game.clusters}
+          overrides={game.overrides}
+          enabled={atmosphere && !game._replay}
+          quiet={!!game.battleContext || actionEffects.length > 0}
+          selected={selected}
+        />
         {areas.map(
           (pts, i) =>
             !game.clusters.includes(i + 1) && (
@@ -334,11 +349,39 @@ export default function Board({
                         ? "⬡"
                         : "☾"}
                 </text>
+                {selected === s.id && (
+                  <g
+                    className="selection-reticle"
+                    pointerEvents="none"
+                    transform={`translate(${x} ${y})`}
+                  >
+                    <path d="M-116 -52v-25h25 M91 -77h25v25 M116 52v25h-25 M-91 77h-25v-25" />
+                  </g>
+                )}
+                {atmosphere &&
+                  !game._replay &&
+                  ships
+                    .filter((p) => !p.damaged)
+                    .map((piece) => {
+                      const i = ships.indexOf(piece);
+                      return (
+                        <circle
+                          key={`light-${piece.id}`}
+                          className="ship-running-light"
+                          cx={x - 79 + (i % 4) * 45}
+                          cy={y - 14 + Math.floor(i / 4) * 35}
+                          r="2.3"
+                          fill={game.players[piece.owner]?.color ?? "#ead7ac"}
+                          style={{ animationDelay: `${-(i % 4)}s` }}
+                          pointerEvents="none"
+                        />
+                      );
+                    })}
                 {ships.length ? (
                   ships.map((piece, i) => (
                     <image
                       key={piece.id}
-                      className={`board-piece ${pieceActions.has(piece.id) ? "piece-target" : ""} ${selectable.has(piece.id) ? "selectable-ship" : ""} ${selectedPieces.includes(piece.id) || fleet.has(piece.id) ? "picked-ship" : ""} ${fleet.has(piece.id) ? "draggable-ship" : ""}`}
+                      className={`board-piece board-ship ${pieceActions.has(piece.id) ? "piece-target" : ""} ${selectable.has(piece.id) ? "selectable-ship" : ""} ${selectedPieces.includes(piece.id) || fleet.has(piece.id) ? "picked-ship" : ""} ${fleet.has(piece.id) ? "draggable-ship" : ""}`}
                       data-piece={piece.id}
                       role={
                         selectable.has(piece.id) || pieceActions.has(piece.id)

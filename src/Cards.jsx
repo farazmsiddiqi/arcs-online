@@ -1,11 +1,14 @@
+import useCardTilt from "./useCardTilt.js";
 import { CARDS, ACTION_CARDS, SUITS } from "../game/data.js";
 export const cardImage = (id) =>
   ACTION_CARDS[id] ? `/assets/${id}.webp` : `/assets/cards/${id}.webp`;
 export function Card({ id, onClick, badge = null }) {
+  const tilt = useCardTilt();
   const c = CARDS[id];
   if (!c) return null;
   return (
     <button
+      {...tilt}
       className={`court-card ${c.imageClass === "rotated" ? "landscape" : ""}`}
       onClick={onClick}
       title={c.name}
@@ -29,10 +32,12 @@ export function ActionCard({
   onDragStart,
   onDragEnd,
 }) {
+  const tilt = useCardTilt();
   const c = ACTION_CARDS[id];
   return (
     <div className={`action-wrapper ${selected ? "chosen" : ""}`}>
       <button
+        {...tilt}
         className={`action-card original ${c.suit} ${selected ? "chosen" : ""}`}
         aria-label={`${c.suit} ${c.rank}, ${c.pips} action pips`}
         onClick={onClick}

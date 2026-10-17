@@ -21,3 +21,5 @@ import "./laptop-fit.css";
 import "./inspection.css";
 
 import "./action-animations.css";
+
+import "./living-table.css";

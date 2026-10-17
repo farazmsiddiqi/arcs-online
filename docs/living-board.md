@@ -1,0 +1,9 @@
+# Living tabletop
+
+The illustrated physical board remains the foundation. A decorative SVG layer follows its active sectors and printed planet positions: foundry beacons on Material worlds, auroras on Fuel worlds, radar on Weapon worlds, rotating constellations on Relic worlds, and tidal rings on Psionic worlds. Gates breathe slowly. Occasional couriers, comets and a swimming space creature cross a world, clipped to the playable map.
+
+These details never represent units, resources, legal moves or game events. Fleet running lights and a slight hover on selected ships give pieces presence; actual moves and combat continue to use the existing physical action effects. Legal-target rings remain distinct from the new selection corners. Card faces lift and tilt with the pointer, with a restrained light reflection. Resource tokens, owned cards and buttons respond to hover/press. Clicking a Court card still inspects it; the dedicated action button still executes Influence.
+
+Table settings → Board atmosphere switches idle scenery off, independently of sound. Device reduced-motion preferences disable it and pointer tilt. Ambient activity fades during action effects and stops off-screen, in background tabs, beneath dialogs and during replay. No extra server requests or game-state writes are introduced. There are 32 background stars and at most one visitor. CSS handles continuous motion; pointer tilt uses one cancellable animation frame, without React renders on pointer movement. Ordinary room polling does not reset the visitor schedule.
+
+Validation: 709 tests passed, including active-sector combinations, theme overrides without mutation, deterministic bounded encounters and existing replay-cache regressions. Production build passed. Browser checks covered system selection/focus, card inspection without Influence, the atmosphere setting, replay stepping, and removal of decorative layers during replay. No rules, persistence or database migration changes.

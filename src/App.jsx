@@ -1,3 +1,4 @@
+import { useAtmosphere, writeAtmosphere } from "./useAtmosphere.js";
 import CourtSlot from "./CourtSlot.jsx";
 import { shortcutFor, SHORTCUTS } from "./keyboardShortcuts.js";
 import { installAudioUnlock, readVolume, writeVolume } from "./gameAudio.js";
@@ -156,6 +157,7 @@ const parseStart = () => {
 };
 const initial = parseStart();
 export default function App() {
+  const atmosphere = useAtmosphere();
   const replaySession = useRef(null);
   const [room, setRoom] = useState(null),
     [credentials, setCredentials] = useState(initial),
@@ -1012,6 +1014,7 @@ export default function App() {
             </div>
           ) : (
             <Board
+              ambient={!modal && !detail && !playerDetail}
               actionEffects={actionAnimations.effects}
               key={live ? room.id : "preview"}
               game={game}
@@ -2219,6 +2222,20 @@ export default function App() {
                     preference stays on this device.
                   </small>
                 </label>
+                <button
+                  className="reference-link full"
+                  aria-pressed={atmosphere}
+                  onClick={() => writeAtmosphere(!atmosphere)}
+                >
+                  {atmosphere
+                    ? "Board atmosphere: alive"
+                    : "Board atmosphere: still"}
+                  <span aria-hidden="true">✧</span>
+                </button>
+                <p className="atmosphere-setting-note">
+                  Orbital lights, world details and occasional visitors. Follows
+                  your device’s reduced-motion preference.
+                </p>
                 {room && (
                   <>
                     <button
