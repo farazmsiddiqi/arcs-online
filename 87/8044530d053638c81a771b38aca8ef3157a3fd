@@ -1,0 +1,45 @@
+docs/cinematic-actions.md
+  s_dc116501f82d39::t_458215d6118ddc 1-11
+src/App.jsx
+  s_dc116501f82d39::t_bce29660c013f7 1,162,2241-2255
+src/Board.jsx
+  s_dc116501f82d39::t_f1bcaf76938266 1,27-29,31,37-41,46,169
+src/BoardCinema.jsx
+  s_dc116501f82d39::t_05978d3a835730 1-544
+src/LivingBoard.jsx
+  s_dc116501f82d39::t_1fce279d124e7e 106-143,163-178,204-206
+src/TableStory.jsx
+  s_dc116501f82d39::t_14524e074f099d 44-47,109-122
+src/cameraFraming.js
+  s_dc116501f82d39::t_2e032865b473a1 1-40
+src/cinematicPlan.js
+  s_dc116501f82d39::t_4e823e45805ce5 1-172
+src/cinematics.css
+  s_dc116501f82d39::t_8bc7fd6966fa56 1-588
+src/living-table.css
+  s_dc116501f82d39::t_a672ccb8a07645 522-587
+src/main.jsx
+  s_dc116501f82d39::t_27a945417f3db5 26-27
+src/useCinematics.js
+  s_dc116501f82d39::t_21030103263057 1-26
+src/useMapCamera.js
+  s_dc116501f82d39::t_3c1d2cb7e8b67b 2,4-6,10-16,18-22,25,38,42-45,47-48,51-70,73,75-81,87-89,91-98,101-108,117-120,161-162
+tests/cinematics.test.js
+  s_dc116501f82d39::t_d967d3136a8143 1-202
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "878044530d053638c81a771b38aca8ef3157a3fd",
+  "prompts": {},
+  "sessions": {
+    "s_dc116501f82d39": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0feb0-6bcc-7a61-b57d-5b785a6c2cc5",
+        "model": "gpt-6-astra"
+      },
+      "human_author": "farazmsiddiqi <70923196+farazmsiddiqi@users.noreply.github.com>"
+    }
+  }
+}
