@@ -103,10 +103,10 @@ function CinemaDirector({ game, enabled = true }) {
         </button>
       </div>
       <footer className="cinema-caption">
-        <span key={step}>{scenePhase(scene, step)}</span>
+        <span key={`phase-${step}`}>{scenePhase(scene, step)}</span>
         {step === 2 && <p>{scene.summary}</p>}
         <small>Live play continues · No input required for this scene</small>
-        <div className="cinema-progress" key={scene.id} />
+        <div className="cinema-progress" key={`progress-${scene.id}`} />
       </footer>
     </section>,
     document.body,
