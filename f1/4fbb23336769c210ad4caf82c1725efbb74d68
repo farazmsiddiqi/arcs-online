@@ -1,0 +1,25 @@
+docs/cinematic-actions.md
+  s_dc116501f82d39::t_a61ecbd064b904 7
+src/cameraGesture.js
+  s_dc116501f82d39::t_db9700d7d6a3a3 1-22
+src/useMapCamera.js
+  s_dc116501f82d39::t_b29b3faf701621 2,12-14,19-41,43,59,70,74,79,89-91,94,98-99,105,113,118,120-121,128,131,150-151
+tests/camera-gesture.test.js
+  s_dc116501f82d39::t_3fdbcf49fb10be 1-41
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "f14fbb23336769c210ad4caf82c1725efbb74d68",
+  "prompts": {},
+  "sessions": {
+    "s_dc116501f82d39": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0feb0-6bcc-7a61-b57d-5b785a6c2cc5",
+        "model": "gpt-6-astra"
+      },
+      "human_author": "farazmsiddiqi <70923196+farazmsiddiqi@users.noreply.github.com>"
+    }
+  }
+}
