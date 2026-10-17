@@ -1,11 +1,17 @@
+import { animationEvents } from "./pieceMotion.js";
 // Presentation data comes only from the seat-filtered public view. Never inspect
 // hand identities, decisions, pending tasks, or private chat for animation cues.
 const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 const countHand = (hand) => (Array.isArray(hand) ? hand.length : (hand ?? 0));
 const count = (list, value) => (list ?? []).filter((x) => x === value).length;
 export function actionChanges(before, after) {
-  if (!before || !after || after.revision <= before.revision) return [];
-  if (after.log?.at(-1)?.history) return [];
+  if (
+    !before ||
+    !after ||
+    (!after._replay && after.revision <= before.revision)
+  )
+    return [];
+  if (!after._replay && after.log?.at(-1)?.history) return [];
   const changes = [],
     add = (kind, data = {}) => changes.push({ kind, ...data });
   const oldPieces = new Map(before.pieces.map((p) => [p.id, p]));
@@ -28,16 +34,28 @@ export function actionChanges(before, after) {
       });
     else if (old.damaged && !piece.damaged)
       add("repair", {
+        pieceType: piece.type,
         system: piece.system,
         piece: piece.id,
         owner: piece.owner,
       });
     else if (!old.damaged && piece.damaged)
-      add("damage", { system: piece.system, owner: piece.owner });
+      add("damage", {
+        system: piece.system,
+        owner: piece.owner,
+        piece: piece.id,
+        pieceType: piece.type,
+      });
   }
   for (const piece of before.pieces) {
     if (!after.pieces.some((p) => p.id === piece.id))
-      add("remove", { system: piece.system, owner: piece.owner });
+      add("remove", {
+        system: piece.system,
+        owner: piece.owner,
+        piece: piece.id,
+        pieceType: piece.type,
+        damaged: piece.damaged,
+      });
   }
   for (const player of after.players) {
     const old = before.players.find((p) => p.id === player.id);
@@ -64,9 +82,26 @@ export function actionChanges(before, after) {
   }
   after.court.forEach((card, index) => {
     if (!same(before.court[index], card)) add("court", { index });
+    if (before.court[index]?.id === card.id)
+      card.agents.forEach((n, owner) => {
+        const delta = n - before.court[index].agents[owner];
+        if (delta) add("influence", { index, owner, delta });
+      });
   });
   if (!same(before.played, after.played) || !same(before.lead, after.lead))
-    add("play");
+    add("play", {
+      cardMove:
+        after._replay?.direction < 0
+          ? before.played.length === after.played.length + 1
+          : after.played.length === before.played.length + 1,
+      played:
+        after.played.length > before.played.length
+          ? after.played.at(-1)
+          : before.played.at(-1),
+      returning:
+        after.played.length < before.played.length &&
+        after._replay?.direction < 0,
+    });
   if (!same(before.markers, after.markers)) add("ambition");
   if (before.initiative !== after.initiative || before.seized !== after.seized)
     add("initiative");
@@ -81,9 +116,7 @@ export function actionChanges(before, after) {
     if (before.overrides?.[system] !== resource)
       add("reshape", { system, resource });
   }
-  const fresh = (after.log ?? []).filter(
-    (e) => e.id > (before.log?.at(-1)?.id ?? 0),
-  );
+  const fresh = animationEvents(before, after);
   for (const event of fresh) {
     if (event.animation?.kind === "tax") add("tax", event.animation);
   }
@@ -95,8 +128,12 @@ export function actionChanges(before, after) {
 export function isForwardUpdate(before, after) {
   return (
     !!before &&
-    after.revision > before.revision &&
-    (after.log?.at(-1)?.id ?? 0) >= (before.log?.at(-1)?.id ?? 0)
+    (after._replay
+      ? after._replay.animate &&
+        !!before._replay &&
+        after._replay.sequence !== before._replay.sequence
+      : after.revision > before.revision &&
+        (after.log?.at(-1)?.id ?? 0) >= (before.log?.at(-1)?.id ?? 0))
   );
 }
 export function animationTargets(change) {

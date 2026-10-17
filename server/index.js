@@ -1,3 +1,4 @@
+import { createReplayStore } from "./replay.js";
 import express from "express";
 import { WebSocketServer } from "ws";
 import { DatabaseSync } from "node:sqlite";
@@ -96,10 +97,36 @@ const load = (id) => {
   if (!row) throw Object.assign(new Error("Table not found."), { status: 404 });
   return { ...row, room: migrateRoom(JSON.parse(row.data)) };
 };
-const save = (row) =>
-  db
-    .prepare("UPDATE rooms SET data=?,updated=? WHERE id=?")
-    .run(JSON.stringify(row.room), Date.now(), row.id);
+const replay = createReplayStore(db);
+// Existing tables begin at the latest trustworthy saved position. Never invent
+// old dice rolls or card draws by replaying commands against today's engine.
+for (const row of db.prepare("SELECT id,data FROM rooms").all()) {
+  if (!replay.summary(row.id).count) {
+    const room = migrateRoom(JSON.parse(row.data));
+    replay.record(row.id, room.game);
+  }
+}
+const save = (row) => {
+  const before = JSON.parse(
+    db.prepare("SELECT data FROM rooms WHERE id=?").get(row.id).data,
+  ).game;
+  // persistAction already holds a transaction; other save paths need one too.
+  const ownTransaction = !db.isTransaction;
+  if (ownTransaction) db.exec("BEGIN IMMEDIATE");
+  try {
+    replay.record(row.id, before);
+    replay.record(row.id, row.room.game, before);
+    db.prepare("UPDATE rooms SET data=?,updated=? WHERE id=?").run(
+      JSON.stringify(row.room),
+      Date.now(),
+      row.id,
+    );
+    if (ownTransaction) db.exec("COMMIT");
+  } catch (error) {
+    if (ownTransaction) db.exec("ROLLBACK");
+    throw error;
+  }
+};
 const auth = (row, key) => {
   const h = hash(key ?? "");
   const p = row.room.seats.findIndex((s) => safe(s.keyHash, h));
@@ -140,6 +167,27 @@ function broadcast(id) {
     if (c.ws.readyState === 1) c.ws.send(JSON.stringify(publicRoom(row, c.p)));
 }
 const chat = createChatService(db, { load, broadcast });
+app.get("/api/rooms/:id/replay", (req, res) => {
+  const row = load(req.params.id);
+  auth(row, getKey(req));
+  const after = req.query.after === undefined ? -1 : Number(req.query.after);
+  if (!Number.isSafeInteger(after) || after < -1)
+    return res.status(400).json({ error: "Invalid replay cursor." });
+  res.json(replay.summary(row.id, after));
+});
+app.get("/api/rooms/:id/replay/:revision", (req, res) => {
+  const row = load(req.params.id);
+  auth(row, getKey(req));
+  const revision = Number(req.params.revision);
+  if (!Number.isSafeInteger(revision) || revision < 0)
+    return res.status(400).json({ error: "Invalid replay position." });
+  const game = replay.frame(row.id, revision);
+  if (!game)
+    return res
+      .status(404)
+      .json({ error: "This replay position is not available." });
+  res.json({ game });
+});
 app.get("/api/rooms/:id/chat", (req, res) => {
   const row = load(req.params.id);
   const p = auth(row, getKey(req));
@@ -229,6 +277,7 @@ app.post("/api/rooms", (req, res) => {
     JSON.stringify(room),
     Date.now(),
   );
+  replay.record(id, room.game);
   res.status(201).json({ id, key, invite, ...publicRoom(load(id), 0) });
   if (practice) scheduleBot(id);
 });

@@ -735,3 +735,76 @@ test("timer controls have independent revisions, preserve gameplay, and persist 
   assert.equal(reply.data.clock.config.mode, "live");
   assert.ok(reply.data.clock.remainingMs <= v.clock.remainingMs);
 });
+
+test("replay reads are authenticated, public, immutable, and survive a server restart", async (t) => {
+  const { start, stop, req } = await launch(t);
+  await start();
+  const {
+    data: { id, key, invite },
+  } = await req("/api/rooms", "POST", { name: "Replay host", players: 2 });
+  const root = `/api/rooms/${id}`;
+  const {
+    data: { key: guestKey },
+  } = await req(root + "/join", "POST", { name: "Replay guest", invite });
+  const initial = await req(root + "/start", "POST", {}, key);
+  assert.equal(initial.status, 200);
+  assert.equal((await req(root + "/replay")).status, 403);
+  assert.equal(
+    (await req(root + "/replay/0", "GET", null, "invalid")).status,
+    403,
+  );
+  const before = (await req(root, "GET", null, key)).data;
+  const archive = (await req(root + "/replay", "GET", null, key)).data;
+  assert.equal(archive.count, 1);
+  const endpoint = root + `/replay/${archive.first}`;
+  const host = (await req(endpoint, "GET", null, key)).data;
+  const guest = (await req(endpoint, "GET", null, guestKey)).data;
+  assert.deepEqual(host, guest);
+  assert.ok(host.game.players.every((p) => typeof p.hand === "number"));
+  assert.equal(host.game.decision, undefined);
+  for (const invalid of ["-2", "1.5", "NaN"])
+    assert.equal(
+      (await req(root + "/replay/" + invalid, "GET", null, key)).status,
+      400,
+    );
+  assert.equal(
+    (await req(root + "/replay/999999", "GET", null, key)).status,
+    404,
+  );
+  assert.equal(
+    (await req(root + "/replay?after=garbage", "GET", null, key)).status,
+    400,
+  );
+  assert.deepEqual((await req(root, "GET", null, key)).data.game, before.game);
+  for (let i = 0; i < 8; i++) {
+    const state = (await req(root, "GET", null, key)).data.game;
+    const actorKey = state.decision.actor === 0 ? key : guestKey;
+    const actor = (await req(root, "GET", null, actorKey)).data.game;
+    const choice =
+      actor.decision.choices.find((c) => c.op === "play") ??
+      actor.decision.choices[0];
+    const next = await req(
+      root + "/action",
+      "POST",
+      { revision: actor.revision, choice: choice.id },
+      actorKey,
+    );
+    assert.equal(next.status, 200);
+    if ((await req(root + "/replay", "GET", null, key)).data.count > 1) break;
+  }
+  const manifest = (await req(root + "/replay", "GET", null, key)).data;
+  assert.ok(manifest.count >= 2);
+  assert.deepEqual(
+    (await req(endpoint, "GET", null, key)).data,
+    host,
+    "old frame must not follow live play",
+  );
+  const saved = (await req(root, "GET", null, key)).data.game;
+  await stop();
+  await start();
+  assert.deepEqual(
+    (await req(root + "/replay", "GET", null, guestKey)).data,
+    manifest,
+  );
+  assert.deepEqual((await req(root, "GET", null, key)).data.game, saved);
+});

@@ -477,7 +477,7 @@ function secure(s, p, index, ransack = false) {
   log(
     s,
     `${s.players[p].name} ${ransack ? "ransacks" : "secures"} ${title(id)}.`,
-    { card: id },
+    { card: id, animation: { kind: "secure", index, owner: p, card: id } },
   );
   if (CARDS[id].kind === "vox")
     s.pending.unshift({ type: "vox", p, id, index });
@@ -2473,7 +2473,7 @@ function resolveStandard(s, p, c, cost, parent) {
   if (c.op === "battleTarget") beginBattle(s, p, c.system, c.defender);
 }
 function taxGain(s, p, piece, r, cost, repeat = false) {
-  gain(s, p, r);
+  const gained = gain(s, p, r);
   if (
     piece.owner !== p &&
     !(
@@ -2496,7 +2496,16 @@ function taxGain(s, p, piece, r, cost, repeat = false) {
   log(
     s,
     `${s.players[p].name} taxes ${sysName(piece.system)} for ${r ?? "no resource"}.`,
-    { animation: { kind: "tax", system: piece.system, owner: p, resource: r } },
+    {
+      animation: {
+        kind: "tax",
+        system: piece.system,
+        piece: piece.id,
+        owner: p,
+        resource: r,
+        gained,
+      },
+    },
   );
   const tasks = [];
   if (

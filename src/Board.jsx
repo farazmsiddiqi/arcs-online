@@ -1,3 +1,4 @@
+import { piecePoint } from "./pieceMotion.js";
 import { MapActionEffects } from "./ActionAnimations.jsx";
 import useMapCamera from "./useMapCamera.js";
 import { ZoomIn, ZoomOut, Scan, Focus } from "lucide-react";
@@ -24,6 +25,19 @@ export default function Board({
     slotCoords,
     game.pieces,
   );
+  const [followActions, setFollowActions] = useState(
+    () => localStorage.getItem("arcs-follow-actions") !== "off",
+  );
+  useEffect(() => {
+    if (!followActions || !actionEffects.length) return;
+    const lastBatch = actionEffects.at(-1).id.split("-")[0];
+    const recent = actionEffects.filter(
+      (e) => e.id.split("-")[0] === lastBatch,
+    );
+    camera.frameSystems([
+      ...new Set(recent.flatMap((e) => [e.system, e.from]).filter(Boolean)),
+    ]);
+  }, [actionEffects.at(-1)?.id, followActions]);
   const pieceActions = new Map(
     (interactive && game.decision?.actor === game.me
       ? (game.decision.choices ?? [])
@@ -68,21 +82,33 @@ export default function Board({
   const flightTimer = useRef(null);
   useEffect(() => () => clearTimeout(flightTimer.current), []);
   useEffect(() => {
-    const moves = game.log?.at(-1)?.history
-      ? []
-      : game.pieces
-          .filter((p) => {
-            const old = previous.current.find((o) => o.id === p.id);
-            return p.type === "ship" && old && old.system !== p.system;
-          })
-          .map((p) => ({
-            id: p.id,
-            owner: p.owner,
-            from: previous.current.find((o) => o.id === p.id).system,
-            to: p.system,
-          }));
+    const moves =
+      (!game._replay && game.log?.at(-1)?.history) ||
+      game._replay?.animate === false
+        ? []
+        : game.pieces
+            .filter((p) => {
+              const old = previous.current.find((o) => o.id === p.id);
+              return p.type === "ship" && old && old.system !== p.system;
+            })
+            .map((p) => ({
+              id: p.id,
+              owner: p.owner,
+              damaged: p.damaged,
+              fromPoint: piecePoint(
+                { pieces: previous.current },
+                previous.current.find((o) => o.id === p.id),
+              ),
+              toPoint: piecePoint(game, p),
+              from: previous.current.find((o) => o.id === p.id).system,
+              to: p.system,
+            }));
     previous.current = game.pieces;
-    if (game.log?.at(-1)?.history) setFlight([]);
+    if (
+      (!game._replay && game.log?.at(-1)?.history) ||
+      game._replay?.animate === false
+    )
+      setFlight([]);
     if (
       !moves.length ||
       window.matchMedia("(prefers-reduced-motion: reduce)").matches
@@ -96,10 +122,10 @@ export default function Board({
       ...moves.map((m) => ({
         ...m,
         key: `${game.revision}-${m.id}`,
-        expires: now + 850,
+        expires: now + 1500,
       })),
     ]);
-  }, [game.revision]);
+  }, [game.revision, game._replay?.sequence]);
   useEffect(() => {
     if (!flight.length) return;
     flightTimer.current = setTimeout(
@@ -132,6 +158,19 @@ export default function Board({
   return (
     <div className="map-viewport" data-zoom={camera.camera.z.toFixed(2)}>
       <div className="map-camera-controls" aria-label="Map camera">
+        <button
+          aria-label="Follow action camera"
+          aria-pressed={followActions}
+          onClick={() =>
+            setFollowActions((value) => {
+              localStorage.setItem("arcs-follow-actions", value ? "off" : "on");
+              return !value;
+            })
+          }
+        >
+          <Focus size={16} />
+          <span>Follow actions</span>
+        </button>
         <button
           aria-label="Zoom in"
           onClick={() => camera.zoom(1.4)}
@@ -385,7 +424,18 @@ export default function Board({
                       onPointerCancel={() => {
                         drag.current = null;
                       }}
-                      opacity={flight?.some((m) => m.id === piece.id) ? 0 : 1}
+                      opacity={
+                        flight?.some((m) => m.id === piece.id) ||
+                        (!matchMedia("(prefers-reduced-motion: reduce)")
+                          .matches &&
+                          actionEffects.some(
+                            (e) =>
+                              e.piece === piece.id &&
+                              ["build", "repair"].includes(e.kind),
+                          ))
+                          ? 0
+                          : 1
+                      }
                       href={sprite(piece.owner, "ship", piece.damaged)}
                       x={x - 85 + (i % 4) * 45}
                       y={y - 40 + Math.floor(i / 4) * 35}
@@ -438,6 +488,17 @@ export default function Board({
                           onAction({ choice: pieceActions.get(piece.id).id });
                         }
                       }}
+                      opacity={
+                        !matchMedia("(prefers-reduced-motion: reduce)")
+                          .matches &&
+                        actionEffects.some(
+                          (e) =>
+                            e.piece === piece.id &&
+                            ["build", "repair"].includes(e.kind),
+                        )
+                          ? 0
+                          : 1
+                      }
                       href={sprite(piece.owner, piece.type, piece.damaged)}
                       x={a - 43}
                       y={b - 45}
@@ -487,29 +548,42 @@ export default function Board({
             </text>
           </g>
         )}
-        {flight?.map(
-          (m, i) =>
-            CENTERS[m.from] &&
-            CENTERS[m.to] && (
-              <g key={m.key} pointerEvents="none" className="flying-ship">
-                <animateMotion
-                  dur=".8s"
-                  fill="freeze"
-                  path={`M${CENTERS[m.from].join(" ")} Q${(CENTERS[m.from][0] + CENTERS[m.to][0]) / 2} ${(CENTERS[m.from][1] + CENTERS[m.to][1]) / 2 - 75} ${CENTERS[m.to].join(" ")}`}
-                />
-                <image
-                  href={sprite(m.owner, "ship")}
-                  x={-30 + (i % 3) * 18}
-                  y={-25 + Math.floor(i / 3) * 12}
-                  width="75"
-                  height="65"
-                />
-              </g>
-            ),
-        )}
+        {flight.map((m) => (
+          <g key={m.key} pointerEvents="none">
+            <path
+              className="ship-flight-trail"
+              d={`M${m.fromPoint.join(" ")} Q${(m.fromPoint[0] + m.toPoint[0]) / 2} ${(m.fromPoint[1] + m.toPoint[1]) / 2 - 65} ${m.toPoint.join(" ")}`}
+              fill="none"
+              stroke="#e9dcaa"
+              strokeWidth="3"
+            />
+            <g className="flying-ship">
+              <animateMotion
+                dur="1.45s"
+                fill="freeze"
+                calcMode="spline"
+                keyTimes="0;1"
+                keySplines=".3 0 .25 1"
+                path={`M${m.fromPoint.join(" ")} Q${(m.fromPoint[0] + m.toPoint[0]) / 2} ${(m.fromPoint[1] + m.toPoint[1]) / 2 - 65} ${m.toPoint.join(" ")}`}
+              />
+              <path
+                className="ship-thruster"
+                d="M-20 0 L-95 -12 L-65 0 L-95 12Z"
+                fill="#ead29c"
+              />
+              <image
+                href={sprite(m.owner, "ship", m.damaged)}
+                x="-31"
+                y="-26.5"
+                width="62"
+                height="53"
+              />
+            </g>
+          </g>
+        ))}
         <MapActionEffects effects={actionEffects} />
         <CombatEffects game={game} centers={CENTERS} slots={slotCoords} />
-        {mv && (
+        {mv && !game._replay && (
           <g
             key={`${game.revision}-${movement.from}-${movement.to}`}
             className="movement-trail"

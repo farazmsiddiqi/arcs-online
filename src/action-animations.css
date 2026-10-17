@@ -233,3 +233,367 @@
     font-size: 10px;
   }
 }
+.table-token-flight {
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: 44px;
+  height: 44px;
+  object-fit: contain;
+  z-index: 10050;
+  pointer-events: none;
+  filter: drop-shadow(0 4px 7px #000b);
+}
+.table-token-flight.card-transfer {
+  width: 76px;
+  height: 106px;
+}
+.construction-scaffold {
+  animation: scaffold 1.6s both;
+}
+.construction-platform {
+  animation: scaffold 1.6s both;
+}
+.constructed-piece {
+  animation: construct-piece 1.6s both;
+}
+.welding-scan {
+  animation: welding-scan 1.4s both;
+}
+.repair-scan {
+  animation: welding-scan 1.5s both;
+}
+.repair-piece {
+  animation: repair-flip 1.6s both;
+}
+.repair-orbit {
+  animation: repair-orbit 1.6s both;
+  transform-origin: center;
+}
+.removed-piece {
+  animation: remove-piece 1.6s both;
+}
+.destroyed-piece {
+  animation: destroy-piece 1.2s both;
+  transform-origin: center;
+}
+.physical-action-label {
+  paint-order: stroke;
+  stroke: #191820;
+  stroke-width: 5px;
+  animation: physical-caption 1.7s both;
+}
+.tax-extraction {
+  animation: tax-extract 1.5s both;
+}
+.battle-laser {
+  stroke-dasharray: 35 300;
+  stroke-dashoffset: 335;
+  animation: laser-fire 0.6s ease-out 2;
+}
+.ship-flight-trail {
+  stroke-dasharray: 8 12;
+  animation: flight-trail 1.5s both;
+}
+.ship-thruster {
+  animation: thruster 0.12s alternate infinite;
+}
+@keyframes scaffold {
+  0% {
+    opacity: 0;
+    transform: scaleY(0.2);
+  }
+  25%,
+  60% {
+    opacity: 0.9;
+    transform: scaleY(1);
+  }
+  100% {
+    opacity: 0;
+  }
+}
+@keyframes construct-piece {
+  0%,
+  15% {
+    opacity: 0;
+    transform: translateY(30px) scale(0.2);
+  }
+  65% {
+    opacity: 1;
+    transform: translateY(-5px) scale(1.12);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+@keyframes welding-scan {
+  0% {
+    opacity: 0;
+    transform: translateY(32px);
+  }
+  25% {
+    opacity: 1;
+  }
+  80% {
+    opacity: 1;
+    transform: translateY(-42px);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-42px);
+  }
+}
+@keyframes repair-flip {
+  0% {
+    opacity: 0.2;
+    transform: scaleX(0.05);
+  }
+  50% {
+    opacity: 1;
+    transform: scaleX(1);
+    filter: brightness(1.8);
+  }
+  100% {
+    opacity: 1;
+    filter: brightness(1);
+  }
+}
+@keyframes repair-orbit {
+  from {
+    opacity: 1;
+    transform: rotate(0deg) scale(0.7);
+  }
+  to {
+    opacity: 0;
+    transform: rotate(160deg) scale(1.2);
+  }
+}
+@keyframes remove-piece {
+  0%,
+  10% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(35px) scale(0.15);
+  }
+}
+@keyframes destroy-piece {
+  0%,
+  15% {
+    opacity: 1;
+  }
+  60% {
+    opacity: 0.8;
+    transform: rotate(25deg) scale(1.3);
+    filter: brightness(3) sepia(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(30px) rotate(50deg) scale(0.2);
+  }
+}
+@keyframes physical-caption {
+  0%,
+  100% {
+    opacity: 0;
+  }
+  20%,
+  70% {
+    opacity: 1;
+  }
+}
+@keyframes tax-extract {
+  0% {
+    opacity: 0;
+    transform: translateY(15px);
+  }
+  30%,
+  65% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-50px);
+  }
+}
+@keyframes laser-fire {
+  to {
+    stroke-dashoffset: -335;
+  }
+}
+@keyframes flight-trail {
+  0% {
+    opacity: 0;
+    stroke-dashoffset: 80;
+  }
+  20%,
+  70% {
+    opacity: 0.5;
+  }
+  100% {
+    opacity: 0;
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes thruster {
+  from {
+    opacity: 0.3;
+  }
+  to {
+    opacity: 0.9;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .construction-sequence,
+  .repair-sequence,
+  .tax-extraction,
+  .battle-crossfire,
+  .removed-piece,
+  .replay-damage,
+  .physical-action-label,
+  .ship-flight-trail {
+    display: none;
+  }
+  .table-token-flight {
+    display: none;
+  }
+}
+
+/* Physical action effects stay within the map; no full-screen flashes. */
+.sound-volume {
+  display: grid;
+  gap: 12px;
+  padding: 20px 8px;
+}
+.sound-volume > span {
+  display: flex;
+  justify-content: space-between;
+}
+.sound-volume input {
+  width: 100%;
+  accent-color: #cfaa6c;
+}
+.sound-volume small {
+  color: #b6afa4;
+  line-height: 1.5;
+}
+.ship-thruster {
+  filter: drop-shadow(0 0 10px #86d9ff);
+  fill: #ace7ff;
+}
+.ship-flight-trail {
+  stroke: #9adcf1;
+  stroke-width: 6;
+  filter: drop-shadow(0 0 8px #60c9f2);
+}
+.flying-ship image {
+  filter: drop-shadow(0 4px 5px #000a);
+}
+.battle-laser,
+.hit-bolt {
+  filter: drop-shadow(0 0 7px #ffac60);
+  stroke-linecap: round;
+}
+.blast-shockwave {
+  animation: blast-wave 1.4s ease-out both;
+  filter: drop-shadow(0 0 10px #ffb16f);
+}
+.blast-cloud {
+  animation: blast-cloud 1.35s ease-out both;
+  filter: blur(12px);
+}
+.blast-debris {
+  animation: blast-debris 1.2s cubic-bezier(0.12, 0.5, 0.3, 1) both;
+}
+.welding-spark {
+  animation: weld-spark 0.5s ease-out 2 both;
+  filter: drop-shadow(0 0 4px #ffe49f);
+}
+.construction-platform,
+.construction-scaffold {
+  filter: drop-shadow(0 0 7px #9adce6);
+}
+.battle-shield {
+  animation: shield-ripple 1.3s ease-out both;
+}
+@keyframes blast-wave {
+  0%,
+  12% {
+    opacity: 0;
+    transform: scale(0.15);
+  }
+  20% {
+    opacity: 0.9;
+  }
+  100% {
+    opacity: 0;
+    transform: scale(3.8);
+    stroke-width: 1;
+  }
+}
+@keyframes blast-cloud {
+  0%,
+  12% {
+    opacity: 0;
+    transform: scale(0.1);
+  }
+  25% {
+    opacity: 0.6;
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.8);
+  }
+}
+@keyframes blast-debris {
+  0%,
+  15% {
+    opacity: 0;
+    transform: translateX(0);
+  }
+  25% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(150px);
+  }
+}
+@keyframes weld-spark {
+  0% {
+    opacity: 0;
+    transform: scale(0.3);
+  }
+  15% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.6) translateY(-15px);
+  }
+}
+@keyframes shield-ripple {
+  0% {
+    opacity: 0;
+    transform: scale(0.4);
+  }
+  30% {
+    opacity: 0.7;
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.5);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .blast-shockwave,
+  .blast-cloud,
+  .blast-debris,
+  .welding-spark,
+  .battle-shield {
+    display: none;
+  }
+}

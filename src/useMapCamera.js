@@ -68,6 +68,30 @@ export default function useMapCamera(system, centers, slots, pieces) {
       true,
     );
   };
+  const frameSystems = (ids) => {
+    const points = ids.flatMap((id) =>
+      centers[id] ? [centers[id], ...(slots[id] ?? [])] : [],
+    );
+    if (!points.length) return;
+    const xs = points.map((p) => p[0]),
+      ys = points.map((p) => p[1]);
+    const left = Math.min(...xs),
+      right = Math.max(...xs),
+      top = Math.min(...ys),
+      bottom = Math.max(...ys);
+    move(
+      {
+        x: (left + right) / 2,
+        y: (top + bottom) / 2,
+        z: Math.min(
+          3,
+          2528 / (right - left + 600),
+          1776 / (bottom - top + 500),
+        ),
+      },
+      true,
+    );
+  };
   const zoom = (factor) =>
     move({ ...current.current, z: current.current.z * factor }, true);
   const reset = () => move({ x: 1264, y: 888, z: 1 }, true);
@@ -143,6 +167,7 @@ export default function useMapCamera(system, centers, slots, pieces) {
     zoom,
     reset,
     focus,
+    frameSystems,
     viewBox: `${camera.x - 1264 / camera.z} ${camera.y - 888 / camera.z} ${2528 / camera.z} ${1776 / camera.z}`,
   };
 }

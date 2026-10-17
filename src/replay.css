@@ -1,0 +1,354 @@
+.app .modal.replay-modal {
+  width: calc(100vw - 32px);
+  max-width: 1500px;
+  height: calc(100vh - 32px);
+  max-height: none;
+  padding: 26px;
+  background: #19181c;
+}
+.replay-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding-right: 40px;
+}
+.replay-heading .eyebrow {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  color: #b6cbd0;
+}
+.replay-heading h2 {
+  margin: 8px 0;
+  font-size: 28px;
+}
+.replay-heading p,
+.replay-coverage {
+  color: #b9b0a5;
+  font-size: 13px;
+}
+.replay-controls {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 18px;
+}
+.replay-controls button {
+  display: grid;
+  place-items: center;
+  min-width: 40px;
+  min-height: 38px;
+  border: 1px solid #68605a;
+  border-radius: 8px;
+  background: #302c30;
+  color: #efdbb5;
+}
+.replay-controls button:disabled {
+  opacity: 0.35;
+}
+.replay-controls label {
+  margin-left: 10px;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.replay-controls span {
+  margin-left: auto;
+  color: #b9b0a5;
+  font-size: 12px;
+}
+.replay-viewer select {
+  background: #28262c;
+  color: #e4d7c4;
+  padding: 6px;
+  border: 1px solid #68605a;
+  border-radius: 6px;
+}
+.replay-scrubber {
+  width: 100%;
+  margin: 14px 0;
+  accent-color: #d6b779;
+}
+.replay-turn-controls {
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+}
+.replay-turn-controls button {
+  background: transparent;
+  color: #dbc79c;
+  border: 0;
+}
+.replay-caption {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: 42px;
+  padding: 12px 0;
+  font-size: 14px;
+}
+.replay-live-alert {
+  border-left: 3px solid #d8ba7e;
+  padding: 8px 12px;
+  color: #eed39d;
+  background: #cdaa6320;
+  font-size: 13px;
+}
+.replay-board-grid {
+  display: grid;
+  grid-template-columns: 190px minmax(0, 1fr);
+  min-height: 430px;
+}
+.replay-viewer .replay-map {
+  height: 480px;
+  position: relative;
+  min-width: 0;
+  overflow: hidden;
+}
+.replay-map .physical-board-wrap {
+  height: 100%;
+}
+.replay-map svg.physical-board {
+  width: 100%;
+  height: 100%;
+}
+.replay-viewer .round-table {
+  margin: 0 0 12px;
+}
+.replay-court {
+  display: flex;
+  gap: 16px;
+  overflow-x: auto;
+  padding: 14px 0;
+}
+.replay-court > div {
+  flex: 0 0 145px;
+}
+.replay-court .court-card {
+  height: 170px;
+  width: 125px;
+}
+.replay-court > div > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  font-size: 11px;
+}
+.replay-players {
+  display: flex;
+  gap: 10px;
+  margin: 14px 0;
+  flex-wrap: wrap;
+}
+.replay-players button {
+  padding: 8px 12px;
+  border: 1px solid #61554b;
+  border-radius: 8px;
+  color: #e5d2b2;
+  background: transparent;
+}
+.replay-players button[aria-pressed="true"] {
+  background: #b99b5d25;
+  border-color: #b99b5d;
+}
+.replay-viewer .player-table {
+  max-height: none;
+  height: auto;
+  min-height: 300px;
+}
+.replay-inspection {
+  position: sticky;
+  bottom: 0;
+  padding: 20px;
+  border: 1px solid #b99b5d;
+  border-radius: 12px;
+  background: #242127;
+  z-index: 10;
+  max-height: 70vh;
+  overflow: auto;
+}
+.replay-inspection > img {
+  display: block;
+  max-width: 100%;
+  max-height: 55vh;
+  margin: auto;
+  object-fit: contain;
+}
+.replay-inspection > button {
+  float: right;
+}
+@media (max-width: 700px) {
+  .app .modal.replay-modal {
+    padding: 16px;
+  }
+  .replay-heading {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .replay-heading h2 {
+    font-size: 23px;
+  }
+  .replay-controls {
+    flex-wrap: wrap;
+  }
+  .replay-controls label {
+    margin-left: 0;
+  }
+  .replay-board-grid {
+    grid-template-columns: 1fr;
+  }
+  .replay-board-grid .shared-board {
+    max-height: 260px;
+    overflow: auto;
+  }
+  .replay-viewer .replay-map {
+    height: 380px;
+  }
+  .replay-turn-controls {
+    flex-wrap: wrap;
+  }
+}
+.replay-map .map-viewport {
+  height: 100%;
+}
+.replay-viewer .replay-map .physical-board {
+  height: 100%;
+  width: 100%;
+}
+
+.app .replay-console {
+  position: sticky;
+  top: -26px;
+  z-index: 8;
+  padding: 8px 0;
+  background: #19181c;
+  border-bottom: 1px solid #4c4440;
+}
+.app .replay-heading h2 {
+  font-size: 23px;
+  margin: 5px 0;
+}
+.app .replay-heading p {
+  font-size: 12px;
+  margin: 3px 0 8px;
+  line-height: 1.4;
+}
+.app .replay-live-alert {
+  padding: 5px 10px;
+  margin: 4px 0;
+  font-size: 12px;
+}
+.app .replay-controls {
+  margin: 6px 0 0;
+}
+.app .replay-controls label {
+  flex-direction: row;
+  margin: 0 0 0 12px;
+  align-items: center;
+}
+.app .replay-scrubber {
+  margin: 4px 0;
+  height: 18px;
+  padding: 0;
+}
+.app .replay-caption {
+  min-height: 0;
+  padding: 5px 0;
+  font-size: 12px;
+}
+.app .replay-coverage {
+  font-size: 11px;
+  margin: 3px 0;
+  line-height: 1.4;
+}
+.app .replay-turn-controls select {
+  padding: 4px;
+}
+.app .replay-board-grid {
+  min-height: 330px;
+}
+.app .replay-map {
+  height: clamp(330px, 48vh, 520px);
+}
+.shortcut-guide > div {
+  display: grid;
+  grid-template-columns: 110px 1fr;
+  align-items: baseline;
+  gap: 12px;
+  padding: 9px 0;
+  border-bottom: 1px solid #b99b5d22;
+}
+.shortcut-guide dd {
+  margin: 0;
+  color: #d9cabb;
+}
+kbd {
+  border: 1px solid #786954;
+  border-radius: 5px;
+  padding: 3px 7px;
+  background: #b99b5d15;
+  font-size: 12px;
+}
+@media (max-width: 700px) {
+  .app .replay-console {
+    position: static;
+  }
+  .app .replay-heading {
+    padding-right: 22px;
+  }
+}
+
+.replay-supply {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 16px;
+  padding: 5px 0;
+  font-size: 12px;
+  color: #d4c3a9;
+}
+.replay-supply > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.replay-supply img {
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
+}
+
+@media (min-width: 900px) {
+  .app .replay-console {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    column-gap: 20px;
+    align-items: center;
+  }
+  .replay-console > .replay-heading,
+  .replay-console > .replay-live-alert,
+  .replay-console > .replay-scrubber {
+    grid-column: 1 / -1;
+  }
+  .replay-console > .replay-turn-controls {
+    grid-column: 2;
+    grid-row: 3;
+  }
+  .replay-console > .replay-coverage {
+    max-width: 320px;
+    font-size: 10px;
+  }
+  .replay-console > .replay-controls > span {
+    display: none;
+  }
+  .app .replay-heading {
+    min-height: 0;
+    gap: 12px;
+  }
+}
+
+.app .modal.replay-modal > .modal-close {
+  z-index: 20;
+}

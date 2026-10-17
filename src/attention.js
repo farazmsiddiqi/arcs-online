@@ -39,33 +39,6 @@ export function flashTitle(label) {
   document.addEventListener("visibilitychange", onVisible);
 }
 
-// The 660 Hz two-tenths-of-a-second chime for "it is your turn".
-export function chime() {
-  try {
-    const ctx = new AudioContext(),
-      o = ctx.createOscillator(),
-      g = ctx.createGain();
-    o.connect(g);
-    g.connect(ctx.destination);
-    o.frequency.value = 660;
-    g.gain.setValueAtTime(0.04, ctx.currentTime);
-    g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.25);
-    o.start();
-    o.stop(ctx.currentTime + 0.25);
-    o.onended = () => ctx.close();
-  } catch {}
-}
-
-// The chime is on unless the player muted it. "yes" is the old opt-in value.
-export const readSound = () => {
-  try {
-    return localStorage.getItem("arcs-sound") !== "no";
-  } catch {
-    return true;
-  }
-};
-export const writeSound = (on) => {
-  try {
-    localStorage.setItem("arcs-sound", on ? "yes" : "no");
-  } catch {}
-};
+export { readSound, writeSound } from "./gameAudio.js";
+import { playCue } from "./gameAudio.js";
+export const chime = () => playCue("turn");

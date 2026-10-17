@@ -1,3 +1,4 @@
+import { piecePoint } from "./pieceMotion.js";
 import { useEffect, useRef, useState } from "react";
 export default function CombatEffects({ game, centers, slots }) {
   const seen = useRef(game.log?.at(-1)?.id ?? 0),
@@ -6,8 +7,11 @@ export default function CombatEffects({ game, centers, slots }) {
     [effects, setEffects] = useState([]);
   useEffect(() => () => clearTimeout(timer.current), []);
   useEffect(() => {
-    if (game.log?.at(-1)?.history) {
-      seen.current = game.log.at(-1).id;
+    if (
+      (!game._replay && game.log?.at(-1)?.history) ||
+      (game._replay && (!game._replay.animate || game._replay.direction < 0))
+    ) {
+      seen.current = game.log?.at(-1)?.id ?? 0;
       prior.current = game.pieces;
       setEffects([]);
       return;
@@ -38,7 +42,26 @@ export default function CombatEffects({ game, centers, slots }) {
             .findIndex((p) => p.id === piece.id);
           [x, y] = slots[piece.system]?.[i] ?? center;
         }
-        return { ...effect, id: e.id, x, y, expires: Date.now() + 1500 };
+        const attacker = pieces.find(
+          (p) =>
+            p.system === effect.system &&
+            p.owner === effect.dealer &&
+            p.type === "ship",
+        );
+        const start = attacker
+          ? piecePoint({ pieces }, attacker)
+          : [x - 165, y - 125];
+        return {
+          ...effect,
+          id: `${game._replay?.sequence ?? 0}-${e.id}`,
+          x,
+          y,
+          origin: [start[0] - x, start[1] - y],
+          destroyedSprite: piece
+            ? `/assets/${["r", "y", "b", "w"][piece.owner]}-${piece.type}${piece.damaged ? "-damaged" : ""}.webp`
+            : null,
+          expires: Date.now() + 1500,
+        };
       })
       .filter(Boolean);
     prior.current = game.pieces;
@@ -46,7 +69,7 @@ export default function CombatEffects({ game, centers, slots }) {
     setEffects((old) =>
       [...old.filter((e) => e.expires > Date.now()), ...next].slice(-40),
     );
-  }, [game.revision]);
+  }, [game.revision, game._replay?.sequence]);
   useEffect(() => {
     if (!effects.length) return;
     timer.current = setTimeout(
@@ -83,12 +106,46 @@ export default function CombatEffects({ game, centers, slots }) {
             </g>
           ) : (
             <>
+              {e.type === "destroy" && e.destroyedSprite && (
+                <image
+                  className="destroyed-piece"
+                  href={e.destroyedSprite}
+                  x="-40"
+                  y="-40"
+                  width="80"
+                  height="80"
+                />
+              )}
               <path
                 className="hit-bolt"
-                d="M-165 -125 L0 0"
+                d={`M${e.origin.join(" ")} L0 0`}
                 stroke="#fff0a3"
                 strokeWidth="12"
               />
+              <ellipse
+                className="blast-shockwave"
+                rx="50"
+                ry="24"
+                fill="none"
+                stroke="#ffc98d"
+                strokeWidth="9"
+              />
+              <circle
+                className="blast-cloud"
+                r={e.type === "destroy" ? 85 : 48}
+                fill="#f47e3a"
+              />
+              {Array.from({ length: 14 }, (_, i) => (
+                <g key={`debris-${i}`} transform={`rotate(${i * 137.5})`}>
+                  <path
+                    className="blast-debris"
+                    style={{ animationDelay: `${(i % 4) * 35}ms` }}
+                    d={`M${25 + (i % 3) * 9} 0 l${10 + (i % 4) * 6} 0`}
+                    stroke={i % 2 ? "#ffe6a3" : "#e97947"}
+                    strokeWidth={3 + (i % 3)}
+                  />
+                </g>
+              ))}
               <circle
                 className="impact-ring"
                 r="22"
@@ -123,17 +180,6 @@ export default function CombatEffects({ game, centers, slots }) {
                   />
                 </g>
               )}
-              <text
-                className="impact-label"
-                y="-65"
-                textAnchor="middle"
-                fill="#ffdfb4"
-                fontSize="27"
-              >
-                {e.type === "destroy"
-                  ? `${e.pieceType.toUpperCase()} DESTROYED`
-                  : "DAMAGED"}
-              </text>
             </>
           )}
         </g>

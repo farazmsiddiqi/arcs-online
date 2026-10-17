@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import {
   MessageCircle,
@@ -287,10 +287,26 @@ export default function TableChat({
       input.current?.focus();
     }
   }, [open]);
+  // A thread/channel switch can reuse the same messages array. Position the
+  // newly rendered feed before paint rather than waiting for another message.
+  useLayoutEffect(() => {
+    if (open && feed.current) {
+      nearBottom.current = true;
+      feed.current.scrollTop = feed.current.scrollHeight;
+    }
+  }, [pageKey, open]);
   useEffect(() => {
     if (open && nearBottom.current && feed.current)
       feed.current.scrollTop = feed.current.scrollHeight;
   }, [messages, open]);
+  useEffect(() => {
+    const toggle = () => {
+      setOpen((value) => !value);
+      nearBottom.current = true;
+    };
+    window.addEventListener("arcs:toggle-chat", toggle);
+    return () => window.removeEventListener("arcs:toggle-chat", toggle);
+  }, []);
   const close = () => {
     setOpen(false);
     button.current?.focus();

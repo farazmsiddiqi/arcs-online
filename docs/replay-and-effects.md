@@ -1,0 +1,13 @@
+# Replay, physical effects, sound and keyboard controls
+
+Replay is a personal, read-only view of the public table. Use Replay (or R), step through actions with Left/Right, navigate turn boundaries, scrub the timeline, or play it automatically. Return to live with R or the return button. The live table and timer continue while you watch; a banner warns when it is your decision.
+
+The archive stores compressed public snapshots in the same persistent SQLite database as the room. It includes accepted human, bot and timer actions and actual Undo/Redo outcomes. Viewing replay never invokes gameplay, undo, timer or random-number commands. Hands remain counts, face-down plays stay concealed, and private chat/decisions are excluded. Every authenticated seat receives the same public archive. Existing games start at their first recorded saved position; older text history cannot reliably reconstruct earlier dice rolls and private draws.
+
+Ships fly between their actual fleet positions. Construction assembles the piece at its board position; repair scans the piece; combat strikes targets with bolts, expanding shockwaves, debris and destruction effects. Tax and resource spending transport tokens between the board, supply and player areas. Influence moves an agent to Court; securing moves the acquired card. Follow actions frames relevant systems and can be switched off on the map. Adjacent replay steps use the same physical differences in reverse; timeline jumps do not animate unrelated moves. Reduced-motion preferences suppress motion.
+
+Sound uses synthesized Web Audio effects, with no external audio assets. The browser unlocks sound after the first pointer/key gesture. Engines, combat, construction, repair, tax, resources, cards, influence, scoring and turn cues have distinct sounds; other decisions use a soft cue. Combat takes priority over accompanying bookkeeping sounds. One shared, compressed master bus has persistent mute and volume controls in Table settings. M toggles mute. Background tabs and initial/reconnected snapshots do not play action cues. Live effects are suppressed while personal replay is open.
+
+Press ? for the keyboard guide, also available in Table settings. C opens chat; Escape closes it. R opens replay/returns live; H opens history; T opens timers; +/− zoom and 0 resets the map. Within replay, Left/Right step, Home/End jump, and Space plays/pauses when focus isn't on another control. Shortcuts ignore editable fields, composition, repeated keys and browser modifier combinations. They never bypass gameplay confirmations.
+
+Closing a chat thread or changing channels scrolls the newly rendered feed to its newest message before paint. Loading older messages retains the reader's position.

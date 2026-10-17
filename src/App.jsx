@@ -1,3 +1,6 @@
+import { shortcutFor, SHORTCUTS } from "./keyboardShortcuts.js";
+import { installAudioUnlock, readVolume, writeVolume } from "./gameAudio.js";
+import ReplayViewer from "./ReplayViewer.jsx";
 import ResourceDetails from "./ResourceDetails.jsx";
 import { useActionAnimations, ActionActivity } from "./ActionAnimations.jsx";
 import SystemDetails from "./SystemDetails.jsx";
@@ -12,6 +15,7 @@ import DockResize from "./DockResize.jsx";
 import React, { useState, useEffect, useLayoutEffect, useRef } from "react";
 import {
   Orbit,
+  History,
   Plus,
   ArrowUpRight,
   BookOpen,
@@ -183,6 +187,7 @@ export default function App() {
     [fullMap, setFullMap] = useState(false),
     [playerDetail, setPlayerDetail] = useState(null),
     [sound, setSound] = useState(readSound),
+    [volume, setVolume] = useState(readVolume),
     // The one-click choice waiting for its confirm step (C-6), as the id of a
     // choice at one revision. Any new revision drops it.
     [pendingConfirm, setPendingConfirm] = useState(null);
@@ -261,7 +266,14 @@ export default function App() {
   const game = room?.game ?? demo,
     me = game.players[game.me ?? 0],
     live = !!room?.game;
-  const actionAnimations = useActionAnimations(game, room?.id);
+  const animationScope = useRef(null);
+  useEffect(installAudioUnlock, []);
+  const actionAnimations = useActionAnimations(
+    game,
+    room?.id,
+    animationScope,
+    modal !== "replay",
+  );
   const preferredDockHeight = dockHeight ?? autoDockHeight;
   // A draft pick passes play immediately. Keep its review and confirmation
   // visible even when the player previously shortened the action area, then
@@ -383,6 +395,55 @@ export default function App() {
     window.addEventListener("keydown", key);
     return () => window.removeEventListener("keydown", key);
   }, []);
+  useEffect(() => {
+    const key = (event) => {
+      if (detail || playerDetail !== null || (modal && modal !== "replay"))
+        return;
+      const action = shortcutFor(event, { replay: modal === "replay" });
+      if (!action) return;
+      if (
+        modal === "replay" &&
+        ["chat", "history", "timers", "help"].includes(action)
+      )
+        return;
+      event.preventDefault();
+      if (action === "chat")
+        window.dispatchEvent(new Event("arcs:toggle-chat"));
+      else if (action === "mute") {
+        setSound(!sound);
+        writeSound(!sound);
+      } else if (action === "live") setModal(null);
+      else if (action === "replay") {
+        if (room?.game) setModal("replay");
+      } else if (action === "history") setModal("journal");
+      else if (action === "timers") {
+        if (room) setModal("timers");
+      } else if (action === "help") setModal("shortcuts");
+      else {
+        const scope = document.querySelector(
+          `[data-animation-scope="${modal === "replay" ? "replay" : "live"}"]`,
+        );
+        const labels = {
+          "zoom-in": "Zoom in",
+          "zoom-out": "Zoom out",
+          overview: "Show whole map",
+          "replay-back": "Previous action",
+          "replay-next": "Next action",
+          "replay-first": "First recorded position",
+          "replay-last": "Latest recorded position",
+        };
+        const label = labels[action];
+        const button = label
+          ? scope?.querySelector(`button[aria-label="${label}"]`)
+          : scope?.querySelector(
+              'button[aria-label="Play replay"], button[aria-label="Pause replay"]',
+            );
+        if (button && !button.disabled) button.click();
+      }
+    };
+    window.addEventListener("keydown", key);
+    return () => window.removeEventListener("keydown", key);
+  }, [modal, detail, playerDetail, room?.id, sound]);
   useEffect(() => {
     if (!modal && !detail && playerDetail === null) return;
     const previous = document.activeElement;
@@ -555,6 +616,7 @@ export default function App() {
     }
   }
   async function control(kind, input) {
+    if (modal === "replay") return;
     if (busy) return;
     const fail = kind === "timer" ? setTimerError : setError;
     setBusy(true);
@@ -581,6 +643,11 @@ export default function App() {
     if (modal !== "timers") setTimerError("");
   }, [modal]);
   async function act(input) {
+    if (modal === "replay")
+      return {
+        ok: false,
+        error: "Replay is read-only. Return to live to act.",
+      };
     if (busy) return { ok: false, error: "Another command is in progress." };
     const target = game.decision.choices?.find(
       (c) => c.id === input.choice,
@@ -691,6 +758,8 @@ export default function App() {
   return (
     <div
       className="app"
+      ref={animationScope}
+      data-animation-scope="live"
       style={
         effectiveDockHeight
           ? { "--dock-height": `${effectiveDockHeight}px` }
@@ -734,6 +803,12 @@ export default function App() {
             <Trophy size={16} />
             <span>Ambitions</span>
           </button>
+          {live && (
+            <button onClick={() => setModal("replay")} aria-label="Replay game">
+              <History size={16} />
+              <span>Replay</span>
+            </button>
+          )}
           <button
             onClick={() => setModal("journal")}
             aria-label="Table history"
@@ -755,6 +830,7 @@ export default function App() {
           <button
             className="icon-button"
             aria-label="Table settings"
+            title="Settings · press ? for keyboard shortcuts"
             onClick={() => setModal("settings")}
           >
             <Settings size={18} />
@@ -1191,7 +1267,7 @@ export default function App() {
               if (layer === "modal")
                 modalScroll.current = e.currentTarget.scrollTop;
             }}
-            className={`modal ${modal?.startsWith("resource:") ? "resource-guide-modal" : ""} ${!detail && playerDetail !== null ? "player-area-modal" : ""} ${!detail && playerDetail === null && modal === "system" ? "system-details-modal" : ""} ${modal === "library" ? "library-modal" : modal === "dice-guide" ? "dice-guide-modal" : ""} ${detail ? "card-modal" : ""}`}
+            className={`modal ${modal === "replay" ? "replay-modal" : ""} ${modal?.startsWith("resource:") ? "resource-guide-modal" : ""} ${!detail && playerDetail !== null ? "player-area-modal" : ""} ${!detail && playerDetail === null && modal === "system" ? "system-details-modal" : ""} ${modal === "library" ? "library-modal" : modal === "dice-guide" ? "dice-guide-modal" : ""} ${detail ? "card-modal" : ""}`}
             role="dialog"
             aria-modal="true"
             aria-label={
@@ -2051,10 +2127,24 @@ export default function App() {
                   </div>
                 </div>
               </>
+            ) : modal === "replay" ? (
+              <ReplayViewer
+                room={room}
+                request={request}
+                onClose={() => setModal(null)}
+              />
             ) : modal === "journal" ? (
               <>
                 <h2>Table history</h2>{" "}
                 <p>Everything done in public, grouped by whose turn it was.</p>
+                {live && (
+                  <button
+                    className="score-recap-button"
+                    onClick={() => setModal("replay")}
+                  >
+                    <History size={15} /> Replay these turns on the board
+                  </button>
+                )}
                 {live && battleList(game).length > 0 && (
                   <button
                     className="score-recap-button"
@@ -2124,10 +2214,35 @@ export default function App() {
                 busy={busy}
                 error={timerError}
               />
+            ) : modal === "shortcuts" ? (
+              <>
+                <span className="eyebrow gold">FLIGHT CONTROLS</span>
+                <h2>Keyboard shortcuts</h2>
+                <p>
+                  Shortcuts stay quiet while you type. Turn decisions and
+                  confirmations work as usual.
+                </p>
+                <dl className="shortcut-guide">
+                  {SHORTCUTS.map(([key, label]) => (
+                    <div key={key}>
+                      <dt>
+                        <kbd>{key}</kbd>
+                      </dt>
+                      <dd>{label}</dd>
+                    </div>
+                  ))}
+                </dl>
+              </>
             ) : modal === "settings" ? (
               <>
                 <span className="eyebrow gold">YOUR TABLE</span>
                 <h2>Table settings</h2>
+                <button
+                  className="reference-link full"
+                  onClick={() => setModal("shortcuts")}
+                >
+                  Keyboard shortcuts <kbd>?</kbd>
+                </button>
                 <button
                   className="reference-link full"
                   aria-pressed={sound}
@@ -2136,9 +2251,31 @@ export default function App() {
                     writeSound(!sound);
                   }}
                 >
-                  {sound ? "Your-turn chime: on" : "Your-turn chime: muted"}
+                  {sound ? "Game sound: on" : "Game sound: muted"}
                   {sound ? <Volume2 size={18} /> : <VolumeX size={18} />}
                 </button>
+                <label className="sound-volume">
+                  <span>
+                    Effects volume <output>{Math.round(volume * 100)}%</output>
+                  </span>
+                  <input
+                    type="range"
+                    aria-label="Effects volume"
+                    min="0"
+                    max="1"
+                    step="0.05"
+                    value={volume}
+                    onChange={(e) => {
+                      const v = Number(e.target.value);
+                      setVolume(v);
+                      writeVolume(v);
+                    }}
+                  />
+                  <small>
+                    Ships, battles, resources, cards and turn cues. Your
+                    preference stays on this device.
+                  </small>
+                </label>
                 {room && (
                   <>
                     <button
