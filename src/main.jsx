@@ -23,3 +23,5 @@ import "./inspection.css";
 import "./action-animations.css";
 
 import "./living-table.css";
+
+import "./cinematics.css";

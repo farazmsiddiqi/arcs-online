@@ -1,0 +1,588 @@
+/* A short theatre above the table. Timers and gameplay are never paused. */
+.board-cinema {
+  position: fixed;
+  z-index: 85;
+  inset: 56px 20px auto;
+  height: min(74vh, 760px);
+  overflow: hidden;
+  border: 1px solid #d4bb8055;
+  border-radius: 16px;
+  background: #090e12;
+  color: #f4e6ca;
+  box-shadow: 0 25px 100px #000b;
+  isolation: isolate;
+  animation: cinema-open 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+.cinema-stage {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.cinema-vignette {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(#05090fe8, transparent 30%, transparent 64%, #05090ff5),
+    radial-gradient(ellipse at 50% 45%, transparent 40%, #04070b80);
+}
+.cinema-heading {
+  position: absolute;
+  top: 28px;
+  left: 36px;
+  pointer-events: none;
+}
+.cinema-heading > span {
+  color: #bea882;
+  font-size: 11px;
+  letter-spacing: 0.23em;
+}
+.cinema-heading h2 {
+  font-family: Georgia, serif;
+  font-weight: normal;
+  font-size: clamp(28px, 3.3vw, 48px);
+  margin: 8px 0;
+  line-height: 1;
+}
+.cinema-heading p {
+  font-size: 14px;
+  color: #d2c4ad;
+  margin: 10px 0;
+}
+.cinema-controls {
+  position: absolute;
+  top: 22px;
+  right: 24px;
+  display: flex;
+  gap: 8px;
+}
+.cinema-controls button {
+  padding: 9px 14px;
+  border: 1px solid #a48a5c66;
+  border-radius: 24px;
+  background: #101820c9;
+  color: #e8d7b4;
+  cursor: pointer;
+}
+.cinema-controls button:hover {
+  background: #314043;
+}
+.cinema-controls kbd {
+  font: 10px sans-serif;
+  margin-left: 7px;
+  opacity: 0.7;
+}
+.cinema-caption {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 20px 36px 24px;
+  pointer-events: none;
+}
+.cinema-caption > span {
+  font-family: Georgia, serif;
+  font-size: clamp(19px, 2vw, 27px);
+  display: block;
+  animation: cinema-caption-in 0.3s ease both;
+}
+.cinema-caption p {
+  font-size: 13px;
+  line-height: 1.5;
+  color: #d7c6aa;
+  max-width: 800px;
+  margin: 8px 0;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+.cinema-caption small {
+  display: block;
+  color: #8e9b9b;
+  font-size: 10px;
+  letter-spacing: 0.05em;
+  margin-top: 10px;
+}
+.cinema-progress {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 2px;
+  width: 100%;
+  background: #dfc58e;
+  transform-origin: left;
+  animation: cinema-progress var(--scene-time) linear both;
+}
+.cinema-world {
+  transform-origin: 1060px 480px;
+  animation: cinema-world var(--scene-time) ease-in-out both;
+}
+.cinema-starfield {
+  animation: cinema-stars var(--scene-time) linear both;
+}
+.cinema-shot {
+  transform-origin: 720px 400px;
+  animation: cinema-shot var(--scene-time) cubic-bezier(0.25, 0.7, 0.3, 1) both;
+}
+.cinema-attack-fleet {
+  animation: cinema-approach 1.2s cubic-bezier(0.16, 0.8, 0.2, 1) both;
+}
+.cinema-defend-fleet {
+  animation: cinema-defend 1.3s ease-out both;
+}
+.cinema-engine {
+  opacity: 0.7;
+  animation: cinema-engine 0.25s ease-in-out infinite alternate;
+  transform-origin: 0 0;
+}
+.cinema-bolt {
+  stroke-dasharray: 10 90;
+  stroke-dashoffset: 100;
+  animation: cinema-bolt 0.6s ease-in both;
+}
+.cinema-shield {
+  opacity: 0;
+  animation: cinema-shield 1.8s 0.9s ease-out both;
+  transform-origin: 1010px 400px;
+}
+.cinema-impact {
+  opacity: 0;
+  animation: cinema-impact 1.2s 0.8s ease-out both;
+}
+.cinema-shockwave {
+  opacity: 0;
+  animation: cinema-shockwave 1.5s 0.8s ease-out both;
+}
+.cinema-debris {
+  opacity: 0;
+  animation: cinema-debris 1.5s 0.9s ease-out both;
+}
+.cinema-destroyed {
+  animation: cinema-destroyed var(--scene-time) ease-in both;
+}
+.cinema-transit {
+  animation: cinema-transit var(--scene-time) cubic-bezier(0.45, 0, 0.2, 1) both;
+}
+.cinema-speedlines {
+  animation: cinema-speedlines var(--scene-time) ease-in-out both;
+}
+.cinema-dock-ring {
+  animation: cinema-dock var(--scene-time) ease-in-out both;
+  transform-origin: 0 90px;
+}
+.cinema-scaffold {
+  animation: cinema-scaffold var(--scene-time) ease both;
+  stroke-dasharray: 1000;
+}
+.cinema-fabricated {
+  animation: cinema-fabricated var(--scene-time) ease both;
+}
+.cinema-weld {
+  animation: cinema-weld 1.7s 0.35s ease-in-out both;
+}
+.cinema-weld-spark {
+  animation: cinema-spark 0.7s ease-in-out 2 both;
+}
+.cinema-beam {
+  stroke-dasharray: 20 12;
+  animation: cinema-beam 1s linear infinite;
+}
+.cinema-cargo {
+  animation: cinema-cargo 2.7s cubic-bezier(0.3, 0, 0.2, 1) both;
+}
+.cinema-court-card {
+  transform-origin: 720px 350px;
+  animation: cinema-card var(--scene-time) cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+.cinema-agent {
+  animation: cinema-agent 2s 0.4s ease both;
+}
+.cinema-emblem {
+  animation: cinema-emblem var(--scene-time) ease both;
+}
+.cinema-dice {
+  opacity: 0;
+  animation: cinema-dice var(--scene-time) ease both;
+}
+@keyframes cinema-open {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes cinema-caption-in {
+  from {
+    opacity: 0;
+    translate: 0 5px;
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+  }
+}
+@keyframes cinema-progress {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+@keyframes cinema-world {
+  0% {
+    transform: scale(1.12) translate(35px, 12px);
+  }
+  70%,
+  100% {
+    transform: scale(1) translate(0, 0);
+  }
+}
+@keyframes cinema-stars {
+  to {
+    transform: translate(-28px, 6px);
+  }
+}
+@keyframes cinema-shot {
+  0% {
+    transform: scale(0.88) translate(-30px, 8px);
+  }
+  30% {
+    transform: scale(1);
+  }
+  68% {
+    transform: scale(1.06) translate(-12px, 0);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+@keyframes cinema-approach {
+  from {
+    transform: translate(-220px, 65px);
+    opacity: 0;
+  }
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
+@keyframes cinema-defend {
+  from {
+    transform: translate(130px, -30px);
+    opacity: 0;
+  }
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
+@keyframes cinema-engine {
+  from {
+    transform: scaleX(0.75);
+    opacity: 0.35;
+  }
+  to {
+    transform: scaleX(1.2);
+    opacity: 0.75;
+  }
+}
+@keyframes cinema-bolt {
+  0% {
+    stroke-dashoffset: 100;
+    opacity: 0;
+  }
+  12% {
+    opacity: 1;
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    stroke-dashoffset: -10;
+    opacity: 0;
+  }
+}
+@keyframes cinema-shield {
+  0% {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  20% {
+    opacity: 0.65;
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.15);
+  }
+}
+@keyframes cinema-impact {
+  0% {
+    opacity: 0;
+    transform: scale(0.1);
+  }
+  15% {
+    opacity: 0.95;
+    transform: scale(0.8);
+  }
+  55% {
+    opacity: 0.6;
+    transform: scale(1.3);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.7);
+  }
+}
+@keyframes cinema-shockwave {
+  0% {
+    opacity: 0.7;
+    transform: scale(0.1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(4);
+  }
+}
+@keyframes cinema-debris {
+  0% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(250px);
+  }
+}
+@keyframes cinema-destroyed {
+  0%,
+  30% {
+    opacity: 1;
+  }
+  55%,
+  100% {
+    opacity: 0;
+    translate: 30px 35px;
+  }
+}
+@keyframes cinema-transit {
+  0% {
+    transform: translate(-350px, 50px) scale(0.8);
+  }
+  20% {
+    transform: translate(-60px, 0);
+  }
+  78% {
+    transform: translate(580px, -40px);
+  }
+  100% {
+    transform: translate(760px, -55px) scale(0.85);
+  }
+}
+@keyframes cinema-speedlines {
+  0%,
+  20%,
+  85%,
+  100% {
+    opacity: 0;
+  }
+  35%,
+  65% {
+    opacity: 1;
+    transform: translateX(-90px);
+  }
+}
+@keyframes cinema-dock {
+  0% {
+    opacity: 0;
+    transform: scale(0.3);
+  }
+  25%,
+  70% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0.15;
+    transform: scale(1.1);
+  }
+}
+@keyframes cinema-scaffold {
+  0% {
+    stroke-dashoffset: 1000;
+    opacity: 0;
+  }
+  25%,
+  65% {
+    stroke-dashoffset: 0;
+    opacity: 0.7;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+@keyframes cinema-fabricated {
+  0%,
+  15% {
+    opacity: 0;
+    translate: 0 40px;
+  }
+  65%,
+  100% {
+    opacity: 1;
+    translate: 0 0;
+  }
+}
+@keyframes cinema-weld {
+  0% {
+    opacity: 0;
+    translate: 0 110px;
+  }
+  20% {
+    opacity: 1;
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    translate: 0 -160px;
+  }
+}
+@keyframes cinema-spark {
+  0%,
+  100% {
+    opacity: 0;
+  }
+  40% {
+    opacity: 1;
+  }
+}
+@keyframes cinema-beam {
+  to {
+    stroke-dashoffset: -64;
+  }
+}
+@keyframes cinema-cargo {
+  0%,
+  15% {
+    opacity: 0;
+    translate: 0 0;
+  }
+  25% {
+    opacity: 1;
+  }
+  85% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    translate: -350px -310px;
+  }
+}
+@keyframes cinema-card {
+  0% {
+    opacity: 0;
+    transform: translateY(100px) rotate(-12deg) scale(0.7);
+  }
+  25%,
+  75% {
+    opacity: 1;
+    transform: translateY(0) rotate(0) scale(1);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(-8px) scale(0.98);
+  }
+}
+@keyframes cinema-agent {
+  from {
+    opacity: 0;
+    translate: -250px 100px;
+  }
+  to {
+    opacity: 1;
+    translate: 80px -80px;
+  }
+}
+@keyframes cinema-emblem {
+  from {
+    opacity: 0;
+  }
+  50%,
+  100% {
+    opacity: 1;
+  }
+}
+@keyframes cinema-dice {
+  0%,
+  60% {
+    opacity: 0;
+    translate: 0 20px;
+  }
+  72%,
+  100% {
+    opacity: 1;
+    translate: 0 0;
+  }
+}
+@media (max-width: 700px) {
+  .board-cinema {
+    inset: 58px 7px auto;
+    height: 64vh;
+    border-radius: 10px;
+  }
+  .cinema-heading {
+    top: 68px;
+    left: 20px;
+  }
+  .cinema-controls {
+    top: 14px;
+    right: 14px;
+  }
+  .cinema-heading h2 {
+    font-size: 28px;
+  }
+  .cinema-caption {
+    padding: 16px 20px;
+  }
+  .cinema-caption p {
+    font-size: 11px;
+  }
+  .cinema-heading > span {
+    font-size: 9px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .board-cinema {
+    display: none;
+  }
+}
+
+.cinema-battle .cinema-shot {
+  animation-name: cinema-battle-camera;
+}
+@keyframes cinema-battle-camera {
+  0% {
+    transform: scale(0.86) translate(-30px, 12px);
+  }
+  25% {
+    transform: scale(1.3) translate(95px, 12px);
+  }
+  58% {
+    transform: scale(1.28) translate(-100px, -8px);
+  }
+  78%,
+  100% {
+    transform: scale(1);
+  }
+}
+@media (max-width: 700px) {
+  .cinema-battle .cinema-shot {
+    animation-name: cinema-shot;
+  }
+}

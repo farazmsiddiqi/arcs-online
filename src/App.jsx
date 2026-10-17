@@ -1,3 +1,4 @@
+import { useCinematics, writeCinematics } from "./useCinematics.js";
 import { useAtmosphere, writeAtmosphere } from "./useAtmosphere.js";
 import CourtSlot from "./CourtSlot.jsx";
 import { shortcutFor, SHORTCUTS } from "./keyboardShortcuts.js";
@@ -158,6 +159,7 @@ const parseStart = () => {
 const initial = parseStart();
 export default function App() {
   const atmosphere = useAtmosphere();
+  const cinematics = useCinematics();
   const replaySession = useRef(null);
   const [room, setRoom] = useState(null),
     [credentials, setCredentials] = useState(initial),
@@ -2235,6 +2237,21 @@ export default function App() {
                 <p className="atmosphere-setting-note">
                   Orbital lights, world details and occasional visitors. Follows
                   your device’s reduced-motion preference.
+                </p>
+                <button
+                  className="reference-link full"
+                  aria-pressed={cinematics}
+                  onClick={() => writeCinematics(!cinematics)}
+                >
+                  {cinematics
+                    ? "Action scenes: cinematic"
+                    : "Action scenes: quick"}
+                  <span aria-hidden="true">▶</span>
+                </button>
+                <p className="atmosphere-setting-note">
+                  Fleet arrivals, battles, construction and Court actions become
+                  short scenes. Skip any scene with Esc. Timers keep running.
+                  Quick keeps effects on the board.
                 </p>
                 {room && (
                   <>

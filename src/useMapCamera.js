@@ -1,30 +1,28 @@
 import { useEffect, useRef, useState } from "react";
-const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
-const bounded = (c) => {
-  const z = clamp(c.z, 1, 4);
-  return {
-    z,
-    x: clamp(c.x, 1264 / z, 2528 - 1264 / z),
-    y: clamp(c.y, 888 / z, 1776 - 888 / z),
-  };
-};
+import { boundedCamera, frameCamera } from "./cameraFraming.js";
 export default function useMapCamera(system, centers, slots, pieces) {
-  const [camera, setCamera] = useState({ x: 1264, y: 888, z: 1 }),
-    current = useRef(camera),
+  const [camera, setCamera] = useState({ x: 1264, y: 888, z: 1 });
+  const current = useRef(camera),
+    goal = useRef(camera),
     animation = useRef(null),
     svg = useRef(null),
     pan = useRef(null),
-    suppress = useRef(false);
-  const move = (next, animated = false) => {
+    suppress = useRef(false),
+    tour = useRef(null);
+  const cancelTour = () => {
+    clearTimeout(tour.current);
+    tour.current = null;
+  };
+  const move = (next, duration = 0) => {
     cancelAnimationFrame(animation.current);
-    const target = bounded(next),
-      from = current.current;
-    const begin = performance.now();
+    const target = boundedCamera(next),
+      from = current.current,
+      begin = performance.now();
+    goal.current = target;
+    const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
     const tick = (now) => {
       const t =
-          animated && !matchMedia("(prefers-reduced-motion: reduce)").matches
-            ? Math.min(1, (now - begin) / 330)
-            : 1,
+          duration && !reduced ? Math.min(1, (now - begin) / duration) : 1,
         k = 1 - Math.pow(1 - t, 3);
       const v = {
         x: from.x + (target.x - from.x) * k,
@@ -36,92 +34,78 @@ export default function useMapCamera(system, centers, slots, pieces) {
         "viewBox",
         `${v.x - 1264 / v.z} ${v.y - 888 / v.z} ${2528 / v.z} ${1776 / v.z}`,
       );
-      if (t === 1) setCamera(v);
       if (t < 1) animation.current = requestAnimationFrame(tick);
+      else setCamera(v);
     };
     animation.current = requestAnimationFrame(tick);
   };
+  const frame = (ids, close = false, duration = 650) => {
+    const next = frameCamera(ids, centers, slots, pieces, close);
+    if (next) move(next, duration);
+  };
   const focus = (id) => {
-    if (!centers[id]) return;
-    const [x, y] = centers[id];
-    const ships = pieces.filter((p) => p.system === id && p.type === "ship");
-    // Buildings can be printed some distance from the system's fleet.
-    const points = [
-      [x, y],
-      [x, y + Math.floor(ships.length / 4) * 35],
-      ...(slots[id] ?? []),
-    ];
-    if (pieces.some((p) => p.system === id && p.cloud))
-      points.push([x + 140, y + 80]);
-    const xs = points.map((p) => p[0]),
-      ys = points.map((p) => p[1]);
-    const left = Math.min(...xs),
-      right = Math.max(...xs),
-      top = Math.min(...ys),
-      bottom = Math.max(...ys);
-    move(
-      {
-        x: (left + right) / 2,
-        y: (top + bottom) / 2,
-        z: Math.min(
-          3.5,
-          2528 / (right - left + 240),
-          1776 / (bottom - top + 240),
-        ),
-      },
-      true,
-    );
+    cancelTour();
+    frame([id], true, 650);
   };
   const frameSystems = (ids) => {
-    const points = ids.flatMap((id) =>
-      centers[id] ? [centers[id], ...(slots[id] ?? [])] : [],
-    );
-    if (!points.length) return;
-    const xs = points.map((p) => p[0]),
-      ys = points.map((p) => p[1]);
-    const left = Math.min(...xs),
-      right = Math.max(...xs),
-      top = Math.min(...ys),
-      bottom = Math.max(...ys);
-    move(
-      {
-        x: (left + right) / 2,
-        y: (top + bottom) / 2,
-        z: Math.min(
-          3.8,
-          2528 / (right - left + (ids.length === 1 ? 300 : 600)),
-          1776 / (bottom - top + (ids.length === 1 ? 240 : 500)),
-        ),
-      },
-      true,
-    );
+    cancelTour();
+    frame(ids);
   };
-  const zoom = (factor) =>
-    move({ ...current.current, z: current.current.z * factor }, true);
-  const reset = () => move({ x: 1264, y: 888, z: 1 }, true);
-  const previousSystem = useRef(system);
+  const follow = (effects) => {
+    cancelTour();
+    const ids = [
+      ...new Set(effects.flatMap((e) => [e.from, e.system]).filter(Boolean)),
+    ];
+    frame(ids, false, 650);
+    const destination = effects.find((e) => e.kind === "move")?.system;
+    if (destination && ids.length > 1)
+      tour.current = setTimeout(() => frame([destination], true, 900), 850);
+  };
+  const zoom = (factor) => {
+    cancelTour();
+    move({ ...current.current, z: goal.current.z * factor }, 280);
+  };
+  const reset = () => {
+    cancelTour();
+    move({ x: 1264, y: 888, z: 1 }, 650);
+  };
   useEffect(() => {
-    if (system) focus(system);
-    else if (previousSystem.current) reset();
-    previousSystem.current = system;
+    if (system) frame([system], true, 750);
   }, [system]);
-  useEffect(() => () => cancelAnimationFrame(animation.current), []);
+  useEffect(
+    () => () => {
+      cancelAnimationFrame(animation.current);
+      cancelTour();
+    },
+    [],
+  );
   useEffect(() => {
     const el = svg.current;
     if (!el) return;
     const wheel = (e) => {
       e.preventDefault();
+      cancelTour();
+      const matrix = el.getScreenCTM();
+      if (!matrix) return;
       const point = new DOMPoint(e.clientX, e.clientY).matrixTransform(
-          el.getScreenCTM().inverse(),
+          matrix.inverse(),
         ),
-        old = current.current,
-        z = clamp(old.z * Math.exp(-e.deltaY * 0.0015), 1, 4),
+        old = current.current;
+      const delta =
+          e.deltaY * (e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? 500 : 1),
+        z = Math.max(
+          1,
+          Math.min(4, goal.current.z * Math.exp(-delta * 0.0015)),
+        ),
         ratio = old.z / z;
-      move({
-        z,
-        x: point.x + (old.x - point.x) * ratio,
-        y: point.y + (old.y - point.y) * ratio,
-      });
+      move(
+        {
+          z,
+          x: point.x + (old.x - point.x) * ratio,
+          y: point.y + (old.y - point.y) * ratio,
+        },
+        150,
+      );
     };
     el.addEventListener("wheel", wheel, { passive: false });
     return () => el.removeEventListener("wheel", wheel);
@@ -130,8 +114,10 @@ export default function useMapCamera(system, centers, slots, pieces) {
     onPointerDown: (e) => {
       if (e.button !== 1 && e.target.closest("[data-system]")) return;
       if (current.current.z <= 1) return;
-      const matrix = svg.current.getScreenCTM().inverse();
-      const p = new DOMPoint(e.clientX, e.clientY).matrixTransform(matrix);
+      cancelTour();
+      cancelAnimationFrame(animation.current);
+      const matrix = svg.current.getScreenCTM().inverse(),
+        p = new DOMPoint(e.clientX, e.clientY).matrixTransform(matrix);
       pan.current = {
         p,
         matrix,
@@ -172,6 +158,8 @@ export default function useMapCamera(system, centers, slots, pieces) {
     reset,
     focus,
     frameSystems,
+    follow,
+    cancelTour,
     viewBox: `${camera.x - 1264 / camera.z} ${camera.y - 888 / camera.z} ${2528 / camera.z} ${1776 / camera.z}`,
   };
 }

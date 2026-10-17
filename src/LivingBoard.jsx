@@ -103,6 +103,44 @@ function LivingBoard({ clusters, overrides, enabled, quiet, selected }) {
               "--world-phase": `${world.phase}s`,
             }}
           >
+            {world.kind !== "gate" && (
+              <g className="planet-weather">
+                <defs>
+                  <radialGradient id={`${clip}-${world.id}-corona`}>
+                    <stop
+                      offset=".55"
+                      stopColor={world.color}
+                      stopOpacity="0"
+                    />
+                    <stop
+                      offset=".82"
+                      stopColor={world.color}
+                      stopOpacity=".06"
+                    />
+                    <stop
+                      offset=".94"
+                      stopColor={world.color}
+                      stopOpacity=".38"
+                    />
+                    <stop offset="1" stopColor={world.color} stopOpacity="0" />
+                  </radialGradient>
+                </defs>
+                <ellipse
+                  className="planet-corona"
+                  rx="138"
+                  ry="116"
+                  style={{ fill: `url(#${clip}-${world.id}-corona)` }}
+                />
+                <g className="planet-cloud-bands">
+                  <path d="M-90 -26 Q-38 -66 25 -36 T104 -31 M-104 20Q-30 -12 40 20T100 18" />
+                  <path d="M-74 57Q-14 32 62 51" />
+                </g>
+                <path
+                  className="planet-sunrise"
+                  d="M-116 22A118 108 0 0 1 -30 -103"
+                />
+              </g>
+            )}
             <ellipse
               className="world-halo"
               rx={world.kind === "gate" ? 48 : 98}
@@ -122,7 +160,22 @@ function LivingBoard({ clusters, overrides, enabled, quiet, selected }) {
                 </g>
                 {world.kind === "material" && (
                   <g className="foundry-beacons">
-                    <path d="M-43 40h86 M-30 40v-19h16v19 M-5 40V9h17v31 M24 40V23h13v17" />
+                    {[
+                      [-42, 23],
+                      [-24, 32],
+                      [13, 44],
+                      [34, 20],
+                      [-9, -30],
+                      [47, -8],
+                    ].map(([x, y], i) => (
+                      <circle
+                        key={i}
+                        cx={x}
+                        cy={y}
+                        r={i % 2 ? 2 : 3}
+                        style={{ animationDelay: `${world.phase + i * 0.9}s` }}
+                      />
+                    ))}
                     <circle cx="3" cy="5" r="3" />
                     <circle cx="-22" cy="17" r="2" />
                   </g>
@@ -148,9 +201,9 @@ function LivingBoard({ clusters, overrides, enabled, quiet, selected }) {
                 )}
                 {world.kind === "psionic" && (
                   <g className="psionic-tides">
-                    <ellipse rx="64" ry="19" transform="rotate(-30)" />
-                    <ellipse rx="64" ry="19" transform="rotate(30)" />
-                    <ellipse rx="23" ry="54" />
+                    <path d="M-88 50C-70 -80 5 70 42 -60S85 -20 98 -50" />
+                    <path d="M-77 55C-52 -63 16 78 54 -50S95 -8 108 -38" />
+                    <path d="M-64 59C-34 -45 30 84 66 -36S104 6 116 -20" />
                   </g>
                 )}
               </>

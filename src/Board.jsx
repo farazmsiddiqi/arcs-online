@@ -1,3 +1,4 @@
+import BoardCinema from "./BoardCinema.jsx";
 import LivingBoard from "./LivingBoard.jsx";
 import { useAtmosphere } from "./useAtmosphere.js";
 import { piecePoint } from "./pieceMotion.js";
@@ -23,24 +24,26 @@ export default function Board({
   ambient = true,
 }) {
   const atmosphere = useAtmosphere() && ambient;
+  const [followActions, setFollowActions] = useState(
+    () => localStorage.getItem("arcs-follow-actions") !== "off",
+  );
   const camera = useMapCamera(
-    game.battleContext?.system,
+    followActions ? game.battleContext?.system : null,
     CENTERS,
     slotCoords,
     game.pieces,
   );
-  const [followActions, setFollowActions] = useState(
-    () => localStorage.getItem("arcs-follow-actions") !== "off",
-  );
   useEffect(() => {
-    if (!followActions || !actionEffects.length) return;
+    if (!followActions) {
+      camera.cancelTour();
+      return;
+    }
+    if (!actionEffects.length) return;
     const lastBatch = actionEffects.at(-1).id.split("-")[0];
     const recent = actionEffects.filter(
       (e) => e.id.split("-")[0] === lastBatch,
     );
-    camera.frameSystems([
-      ...new Set(recent.flatMap((e) => [e.system, e.from]).filter(Boolean)),
-    ]);
+    camera.follow(recent);
   }, [actionEffects.at(-1)?.id, followActions]);
   const pieceActions = new Map(
     (interactive && game.decision?.actor === game.me
@@ -163,6 +166,7 @@ export default function Board({
       data-atmosphere={atmosphere && !game._replay ? "on" : "off"}
       data-zoom={camera.camera.z.toFixed(2)}
     >
+      <BoardCinema game={game} enabled={ambient} />
       <div className="map-camera-controls" aria-label="Map camera">
         <button
           aria-label="Follow action camera"

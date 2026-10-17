@@ -1,0 +1,11 @@
+# Cinematic actions and camera
+
+Cinematic mode turns recorded public outcomes into short, skippable scenes above the table. Battles establish the fleets, stage volleys, and reveal the exact rolled dice. Damage and destruction are separate scenes emitted only for those recorded outcomes. Movement, construction, repair, taxation, raids, Court influence/securing, declarations and scoring have their own presentations. The source material remains the illustrated board, real card art and player pieces.
+
+Scenes last 2.6–4.4 seconds. Skip scene or Escape dismisses immediately; Quick effects switches back to the on-board effects. The persistent setting is also in Table settings. Game clocks and the server keep running. No game commands are issued by the cinematic renderer. A newer action replaces an older scene rather than accumulating a playback backlog. Scenes are disabled for personal replay, initial snapshots, reconnect catch-up, actual undo, background tabs, other open dialogs, and reduced-motion preferences. Sound accents use the existing mute/volume controls.
+
+Camera wheel zoom eases toward the pointer and accumulates fast scroll input. Following a movement first frames the origin and destination, then travels to the arrival. Framing includes fleet rows, building slots and cloud buildings. Manual pan/zoom cancels pending camera travel. Disabling Follow actions also stops automatic battle framing. Camera frames update the SVG directly, without per-frame React renders.
+
+Planets use coronas, cloud bands, directional rim light, staggered surface lights and flowing auroras. The previous atom-like psionic diagram and foundry outline were removed. Lead cards no longer have an opaque zero disc obscuring their artwork: a named ambition-declaration label explains the rank change while keeping printed action pips clear.
+
+Validation: 721 tests passed (including outcome accuracy, no private-hand fields, no state mutation, empty tax results, replay/undo/reconnect suppression, and framing every system). Browser rehearsals exercise the actual renderer with isolated synthetic public outcomes; integration checks use a disposable local table. No rules or persistent-storage schema changes.

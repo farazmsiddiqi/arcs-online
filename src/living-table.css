@@ -519,3 +519,69 @@
     translate: 0 -5px;
   }
 }
+
+.planet-weather .planet-corona {
+  stroke: none;
+  animation: planet-air 12s ease-in-out infinite;
+  animation-delay: var(--world-phase);
+}
+.planet-cloud-bands {
+  opacity: 0.18;
+  animation: planet-clouds 18s ease-in-out infinite alternate;
+  animation-delay: var(--world-phase);
+}
+.planet-cloud-bands path {
+  stroke-width: 7;
+  stroke-linecap: round;
+}
+.planet-weather .planet-sunrise {
+  stroke-width: 3;
+  opacity: 0.4;
+  stroke-linecap: round;
+}
+.world-psionic .psionic-tides path {
+  stroke-width: 4;
+  stroke-opacity: 0.45;
+}
+.world-psionic .psionic-tides path:nth-child(2) {
+  stroke-width: 9;
+  stroke-opacity: 0.12;
+}
+@keyframes planet-air {
+  0%,
+  100% {
+    opacity: 0.4;
+  }
+  50% {
+    opacity: 0.9;
+  }
+}
+@keyframes planet-clouds {
+  from {
+    transform: translate(-9px, 2px) rotate(-5deg);
+  }
+  to {
+    transform: translate(9px, -3px) rotate(5deg);
+  }
+}
+
+.app .round-seat > div > .lead-declaration {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: #d6c198;
+  font-size: 10px;
+  font-weight: 500;
+  line-height: 1.35;
+  white-space: normal;
+}
+.app .lead-declaration img {
+  width: 15px;
+  height: 15px;
+  object-fit: contain;
+}
+.app .lead-declaration:focus-visible {
+  outline: 1px solid #d6c198;
+  outline-offset: 2px;
+  border-radius: 3px;
+}

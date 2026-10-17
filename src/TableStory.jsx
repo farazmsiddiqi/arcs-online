@@ -41,6 +41,10 @@ export function RoundStory({ game, onInspect, onPlayer }) {
           const played = (game.played ?? []).find((c) => c.player === p),
             isLead = lead?.player === p;
           const id = isLead ? lead.id : played?.card;
+          const declaration =
+            isLead &&
+            ([...declarations].reverse().find((d) => d.zero) ??
+              declarations.find((d) => d.player === p));
           return (
             <div
               key={p}
@@ -73,7 +77,6 @@ export function RoundStory({ game, onInspect, onPlayer }) {
                         : "Not played"}
                   </span>
                 )}
-                {isLead && lead.rank === 0 && <b className="zero-marker">0</b>}
               </button>
               <div>
                 <strong>
@@ -103,6 +106,20 @@ export function RoundStory({ game, onInspect, onPlayer }) {
                     </>
                   )}
                 </span>
+                {isLead && lead.rank === 0 && (
+                  <span
+                    className="lead-declaration"
+                    title="Declaring an ambition makes the lead rank 0. The card’s printed action pips are unchanged."
+                    tabIndex={0}
+                    aria-label={`${declaration ? cap(declaration.ambition) : "Ambition"} declared. Lead rank is zero; printed action pips are unchanged.`}
+                  >
+                    {declaration && (
+                      <AmbitionIcon ambition={declaration.ambition} />
+                    )}
+                    {declaration ? cap(declaration.ambition) : "Ambition"}{" "}
+                    declared
+                  </span>
+                )}
                 <div
                   className="round-player-power"
                   style={{ "--player": game.players[p].color }}
