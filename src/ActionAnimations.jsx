@@ -59,12 +59,6 @@ export function useActionAnimations(game, tableId, scopeRef, audible = true) {
           "damage",
         ].includes(c.kind),
       )
-      .filter(
-        (c) =>
-          !["damage", "remove"].includes(c.kind) ||
-          game._replay?.direction < 0 ||
-          !fresh.some((e) => e.effect?.system === c.system),
-      )
       .map((c, i) => {
         const source = c.kind === "remove" ? before.game : game;
         const piece = source.pieces.find((p) => p.id === c.piece);
@@ -73,6 +67,11 @@ export function useActionAnimations(game, tableId, scopeRef, audible = true) {
           ...c,
           point,
           reverse: game._replay?.direction < 0,
+          draw: !(
+            ["damage", "remove"].includes(c.kind) &&
+            !(game._replay?.direction < 0) &&
+            fresh.some((e) => e.effect?.system === c.system)
+          ),
           id: `${batch}-${i}`,
           expires: now + 1700,
         };
@@ -198,7 +197,7 @@ export function MapActionEffects({ effects }) {
   return (
     <g className="map-action-effects" pointerEvents="none" aria-hidden="true">
       {effects
-        .filter((e) => e.point && e.kind !== "move")
+        .filter((e) => e.point && e.kind !== "move" && e.draw !== false)
         .map((e) => {
           const piece =
             e.pieceType &&

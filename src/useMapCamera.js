@@ -84,9 +84,9 @@ export default function useMapCamera(system, centers, slots, pieces) {
         x: (left + right) / 2,
         y: (top + bottom) / 2,
         z: Math.min(
-          3,
-          2528 / (right - left + 600),
-          1776 / (bottom - top + 500),
+          3.8,
+          2528 / (right - left + (ids.length === 1 ? 300 : 600)),
+          1776 / (bottom - top + (ids.length === 1 ? 240 : 500)),
         ),
       },
       true,
