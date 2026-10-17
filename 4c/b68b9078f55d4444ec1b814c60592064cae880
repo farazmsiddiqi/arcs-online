@@ -1,0 +1,39 @@
+docs/living-board.md
+  s_dc116501f82d39::t_bc930445ab096a 1-9
+src/App.jsx
+  s_dc116501f82d39::t_1c5f0f7ce73423 1,160,1017,2225-2238
+src/Board.jsx
+  s_dc116501f82d39::t_15ab000b885609 1-2,23,25,161-165,248-254,352-379,384
+src/Cards.jsx
+  s_dc116501f82d39::t_7da78f33d6cf90 1,6,11,35,40
+src/LivingBoard.jsx
+  s_dc116501f82d39::t_3961847b612462 1-193
+src/boardAtmosphere.js
+  s_dc116501f82d39::t_e1d67c0955884b 1-50
+src/living-table.css
+  s_dc116501f82d39::t_6c93a8d10ffe32 1-521
+src/main.jsx
+  s_dc116501f82d39::t_95b49ece1dec10 24-25
+src/useAtmosphere.js
+  s_dc116501f82d39::t_6b397ca5301f4b 1-19
+src/useCardTilt.js
+  s_dc116501f82d39::t_96a70bc7146851 1-45
+tests/board-atmosphere.test.js
+  s_dc116501f82d39::t_9193ad891afb3f 1-60
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "4cb68b9078f55d4444ec1b814c60592064cae880",
+  "prompts": {},
+  "sessions": {
+    "s_dc116501f82d39": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0feb0-6bcc-7a61-b57d-5b785a6c2cc5",
+        "model": "gpt-6-astra"
+      },
+      "human_author": "farazmsiddiqi <70923196+farazmsiddiqi@users.noreply.github.com>"
+    }
+  }
+}
