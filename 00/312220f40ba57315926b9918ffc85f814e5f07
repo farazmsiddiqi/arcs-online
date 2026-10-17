@@ -1,0 +1,37 @@
+game/engine.js
+  s_dc116501f82d39::t_4c028b86cb1fc6 1893-1902,2131-2142
+server/history.js
+  s_dc116501f82d39::t_9dcca3a1144078 7-8
+src/App.jsx
+  s_dc116501f82d39::t_fcc3e2babed3e7 1,1048-1050,1053,1055-1064
+src/CommandPanel.jsx
+  s_dc116501f82d39::t_7889d040aec6bf 166-168,588,595-597
+src/CourtSlot.jsx
+  s_dc116501f82d39::t_bcb68af6873c76 1-87
+src/court-actions.css
+  s_dc116501f82d39::t_ba92eea74c2ad9 1-131
+src/courtActions.js
+  s_dc116501f82d39::t_bab4f3a081f8d4 1-13
+src/decisionGuide.js
+  s_dc116501f82d39::t_bd84dc3ed8eb2c 151-154
+tests/decision-guide.test.js
+  s_dc116501f82d39::t_0957f85bcaef10 21
+tests/elder-influence.test.js
+  s_dc116501f82d39::t_68a8e58e26a395 1-157
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "00312220f40ba57315926b9918ffc85f814e5f07",
+  "prompts": {},
+  "sessions": {
+    "s_dc116501f82d39": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0feb0-6bcc-7a61-b57d-5b785a6c2cc5",
+        "model": "gpt-6-astra"
+      },
+      "human_author": "farazmsiddiqi <70923196+farazmsiddiqi@users.noreply.github.com>"
+    }
+  }
+}
