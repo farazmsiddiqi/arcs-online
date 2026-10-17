@@ -1,0 +1,68 @@
+server/arcy-corpus.js
+  s_dc116501f82d39::t_f97886ae28165e 1-23,25-82,84-96
+  s_dc116501f82d39::t_587074ff11ff9f 24,83
+  s_dc116501f82d39::t_ea9360bc68cd4c 97-185
+tests/arcy.test.js
+  s_dc116501f82d39::t_3ee50c11cec5b0 174-176
+  s_dc116501f82d39::t_3e77ebfb4c7868 1-173,177-451
+  s_dc116501f82d39::t_51f2bb151cfca5 452-454
+docs/arcy-referee.md
+  s_dc116501f82d39::t_3ee50c11cec5b0 1-33
+server/chat.js
+  s_dc116501f82d39::t_06f59a10aac5c8 1-11,13-20,22-25,27-105
+  s_dc116501f82d39::t_e8094244d92f2f 12,21,26
+  s_dc116501f82d39::t_e1b798ba8e1bfa 106-246
+src/App.jsx
+  s_dc116501f82d39::t_e8094244d92f2f 2,728
+  s_dc116501f82d39::t_6a619a7164abab 729-736
+server/arcy.js
+  s_dc116501f82d39::t_4736e0baa5e432 1-109
+  s_dc116501f82d39::t_3c1ed09e4d695d 110-269
+src/table-chat.css
+  s_dc116501f82d39::t_e8094244d92f2f 1-25
+  s_dc116501f82d39::t_49d181719010fd 26-462
+scripts/arcy-eval.mjs
+  s_dc116501f82d39::t_3e77ebfb4c7868 1-172
+THIRD_PARTY_NOTICES.md
+  s_dc116501f82d39::t_3ee50c11cec5b0 9
+server/index.js
+  s_dc116501f82d39::t_3e77ebfb4c7868 143,146-151,154-157,159-161,163-164
+  s_dc116501f82d39::t_06f59a10aac5c8 12,131,142,144-145,152-153,158,162,165-166
+src/TableChat.jsx
+  s_dc116501f82d39::t_e8094244d92f2f 1-129
+  s_dc116501f82d39::t_6bb668e5520165 130-490
+server/arcy-context.js
+  s_dc116501f82d39::t_3e77ebfb4c7868 1-2,7-12,14-26,29-32,34-59,61-68,70-106,108-116,120-124
+  s_dc116501f82d39::t_3ee50c11cec5b0 60
+  s_dc116501f82d39::t_f97886ae28165e 3-6,13,27-28,33,69,107,117-119,125
+.env.example
+  s_dc116501f82d39::t_8aa4297bc0edba 1-8
+README.md
+  s_dc116501f82d39::t_2d4501abd0e0b7 23-36
+data/arcy-rules.json
+  s_dc116501f82d39::t_e28f34cdd699b1 1-1688
+package-lock.json
+  s_dc116501f82d39::t_d27ff54ad6aafd 19
+package.json
+  s_dc116501f82d39::t_c2f2a6b679283c 44
+scripts/sync-arcy-rules.mjs
+  s_dc116501f82d39::t_72d9fc6d37be4d 1-87
+tests/chat-server.test.js
+  s_dc116501f82d39::t_1921cfde6f8a55 1-156
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "3aded660bd6d2550c7aea113bd9a92daed552596",
+  "prompts": {},
+  "sessions": {
+    "s_dc116501f82d39": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0feb0-6bcc-7a61-b57d-5b785a6c2cc5",
+        "model": "gpt-6-astra"
+      },
+      "human_author": "farazmsiddiqi <70923196+farazmsiddiqi@users.noreply.github.com>"
+    }
+  }
+}
