@@ -44,6 +44,7 @@ export function RoundStory({ game, onInspect, onPlayer }) {
           return (
             <div
               key={p}
+              data-player-area={p}
               className={`round-seat ${isLead ? "is-lead" : ""} ${played && !isLead ? "played-response" : ""}`}
             >
               <button

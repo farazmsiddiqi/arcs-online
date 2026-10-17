@@ -79,6 +79,7 @@ export default function PlayerTable({
     handSize = Array.isArray(me.hand) ? me.hand.length : (me.hand ?? 0);
   return (
     <section
+      data-player-area={playerId}
       className={`hand-tray player-table ${readOnly ? "public-player-table" : ""}`}
       aria-label={readOnly ? `${me.name}’s play area` : "Your player board"}
       style={{ "--player-color": me.color }}

@@ -19,3 +19,5 @@ import "./shared-board.css";
 import "./laptop-fit.css";
 
 import "./inspection.css";
+
+import "./action-animations.css";

@@ -6,6 +6,12 @@ export default function CombatEffects({ game, centers, slots }) {
     [effects, setEffects] = useState([]);
   useEffect(() => () => clearTimeout(timer.current), []);
   useEffect(() => {
+    if (game.log?.at(-1)?.history) {
+      seen.current = game.log.at(-1).id;
+      prior.current = game.pieces;
+      setEffects([]);
+      return;
+    }
     const fresh = (game.log ?? []).filter(
       (e) => e.id > seen.current && e.effect?.system,
     );
@@ -32,15 +38,23 @@ export default function CombatEffects({ game, centers, slots }) {
             .findIndex((p) => p.id === piece.id);
           [x, y] = slots[piece.system]?.[i] ?? center;
         }
-        return { ...effect, id: e.id, x, y };
+        return { ...effect, id: e.id, x, y, expires: Date.now() + 1500 };
       })
       .filter(Boolean);
     prior.current = game.pieces;
     if (!next.length) return;
-    clearTimeout(timer.current);
-    setEffects(next);
-    timer.current = setTimeout(() => setEffects([]), 1500);
+    setEffects((old) =>
+      [...old.filter((e) => e.expires > Date.now()), ...next].slice(-40),
+    );
   }, [game.revision]);
+  useEffect(() => {
+    if (!effects.length) return;
+    timer.current = setTimeout(
+      () => setEffects((old) => old.filter((e) => e.expires > Date.now())),
+      Math.max(0, Math.min(...effects.map((e) => e.expires)) - Date.now()),
+    );
+    return () => clearTimeout(timer.current);
+  }, [effects]);
   return (
     <g className="combat-effects" pointerEvents="none" aria-hidden="true">
       {effects.map((e) => (

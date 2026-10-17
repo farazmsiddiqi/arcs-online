@@ -1,3 +1,4 @@
+import { MapActionEffects } from "./ActionAnimations.jsx";
 import useMapCamera from "./useMapCamera.js";
 import { ZoomIn, ZoomOut, Scan, Focus } from "lucide-react";
 import CombatEffects from "./CombatEffects.jsx";
@@ -8,6 +9,7 @@ export const sprite = (owner, type, damaged = false) =>
   `/assets/${["r", "y", "b", "w"][owner]}-${type}${damaged ? "-damaged" : ""}.webp`;
 export default function Board({
   game,
+  actionEffects = [],
   selected,
   onSelect,
   selectedPieces = [],
@@ -61,28 +63,52 @@ export default function Board({
       : [],
   );
   const [hovered, setHovered] = useState(null);
-  const [flight, setFlight] = useState(null);
+  const [flight, setFlight] = useState([]);
   const previous = useRef(game.pieces);
   const flightTimer = useRef(null);
   useEffect(() => () => clearTimeout(flightTimer.current), []);
   useEffect(() => {
-    const moves = game.pieces
-      .filter((p) => {
-        const old = previous.current.find((o) => o.id === p.id);
-        return p.type === "ship" && old && old.system !== p.system;
-      })
-      .map((p) => ({
-        id: p.id,
-        owner: p.owner,
-        from: previous.current.find((o) => o.id === p.id).system,
-        to: p.system,
-      }));
+    const moves = game.log?.at(-1)?.history
+      ? []
+      : game.pieces
+          .filter((p) => {
+            const old = previous.current.find((o) => o.id === p.id);
+            return p.type === "ship" && old && old.system !== p.system;
+          })
+          .map((p) => ({
+            id: p.id,
+            owner: p.owner,
+            from: previous.current.find((o) => o.id === p.id).system,
+            to: p.system,
+          }));
     previous.current = game.pieces;
-    if (!moves.length) return;
-    clearTimeout(flightTimer.current);
-    setFlight(moves);
-    flightTimer.current = setTimeout(() => setFlight(null), 850);
+    if (game.log?.at(-1)?.history) setFlight([]);
+    if (
+      !moves.length ||
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    )
+      return;
+    const now = Date.now();
+    setFlight((old) => [
+      ...old.filter(
+        (m) => m.expires > now && !moves.some((n) => n.id === m.id),
+      ),
+      ...moves.map((m) => ({
+        ...m,
+        key: `${game.revision}-${m.id}`,
+        expires: now + 850,
+      })),
+    ]);
   }, [game.revision]);
+  useEffect(() => {
+    if (!flight.length) return;
+    flightTimer.current = setTimeout(
+      () => setFlight((old) => old.filter((m) => m.expires > Date.now())),
+      Math.max(0, Math.min(...flight.map((m) => m.expires)) - Date.now()),
+    );
+    return () => clearTimeout(flightTimer.current);
+  }, [flight]);
+
   const route =
     hovered && game.interaction?.origin
       ? {
@@ -465,11 +491,11 @@ export default function Board({
           (m, i) =>
             CENTERS[m.from] &&
             CENTERS[m.to] && (
-              <g key={m.id} pointerEvents="none" className="flying-ship">
+              <g key={m.key} pointerEvents="none" className="flying-ship">
                 <animateMotion
                   dur=".8s"
                   fill="freeze"
-                  path={`M${CENTERS[m.from].join(" ")} Q1264 888 ${CENTERS[m.to].join(" ")}`}
+                  path={`M${CENTERS[m.from].join(" ")} Q${(CENTERS[m.from][0] + CENTERS[m.to][0]) / 2} ${(CENTERS[m.from][1] + CENTERS[m.to][1]) / 2 - 75} ${CENTERS[m.to].join(" ")}`}
                 />
                 <image
                   href={sprite(m.owner, "ship")}
@@ -481,6 +507,7 @@ export default function Board({
               </g>
             ),
         )}
+        <MapActionEffects effects={actionEffects} />
         <CombatEffects game={game} centers={CENTERS} slots={slotCoords} />
         {mv && (
           <g

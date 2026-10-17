@@ -122,6 +122,7 @@ export function travelHistory(room, p, direction) {
   log(
     restored,
     `${restored.players[p].name} ${undo ? "undid" : "redid"} their previous decision.`,
+    { history: direction },
   );
   h.cursor += undo ? -1 : 1;
   room.game = restored;

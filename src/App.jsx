@@ -1,3 +1,5 @@
+import ResourceDetails from "./ResourceDetails.jsx";
+import { useActionAnimations, ActionActivity } from "./ActionAnimations.jsx";
 import SystemDetails from "./SystemDetails.jsx";
 import { requestJSON, subscribeRoom } from "./connection.js";
 import PlayChoices from "./PlayChoices.jsx";
@@ -259,6 +261,7 @@ export default function App() {
   const game = room?.game ?? demo,
     me = game.players[game.me ?? 0],
     live = !!room?.game;
+  const actionAnimations = useActionAnimations(game, room?.id);
   const preferredDockHeight = dockHeight ?? autoDockHeight;
   // A draft pick passes play immediately. Keep its review and confirmation
   // visible even when the player previously shortened the action area, then
@@ -807,13 +810,16 @@ export default function App() {
                     ),
                   );
                   return (
-                    <span
+                    <button
                       key={r}
+                      data-supply-resource={r}
+                      aria-label={`Explain ${cap(r)} · ${game.supply[r]} in supply`}
+                      onClick={() => setModal(`resource:${r}`)}
                       title={`${cap(r)}: ${game.supply[r]} in supply${cartel ? ` · held by ${cartel.name}'s Cartel` : ""}`}
                     >
                       <img src={`/assets/${r}.webp`} alt={cap(r)} />
                       <b>{game.supply[r]}</b>
-                    </span>
+                    </button>
                   );
                 })}
               </div>
@@ -833,6 +839,10 @@ export default function App() {
               </button>
             </div>
           </div>
+          <ActionActivity
+            activity={actionAnimations.activity}
+            onHistory={() => setModal("journal")}
+          />
           {game.phase === "draft" && game.draft ? (
             <div className="draft-board">
               <p>
@@ -924,6 +934,7 @@ export default function App() {
             </div>
           ) : (
             <Board
+              actionEffects={actionAnimations.effects}
               key={live ? room.id : "preview"}
               game={game}
               selected={selected}
@@ -959,7 +970,11 @@ export default function App() {
             </div>
             <div className="court-row">
               {game.court.map((c, index) => (
-                <div className="court-slot" key={`${index}-${c.id}`}>
+                <div
+                  className="court-slot"
+                  data-court-slot={index}
+                  key={`${index}-${c.id}`}
+                >
                   {c.id ? (
                     <>
                       <Card
@@ -1176,7 +1191,7 @@ export default function App() {
               if (layer === "modal")
                 modalScroll.current = e.currentTarget.scrollTop;
             }}
-            className={`modal ${!detail && playerDetail !== null ? "player-area-modal" : ""} ${!detail && playerDetail === null && modal === "system" ? "system-details-modal" : ""} ${modal === "library" ? "library-modal" : modal === "dice-guide" ? "dice-guide-modal" : ""} ${detail ? "card-modal" : ""}`}
+            className={`modal ${modal?.startsWith("resource:") ? "resource-guide-modal" : ""} ${!detail && playerDetail !== null ? "player-area-modal" : ""} ${!detail && playerDetail === null && modal === "system" ? "system-details-modal" : ""} ${modal === "library" ? "library-modal" : modal === "dice-guide" ? "dice-guide-modal" : ""} ${detail ? "card-modal" : ""}`}
             role="dialog"
             aria-modal="true"
             aria-label={
@@ -1799,6 +1814,12 @@ export default function App() {
                   bonuses apply only to an outright first place.
                 </p>
               </>
+            ) : modal?.startsWith("resource:") ? (
+              <ResourceDetails
+                resource={modal.split(":")[1]}
+                game={game}
+                onSelect={(r) => setModal(`resource:${r}`)}
+              />
             ) : modal === "dice-guide" ? (
               <BattleGuide game={game} dice={battleDice} />
             ) : modal === "battle" ? (

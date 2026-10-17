@@ -2496,6 +2496,7 @@ function taxGain(s, p, piece, r, cost, repeat = false) {
   log(
     s,
     `${s.players[p].name} taxes ${sysName(piece.system)} for ${r ?? "no resource"}.`,
+    { animation: { kind: "tax", system: piece.system, owner: p, resource: r } },
   );
   const tasks = [];
   if (
