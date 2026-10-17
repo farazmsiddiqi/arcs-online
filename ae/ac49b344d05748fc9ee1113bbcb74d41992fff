@@ -1,0 +1,27 @@
+server/index.js
+  s_dc116501f82d39::t_874f4f29dcfe46 379-386,388-390
+src/CommandPanel.jsx
+  s_dc116501f82d39::t_40f4198a82c034 12-13,531-546
+src/confirmStep.js
+  s_dc116501f82d39::t_c342a9c8467c2a 2,15,30-44
+src/table-ux.css
+  s_dc116501f82d39::t_72b6262be626c0 1523-1545
+tests/confirm-step.test.js
+  s_dc116501f82d39::t_3077561de032a8 128-163
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "aeac49b344d05748fc9ee1113bbcb74d41992fff",
+  "prompts": {},
+  "sessions": {
+    "s_dc116501f82d39": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0feb0-6bcc-7a61-b57d-5b785a6c2cc5",
+        "model": "gpt-6-astra"
+      },
+      "human_author": "farazmsiddiqi <70923196+farazmsiddiqi@users.noreply.github.com>"
+    }
+  }
+}
