@@ -92,5 +92,29 @@ export function createReplayStore(db) {
       .get(id, revision);
     return row ? JSON.parse(gunzipSync(row.snapshot)) : null;
   }
-  return { record, summary, frame };
+  function positions(id, revisions) {
+    return db
+      .prepare(
+        `SELECT revision,snapshot FROM replay_frames WHERE room=? AND revision IN (${revisions.map(() => "?").join(",")}) ORDER BY revision`,
+      )
+      .all(id, ...revisions)
+      .map((row) => ({
+        revision: row.revision,
+        game: JSON.parse(gunzipSync(row.snapshot)),
+      }));
+  }
+  function recent(id) {
+    const rows = db
+      .prepare(
+        "SELECT revision,snapshot FROM replay_frames WHERE room=? ORDER BY revision DESC LIMIT 24",
+      )
+      .all(id);
+    return rows
+      .reverse()
+      .map((row) => ({
+        revision: row.revision,
+        game: JSON.parse(gunzipSync(row.snapshot)),
+      }));
+  }
+  return { record, summary, frame, positions, recent };
 }

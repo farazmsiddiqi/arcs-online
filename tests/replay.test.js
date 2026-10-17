@@ -98,6 +98,16 @@ test("replay cursors paginate, and real undo appends instead of overwriting hist
     assert.equal(page.frames.length, 500);
     assert.equal(page.nextAfter, 499);
     assert.equal(store.summary("x", page.nextAfter).frames.length, 5);
+    assert.deepEqual(
+      store.positions("x", [504, 1, 80]).map((p) => p.revision),
+      [1, 80, 504],
+    );
+    assert.deepEqual(store.positions("other", [1, 80]), []);
+    const recent = store.recent("x");
+    assert.equal(recent.length, 24);
+    assert.equal(recent[0].revision, 481);
+    assert.equal(recent.at(-1).revision, 504);
+    assert.deepEqual(recent.at(-1).game, store.frame("x", 504));
     const undo = fixture();
     undo.revision = 505;
     undo.log.push({ id: 1, text: "A undid a decision", history: true });

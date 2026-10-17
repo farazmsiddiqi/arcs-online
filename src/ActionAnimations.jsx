@@ -18,6 +18,10 @@ export function useActionAnimations(game, tableId, scopeRef, audible = true) {
   const transfers = useRef([]);
   useEffect(() => () => transfers.current.forEach((stop) => stop()), []);
   useEffect(() => {
+    if (game._replay) {
+      transfers.current.forEach((stop) => stop());
+      transfers.current = [];
+    }
     const before = previous.current;
     previous.current = { game, tableId };
     if (!audible && !game._replay) {
@@ -77,7 +81,10 @@ export function useActionAnimations(game, tableId, scopeRef, audible = true) {
         };
       });
     setEffects((old) =>
-      [...old.filter((e) => e.expires > now), ...spatial].slice(-32),
+      [
+        ...(game._replay ? [] : old.filter((e) => e.expires > now)),
+        ...spatial,
+      ].slice(-32),
     );
     const tokens = changes
       .filter((c) => c.kind === "resource" || c.kind === "power")

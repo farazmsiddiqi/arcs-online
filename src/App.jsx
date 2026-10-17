@@ -156,6 +156,7 @@ const parseStart = () => {
 };
 const initial = parseStart();
 export default function App() {
+  const replaySession = useRef(null);
   const [room, setRoom] = useState(null),
     [credentials, setCredentials] = useState(initial),
     [selected, setSelected] = useState(null),
@@ -2070,6 +2071,7 @@ export default function App() {
               </>
             ) : modal === "replay" ? (
               <ReplayViewer
+                sessionRef={replaySession}
                 room={room}
                 request={request}
                 onClose={() => setModal(null)}

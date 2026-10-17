@@ -32,7 +32,11 @@ export default function useMapCamera(system, centers, slots, pieces) {
         z: from.z + (target.z - from.z) * k,
       };
       current.current = v;
-      setCamera(v);
+      svg.current?.setAttribute(
+        "viewBox",
+        `${v.x - 1264 / v.z} ${v.y - 888 / v.z} ${2528 / v.z} ${1776 / v.z}`,
+      );
+      if (t === 1) setCamera(v);
       if (t < 1) animation.current = requestAnimationFrame(tick);
     };
     animation.current = requestAnimationFrame(tick);

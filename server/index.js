@@ -1,3 +1,5 @@
+import { gzip } from "node:zlib";
+import { promisify } from "node:util";
 import { createReplayStore } from "./replay.js";
 import express from "express";
 import { WebSocketServer } from "ws";
@@ -167,21 +169,61 @@ function broadcast(id) {
     if (c.ws.readyState === 1) c.ws.send(JSON.stringify(publicRoom(row, c.p)));
 }
 const chat = createChatService(db, { load, broadcast });
-app.get("/api/rooms/:id/replay", (req, res) => {
-  const row = load(req.params.id);
-  auth(row, getKey(req));
+// Replay authorization needs seat hashes, not the full game and Undo snapshots.
+const replaySeats = db.prepare(
+  "SELECT id,json_extract(data, '$.seats') AS seats FROM rooms WHERE id=?",
+);
+function authorizeReplay(req) {
+  const row = replaySeats.get(req.params.id);
+  if (!row) throw Object.assign(new Error("Table not found."), { status: 404 });
+  auth({ room: { seats: JSON.parse(row.seats) } }, getKey(req));
+  return row.id;
+}
+const compressReplay = promisify(gzip);
+async function sendReplay(req, res, payload) {
+  res.vary("Accept-Encoding");
+  if (req.acceptsEncodings("gzip")) {
+    const body = await compressReplay(JSON.stringify(payload), { level: 1 });
+    res.set("Content-Encoding", "gzip").type("json").send(body);
+  } else res.json(payload);
+}
+app.get("/api/rooms/:id/replay", async (req, res) => {
+  const id = authorizeReplay(req);
   const after = req.query.after === undefined ? -1 : Number(req.query.after);
   if (!Number.isSafeInteger(after) || after < -1)
     return res.status(400).json({ error: "Invalid replay cursor." });
-  res.json(replay.summary(row.id, after));
+  const result = replay.summary(id, after);
+  if (req.query.bootstrap === "1") result.positions = replay.recent(id);
+  await sendReplay(req, res, result);
+});
+app.get("/api/rooms/:id/replay/positions", async (req, res) => {
+  const id = authorizeReplay(req);
+  const raw =
+    typeof req.query.revisions === "string"
+      ? req.query.revisions.split(",")
+      : [];
+  if (
+    !raw.length ||
+    raw.length > 24 ||
+    raw.some((v) => !/^\d+$/.test(v) || !Number.isSafeInteger(Number(v)))
+  )
+    return res
+      .status(400)
+      .json({ error: "Choose between 1 and 24 replay positions." });
+  const revisions = [...new Set(raw.map(Number))];
+  const positions = replay.positions(id, revisions);
+  if (positions.length !== revisions.length)
+    return res
+      .status(404)
+      .json({ error: "A replay position is not available." });
+  await sendReplay(req, res, { positions });
 });
 app.get("/api/rooms/:id/replay/:revision", (req, res) => {
-  const row = load(req.params.id);
-  auth(row, getKey(req));
+  const id = authorizeReplay(req);
   const revision = Number(req.params.revision);
   if (!Number.isSafeInteger(revision) || revision < 0)
     return res.status(400).json({ error: "Invalid replay position." });
-  const game = replay.frame(row.id, revision);
+  const game = replay.frame(id, revision);
   if (!game)
     return res
       .status(404)

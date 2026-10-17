@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useMemo, useCallback, memo } from "react";
 import {
   ChevronLeft,
   ChevronRight,
@@ -17,11 +17,27 @@ import SystemDetails from "./SystemDetails.jsx";
 import { Card, cardImage } from "./Cards.jsx";
 import { useActionAnimations } from "./ActionAnimations.jsx";
 import { replayPresentation, turnDestination } from "./replayModel.js";
+import { createReplayCache, replayBatch } from "./replayCache.js";
 import "./replay.css";
 
-export default function ReplayViewer({ room, request, onClose }) {
-  const [frames, setFrames] = useState([]),
-    [index, setIndex] = useState(-1);
+const ReplayBoard = memo(Board);
+const ReplayPlayerTable = memo(PlayerTable);
+
+export default function ReplayViewer({ room, request, onClose, sessionRef }) {
+  const localSession = useRef(null);
+  const holder = sessionRef ?? localSession;
+  const scope = `${room.id}:${room.me}`;
+  if (holder.current?.scope !== scope)
+    holder.current = {
+      scope,
+      frames: [],
+      cache: createReplayCache(),
+      index: -1,
+    };
+  const session = holder.current;
+  const [frames, setFrames] = useState(session.frames),
+    [index, setIndex] = useState(-1),
+    [cursor, setCursor] = useState(session.index);
   const [game, setGame] = useState(null),
     [error, setError] = useState("");
   const [loading, setLoading] = useState(true),
@@ -31,33 +47,39 @@ export default function ReplayViewer({ room, request, onClose }) {
   const [selected, setSelected] = useState(null),
     [detail, setDetail] = useState(null);
   const [retry, setRetry] = useState(0);
+  const inspectSystem = useCallback(() => setDetail("system"), []);
   const root = useRef(null),
-    cache = useRef(new Map()),
     serial = useRef(0),
-    latestIndex = useRef(-1);
+    latestIndex = useRef(-1),
+    wanted = useRef(session.index),
+    scrubTimer = useRef(null);
   const requestRef = useRef(request);
   requestRef.current = request;
   const framesRef = useRef(frames);
   framesRef.current = frames;
   const seekRef = useRef(null);
-  async function seek(next, animate = true) {
+  const fetchPositions = (revisions) =>
+    requestRef.current(
+      `/api/rooms/${room.id}/replay/positions?revisions=${revisions.join(",")}`,
+    );
+  function warm(next) {
+    // Only cross a batch boundary when it is within a few taps of the cursor.
+    for (const i of [next - 5, next + 5]) {
+      if (i >= 0 && i < framesRef.current.length)
+        session.cache
+          .load(replayBatch(framesRef.current, i), fetchPositions)
+          .catch(() => {});
+    }
+  }
+  function seek(next, animate = true, debounce = false) {
     const frame = framesRef.current[next];
     if (!frame) return;
+    clearTimeout(scrubTimer.current);
     const ticket = ++serial.current;
-    setLoading(true);
+    wanted.current = next;
+    setCursor(next);
     setError("");
-    try {
-      let position = cache.current.get(frame.revision);
-      if (!position) {
-        position = (
-          await requestRef.current(
-            `/api/rooms/${room.id}/replay/${frame.revision}`,
-          )
-        ).game;
-        cache.current.set(frame.revision, position);
-        if (cache.current.size > 80)
-          cache.current.delete(cache.current.keys().next().value);
-      }
+    function show(position) {
       if (ticket !== serial.current) return;
       const previous = latestIndex.current;
       setGame(
@@ -72,45 +94,78 @@ export default function ReplayViewer({ room, request, onClose }) {
         }),
       );
       latestIndex.current = next;
+      session.index = next;
       setIndex(next);
       setDetail(null);
-    } catch (e) {
-      if (ticket === serial.current) {
-        setError(e.message);
-        setTarget(null);
-      }
-    } finally {
-      if (ticket === serial.current) setLoading(false);
+      setLoading(false);
+      warm(next);
     }
+    const cached = session.cache.get(frame.revision);
+    if (cached && !debounce) {
+      show(cached);
+      return;
+    }
+    setLoading(!cached);
+    async function load() {
+      try {
+        if (!session.cache.get(frame.revision))
+          await session.cache.load(
+            replayBatch(framesRef.current, next),
+            fetchPositions,
+          );
+        if (ticket !== serial.current) return;
+        const position = session.cache.get(frame.revision);
+        if (!position)
+          throw new Error(
+            "This replay position is not available. Please retry.",
+          );
+        show(position);
+      } catch (e) {
+        if (ticket === serial.current) {
+          setError(e.message);
+          setTarget(null);
+          setLoading(false);
+        }
+      }
+    }
+    // Coalesce slider movement; the thumb moves immediately, the board settles
+    // on the newest position rather than fetching every pixel crossed.
+    if (debounce) scrubTimer.current = setTimeout(load, 60);
+    else load();
   }
   seekRef.current = seek;
   useEffect(() => {
     let cancelled = false;
+    if (latestIndex.current < 0 && session.frames.length)
+      seekRef.current(
+        session.index >= 0 ? session.index : session.frames.length - 1,
+        false,
+      );
     async function refresh() {
       try {
         let after = framesRef.current.at(-1)?.revision ?? -1;
-        const added = [];
         do {
           const page = await requestRef.current(
-            `/api/rooms/${room.id}/replay?after=${after}`,
+            `/api/rooms/${room.id}/replay?after=${after}${after < 0 ? "&bootstrap=1" : ""}`,
           );
           if (cancelled) return;
-          added.push(...page.frames);
+          if (page.positions) session.cache.seed(page.positions);
+          const all = [
+            ...new Map(
+              [...framesRef.current, ...page.frames].map((f) => [
+                f.revision,
+                f,
+              ]),
+            ).values(),
+          ].sort((a, b) => a.revision - b.revision);
+          session.frames = all;
+          framesRef.current = all;
+          setFrames(all);
           after = page.nextAfter;
         } while (after !== null);
-        if (!added.length) {
-          if (!framesRef.current.length) setLoading(false);
-          return;
-        }
-        const all = [
-          ...new Map(
-            [...framesRef.current, ...added].map((f) => [f.revision, f]),
-          ).values(),
-        ].sort((a, b) => a.revision - b.revision);
-        framesRef.current = all;
-        setFrames(all);
-        if (latestIndex.current < 0)
-          await seekRef.current(all.length - 1, false);
+        if (latestIndex.current < 0 && framesRef.current.length)
+          seekRef.current(framesRef.current.length - 1, false);
+        else if (!framesRef.current.length) setLoading(false);
       } catch (e) {
         if (!cancelled) {
           setError(e.message);
@@ -126,6 +181,7 @@ export default function ReplayViewer({ room, request, onClose }) {
   useEffect(
     () => () => {
       serial.current++;
+      clearTimeout(scrubTimer.current);
     },
     [],
   );
@@ -150,9 +206,12 @@ export default function ReplayViewer({ room, request, onClose }) {
   const frame = frames[index];
   const step = (direction) => {
     setTarget(null);
-    seek(index + direction);
+    seek(wanted.current + direction);
   };
-  const turns = frames.filter((f, i) => !i || f.turn !== frames[i - 1].turn);
+  const turns = useMemo(
+    () => frames.filter((f, i) => !i || f.turn !== frames[i - 1].turn),
+    [frames],
+  );
   return (
     <div className="replay-viewer" data-animation-scope="replay" ref={root}>
       <div className="replay-console">
@@ -177,7 +236,7 @@ export default function ReplayViewer({ room, request, onClose }) {
         <div className="replay-controls" aria-label="Replay navigation">
           <button
             aria-label="First recorded position"
-            disabled={loading || index <= 0}
+            disabled={!frames.length || cursor <= 0}
             onClick={() => {
               setTarget(null);
               seek(0, false);
@@ -187,7 +246,7 @@ export default function ReplayViewer({ room, request, onClose }) {
           </button>
           <button
             aria-label="Previous action"
-            disabled={loading || index <= 0}
+            disabled={!frames.length || cursor <= 0}
             onClick={() => step(-1)}
           >
             <ChevronLeft />
@@ -205,14 +264,14 @@ export default function ReplayViewer({ room, request, onClose }) {
           </button>
           <button
             aria-label="Next action"
-            disabled={loading || index >= frames.length - 1}
+            disabled={!frames.length || cursor >= frames.length - 1}
             onClick={() => step(1)}
           >
             <ChevronRight />
           </button>
           <button
             aria-label="Latest recorded position"
-            disabled={loading || index >= frames.length - 1}
+            disabled={!frames.length || cursor >= frames.length - 1}
             onClick={() => {
               setTarget(null);
               seek(frames.length - 1, false);
@@ -244,17 +303,20 @@ export default function ReplayViewer({ room, request, onClose }) {
           aria-label="Replay position"
           min={0}
           max={Math.max(0, frames.length - 1)}
-          value={Math.max(0, index)}
+          value={Math.max(0, cursor)}
           disabled={!frames.length}
           onChange={(e) => {
             setTarget(null);
-            seek(Number(e.target.value), false);
+            seek(Number(e.target.value), false, true);
           }}
         />
         <div className="replay-turn-controls">
           <button
-            disabled={loading || index <= 0}
-            onClick={() => setTarget(turnDestination(frames, index, -1))}
+            disabled={!frames.length || cursor <= 0}
+            onClick={() => {
+              setTarget(null);
+              seek(turnDestination(frames, wanted.current, -1), false);
+            }}
           >
             ← Previous turn
           </button>
@@ -277,8 +339,11 @@ export default function ReplayViewer({ room, request, onClose }) {
             ))}
           </select>
           <button
-            disabled={loading || index >= frames.length - 1}
-            onClick={() => setTarget(turnDestination(frames, index, 1))}
+            disabled={!frames.length || cursor >= frames.length - 1}
+            onClick={() => {
+              setTarget(null);
+              seek(turnDestination(frames, wanted.current, 1), false);
+            }}
           >
             Next turn →
           </button>
@@ -301,7 +366,7 @@ export default function ReplayViewer({ room, request, onClose }) {
               onClick={() => {
                 setError("");
                 setRetry((n) => n + 1);
-                if (index >= 0) seek(index, false);
+                if (wanted.current >= 0) seek(wanted.current, false);
               }}
             >
               Retry
@@ -344,12 +409,12 @@ export default function ReplayViewer({ room, request, onClose }) {
               onAmbition={(a) => setDetail(`ambition:${a}`)}
             />
             <div className="replay-map">
-              <Board
+              <ReplayBoard
                 game={game}
                 actionEffects={motion.effects}
                 selected={selected}
                 onSelect={setSelected}
-                onInspect={() => setDetail("system")}
+                onInspect={inspectSystem}
                 interactive={false}
               />
             </div>
@@ -379,7 +444,7 @@ export default function ReplayViewer({ room, request, onClose }) {
               </button>
             ))}
           </nav>
-          <PlayerTable
+          <ReplayPlayerTable
             game={game}
             playerId={player}
             readOnly

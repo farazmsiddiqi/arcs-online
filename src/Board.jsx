@@ -104,10 +104,7 @@ export default function Board({
               to: p.system,
             }));
     previous.current = game.pieces;
-    if (
-      (!game._replay && game.log?.at(-1)?.history) ||
-      game._replay?.animate === false
-    )
+    if ((!game._replay && game.log?.at(-1)?.history) || !!game._replay)
       setFlight([]);
     if (
       !moves.length ||
@@ -117,7 +114,8 @@ export default function Board({
     const now = Date.now();
     setFlight((old) => [
       ...old.filter(
-        (m) => m.expires > now && !moves.some((n) => n.id === m.id),
+        (m) =>
+          !game._replay && m.expires > now && !moves.some((n) => n.id === m.id),
       ),
       ...moves.map((m) => ({
         ...m,

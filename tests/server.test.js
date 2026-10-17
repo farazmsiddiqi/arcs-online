@@ -737,7 +737,7 @@ test("timer controls have independent revisions, preserve gameplay, and persist 
 });
 
 test("replay reads are authenticated, public, immutable, and survive a server restart", async (t) => {
-  const { start, stop, req } = await launch(t);
+  const { port, start, stop, req } = await launch(t);
   await start();
   const {
     data: { id, key, invite },
@@ -753,6 +753,7 @@ test("replay reads are authenticated, public, immutable, and survive a server re
     (await req(root + "/replay/0", "GET", null, "invalid")).status,
     403,
   );
+  assert.equal((await req(root + "/replay/positions?revisions=0")).status, 403);
   const before = (await req(root, "GET", null, key)).data;
   const archive = (await req(root + "/replay", "GET", null, key)).data;
   assert.equal(archive.count, 1);
@@ -762,6 +763,48 @@ test("replay reads are authenticated, public, immutable, and survive a server re
   assert.deepEqual(host, guest);
   assert.ok(host.game.players.every((p) => typeof p.hand === "number"));
   assert.equal(host.game.decision, undefined);
+  const batchPath = root + `/replay/positions?revisions=${archive.first}`;
+  const batch = await req(batchPath, "GET", null, key);
+  assert.equal(batch.status, 200);
+  assert.deepEqual(batch.data.positions, [
+    { revision: archive.first, game: host.game },
+  ]);
+  assert.deepEqual(
+    (await req(batchPath, "GET", null, guestKey)).data,
+    batch.data,
+  );
+  const boot = (await req(root + "/replay?bootstrap=1", "GET", null, key)).data;
+  assert.deepEqual(boot.positions, batch.data.positions);
+  for (const invalid of [
+    "",
+    "-1",
+    "NaN",
+    "1.5",
+    "0,,1",
+    Array(25).fill(0).join(","),
+  ])
+    assert.equal(
+      (
+        await req(
+          root + "/replay/positions?revisions=" + invalid,
+          "GET",
+          null,
+          key,
+        )
+      ).status,
+      400,
+    );
+  assert.equal(
+    (await req(root + "/replay/positions?revisions=999999", "GET", null, key))
+      .status,
+    404,
+  );
+  const rawResponse = await fetch(`http://127.0.0.1:${port}` + batchPath, {
+    headers: { Authorization: `Bearer ${key}`, "Accept-Encoding": "gzip" },
+  });
+  assert.equal(rawResponse.headers.get("content-encoding"), "gzip");
+  assert.deepEqual(await rawResponse.json(), batch.data);
+
   for (const invalid of ["-2", "1.5", "NaN"])
     assert.equal(
       (await req(root + "/replay/" + invalid, "GET", null, key)).status,
