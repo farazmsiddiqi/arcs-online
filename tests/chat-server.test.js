@@ -153,4 +153,42 @@ test("authenticated chat is realtime, durable, private to the table, and indepen
   const persisted = (await req(root + "/chat", "GET", null, guest.key)).data;
   assert.equal(persisted.messages.length, 3);
   assert.equal(persisted.messages[0].text, "Hi Bo <script>unsafe()</script>");
+  const rootId = persisted.messages[0].id;
+  const reply = await req(
+    root + "/chat",
+    "POST",
+    { text: "Thread reply", clientId: "t".repeat(20), replyTo: rootId },
+    guest.key,
+  );
+  assert.equal(reply.status, 201);
+  const thread = await req(
+    root + `/chat?thread=${rootId}`,
+    "GET",
+    null,
+    host.key,
+  );
+  assert.equal(thread.data.messages.length, 2);
+  assert.equal(thread.data.messages[1].threadId, rootId);
+  assert.equal(
+    (
+      await req(
+        `/rooms/${other.id}/chat?thread=${rootId}`,
+        "GET",
+        null,
+        other.key,
+      )
+    ).status,
+    404,
+  );
+  assert.equal(
+    (await req(root + "/chat?thread=invalid", "GET", null, host.key)).status,
+    400,
+  );
+  await stop();
+  await start();
+  assert.deepEqual(
+    (await req(root + `/chat?thread=${rootId}`, "GET", null, guest.key)).data
+      .messages,
+    thread.data.messages,
+  );
 });

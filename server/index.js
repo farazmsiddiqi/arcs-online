@@ -149,7 +149,11 @@ app.get("/api/rooms/:id/chat", (req, res) => {
       : Number(req.query.before);
   if (!Number.isSafeInteger(before) || before < 1)
     return res.status(400).json({ error: "Invalid message cursor." });
-  res.json(chat.view(row.id, before));
+  const thread =
+    req.query.thread === undefined ? null : Number(req.query.thread);
+  if (thread !== null && (!Number.isSafeInteger(thread) || thread < 1))
+    return res.status(400).json({ error: "Invalid thread." });
+  res.json(chat.view(row.id, before, thread));
 });
 app.post("/api/rooms/:id/chat", (req, res) => {
   const row = load(req.params.id),
@@ -339,12 +343,10 @@ for (const control of ["history", "timer"])
         req.body.clockRevision !== undefined &&
         req.body.clockRevision !== (row.room.clock?.revision ?? 0)
       )
-        return res
-          .status(409)
-          .json({
-            error: "Timer settings changed. Review the refreshed controls.",
-            ...publicRoom(row, p),
-          });
+        return res.status(409).json({
+          error: "Timer settings changed. Review the refreshed controls.",
+          ...publicRoom(row, p),
+        });
       changeClock(row.room, p, req.body);
     }
     if (control === "history") persistAction(row, p, { control, ...req.body });

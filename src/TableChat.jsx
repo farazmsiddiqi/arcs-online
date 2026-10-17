@@ -2,14 +2,25 @@ import React, { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import {
   MessageCircle,
-  Send,
+  ArrowUp,
+  ArrowLeft,
+  Reply,
   X,
   Sparkles,
   BookOpen,
   RotateCcw,
   ChevronDown,
+  AtSign,
+  UserRound,
+  Orbit,
 } from "lucide-react";
 import { COLORS } from "../game/data.js";
+import {
+  chatMentionOptions,
+  mentionQuery,
+  filterMentions,
+  mentionSegments,
+} from "../game/chat-mentions.js";
 import "./table-chat.css";
 
 function SourceNotes({ evidence, onInspect }) {
@@ -24,10 +35,7 @@ function SourceNotes({ evidence, onInspect }) {
   return (
     <details className="arcy-evidence">
       <summary>
-        <BookOpen size={12} />{" "}
-        {sources.length === 1
-          ? sources[0].title
-          : `${sources.length} supporting sources`}
+        <BookOpen size={12} /> Sources · {sources.length}
       </summary>
       {sources.map((e) => (
         <div key={e.sourceId}>
@@ -52,6 +60,32 @@ function Ruling({ message, game, onInspect }) {
     snapshot?.revision != null && game?.revision !== snapshot.revision;
   return (
     <div className="arcy-ruling">
+      {["needs_clarification", "unsupported", "strategy"].includes(
+        answer.status,
+      ) && (
+        <div className={`arcy-verdict ${answer.status}`}>
+          {answer.status === "strategy"
+            ? "Rules, not strategy"
+            : answer.status === "needs_clarification"
+              ? "One detail to clarify"
+              : "Not settled by the sources"}
+        </div>
+      )}
+      {answer.paragraphs.map((p, i) => (
+        <div key={i} className="arcy-paragraph">
+          <p>{p.text}</p>
+        </div>
+      ))}
+      {!!answer.assumptions.length && (
+        <div className="arcy-assumptions">
+          <strong>Assuming</strong> {answer.assumptions.join(" ")}
+        </div>
+      )}
+      {answer.followUp && <p className="arcy-followup">{answer.followUp}</p>}
+      <SourceNotes
+        evidence={answer.paragraphs.flatMap((p) => p.evidence)}
+        onInspect={onInspect}
+      />
       {snapshot?.chapter && (
         <div className="arcy-snapshot">
           Chapter {snapshot.chapter} · Round {snapshot.round}
@@ -62,27 +96,6 @@ function Ruling({ message, game, onInspect }) {
           )}
         </div>
       )}
-      <div className={`arcy-verdict ${answer.status}`}>
-        {answer.status === "context"
-          ? "At your table"
-          : answer.status === "needs_clarification"
-            ? "One detail to clarify"
-            : answer.status === "unsupported"
-              ? "Not settled by the sources"
-              : "The ruling"}
-      </div>
-      {answer.paragraphs.map((p, i) => (
-        <div key={i} className="arcy-paragraph">
-          <p>{p.text}</p>
-          <SourceNotes evidence={p.evidence} onInspect={onInspect} />
-        </div>
-      ))}
-      {!!answer.assumptions.length && (
-        <div className="arcy-assumptions">
-          <strong>Assuming</strong> {answer.assumptions.join(" ")}
-        </div>
-      )}
-      {answer.followUp && <p className="arcy-followup">{answer.followUp}</p>}
     </div>
   );
 }
@@ -93,7 +106,10 @@ export default function TableChat({ room, game, request, onInspect }) {
     [draft, setDraft] = useState(""),
     [busy, setBusy] = useState(false),
     [error, setError] = useState(""),
-    [older, setOlder] = useState(false),
+    [thread, setThread] = useState(null),
+    [threadCounts, setThreadCounts] = useState({}),
+    [pages, setPages] = useState({}),
+    [threadLoading, setThreadLoading] = useState(false),
     [loadingOlder, setLoadingOlder] = useState(false),
     [width, setWidth] = useState(() =>
       Math.max(
@@ -101,15 +117,60 @@ export default function TableChat({ room, game, request, onInspect }) {
         Math.min(600, Number(localStorage.getItem("arcs-chat-width")) || 400),
       ),
     ),
-    [unread, setUnread] = useState(0);
+    [unread, setUnread] = useState(0),
+    [mention, setMention] = useState(null),
+    [mentionIndex, setMentionIndex] = useState(0);
   const input = useRef(null),
     feed = useRef(null),
     nearBottom = useRef(true),
     previousIds = useRef(null),
     button = useRef(null),
     clientId = useRef(null),
-    previousDraft = useRef("");
+    previousDraft = useRef(""),
+    drafts = useRef({}),
+    currentThread = useRef(null);
+  const pageKey = thread ?? "table";
+  const older = pages[pageKey]?.hasOlder ?? false;
+  const threadHasArcy = thread !== null && threadCounts[thread]?.arcy;
+  const visibleMessages = messages.filter((m) =>
+    thread !== null
+      ? m.id === thread || m.threadId === thread
+      : m.threadId == null || (m.role === "arcy" && m.replyTo === m.threadId),
+  );
   const enabled = room.chat?.enabled ?? false;
+  const mentionOptions = chatMentionOptions(room.seats);
+  const suggestions = mention
+    ? filterMentions(mentionOptions, mention.query)
+    : [];
+  const updateMention = (el) => {
+    const query =
+      el.selectionStart === el.selectionEnd
+        ? mentionQuery(el.value, el.selectionStart)
+        : null;
+    setMention(query);
+    setMentionIndex(0);
+  };
+  const chooseMention = (option) => {
+    if (!mention) return;
+    const text =
+      draft.slice(0, mention.start) +
+      option.token +
+      " " +
+      draft.slice(mention.end);
+    const caret = mention.start + option.token.length + 1;
+    setDraft(text);
+    setMention(null);
+    requestAnimationFrame(() => {
+      input.current?.focus();
+      input.current?.setSelectionRange(caret, caret);
+    });
+  };
+  useEffect(() => {
+    if (suggestions.length)
+      document
+        .getElementById(`chat-mention-${mentionIndex}`)
+        ?.scrollIntoView({ block: "nearest" });
+  }, [mentionIndex, mention?.query]);
   const merge = (incoming) =>
     setMessages((current) => {
       const byId = new Map(current.map((m) => [m.id, m]));
@@ -121,7 +182,9 @@ export default function TableChat({ room, game, request, onInspect }) {
   useEffect(() => {
     const incoming = room.chat?.messages ?? [];
     merge(incoming);
-    if (previousIds.current === null) setOlder(!!room.chat?.hasOlder);
+    setThreadCounts((current) => ({ ...current, ...room.chat?.threadCounts }));
+    if (previousIds.current === null)
+      setPages((current) => ({ ...current, table: room.chat }));
     const signatures = new Set(incoming.map((m) => `${m.id}:${m.status}`));
     if (previousIds.current && !open)
       setUnread(
@@ -152,26 +215,59 @@ export default function TableChat({ room, game, request, onInspect }) {
   };
   const ask = (text) => {
     setDraft(text);
+    setMention(null);
     input.current?.focus();
   };
+  async function showThread(id) {
+    drafts.current[currentThread.current ?? "table"] = draft;
+    currentThread.current = id;
+    setThread(id);
+    setDraft(drafts.current[id ?? "table"] ?? "");
+    setMention(null);
+    setError("");
+    nearBottom.current = true;
+    input.current?.focus();
+    if (id === null) {
+      setThreadLoading(false);
+      return;
+    }
+    setThreadLoading(true);
+    try {
+      const result = await request(`/api/rooms/${room.id}/chat?thread=${id}`);
+      merge(result.messages);
+      setThreadCounts((current) => ({ ...current, ...result.threadCounts }));
+      setPages((current) => ({ ...current, [id]: result }));
+    } catch (e) {
+      if (currentThread.current === id) setError(e.message);
+    } finally {
+      if (currentThread.current === id) setThreadLoading(false);
+    }
+  }
   async function send(event) {
     event.preventDefault();
     if (!draft.trim() || busy) return;
     const text = draft.trim();
+    const sentThread = thread;
     // Keep a failed request's ID: retrying after a lost response cannot double
     // post or bill the same question twice.
-    if (!clientId.current || previousDraft.current !== text)
+    if (!clientId.current || previousDraft.current !== `${thread}:${text}`)
       clientId.current = crypto.randomUUID();
-    previousDraft.current = text;
+    previousDraft.current = `${thread}:${text}`;
     setBusy(true);
     setError("");
     try {
       const result = await request(`/api/rooms/${room.id}/chat`, "POST", {
         text,
         clientId: clientId.current,
+        replyTo: sentThread,
       });
       merge(result.messages);
-      setDraft((current) => (current.trim() === text ? "" : current));
+      setThreadCounts((current) => ({ ...current, ...result.threadCounts }));
+      if (currentThread.current === sentThread)
+        setDraft((current) => (current.trim() === text ? "" : current));
+      else if (drafts.current[sentThread ?? "table"]?.trim() === text)
+        drafts.current[sentThread ?? "table"] = "";
+      setMention(null);
       clientId.current = null;
       nearBottom.current = true;
     } catch (e) {
@@ -202,10 +298,11 @@ export default function TableChat({ room, game, request, onInspect }) {
     const height = feed.current?.scrollHeight ?? 0;
     try {
       const result = await request(
-        `/api/rooms/${room.id}/chat?before=${messages[0].id}`,
+        `/api/rooms/${room.id}/chat?before=${pages[pageKey]?.nextBefore}${thread !== null ? `&thread=${thread}` : ""}`,
       );
       merge(result.messages);
-      setOlder(result.hasOlder);
+      setPages((current) => ({ ...current, [pageKey]: result }));
+      setThreadCounts((current) => ({ ...current, ...result.threadCounts }));
       requestAnimationFrame(() => {
         if (feed.current)
           feed.current.scrollTop += feed.current.scrollHeight - height;
@@ -289,28 +386,35 @@ export default function TableChat({ room, game, request, onInspect }) {
             />
             <div className="chat-heading">
               <div>
-                <span className="chat-eyebrow">COMMS · YOUR TABLE</span>
-                <h2>Across the Reach</h2>
+                <h2>Table chat</h2>
+                <span className="chat-eyebrow">
+                  {enabled
+                    ? "Arcy is here for rules · no strategy advice"
+                    : "Player chat · Arcy is offline"}
+                </span>
               </div>
               <button aria-label="Close table chat" onClick={close}>
                 <X size={19} />
               </button>
             </div>
-            <div className="arcy-presence">
-              <span className="arcy-avatar">
-                <Sparkles size={18} />
-              </span>
-              <div>
-                <strong>
-                  Arcy <span>Rules referee</span>
-                </strong>
-                <small>
-                  {enabled
-                    ? "Mention @arcy for a ruling, with sources."
-                    : "Referee not connected · player chat is open."}
-                </small>
+            {thread !== null && (
+              <div className="chat-thread-heading">
+                <button
+                  onClick={() => showThread(null)}
+                  aria-label="Back to table chat"
+                >
+                  <ArrowLeft size={17} />
+                </button>
+                <div>
+                  <strong>Thread</strong>
+                  <small>
+                    {threadHasArcy
+                      ? "Arcy follows replies here · shared with the table"
+                      : "Replies stay together · shared with the table"}
+                  </small>
+                </div>
               </div>
-            </div>
+            )}
             <div
               className="chat-feed"
               ref={feed}
@@ -333,13 +437,16 @@ export default function TableChat({ room, game, request, onInspect }) {
                   {loadingOlder ? "Loading…" : "Earlier messages"}
                 </button>
               )}
-              {!messages.length && (
+              {threadLoading && (
+                <p className="chat-thread-loading">Loading thread…</p>
+              )}
+              {!messages.length && thread === null && (
                 <div className="chat-empty">
                   <MessageCircle size={28} />
-                  <h3>A seat for every question.</h3>
+                  <h3>What’s the rule?</h3>
                   <p>
-                    Talk to the table, settle a rules question, or ask Arcy to
-                    explain what’s happening.
+                    Message your table, or mention @arcy for a rules explanation
+                    with sources. You make the moves.
                   </p>
                   <div className="chat-starters">
                     {[
@@ -360,32 +467,29 @@ export default function TableChat({ room, game, request, onInspect }) {
                   </div>
                 </div>
               )}
-              {messages.map((m) => (
+              {visibleMessages.map((m) => (
                 <article
                   key={m.id}
-                  className={`chat-message ${m.role === "arcy" ? "from-arcy" : ""}`}
+                  className={`chat-message ${m.role === "arcy" ? "from-arcy" : m.seat === room.me ? "from-me" : "from-player"}`}
                   aria-label={`${m.role === "arcy" ? "Arcy referee" : (room.seats[m.seat]?.name ?? "Player")} message`}
                 >
                   <div className="chat-byline">
-                    <span
-                      className="chat-seat"
-                      style={{
-                        background:
-                          m.role === "arcy" ? "#c2b4e5" : COLORS[m.seat],
-                      }}
-                    />
+                    {m.role === "arcy" ? (
+                      <Sparkles size={16} className="arcy-message-icon" />
+                    ) : (
+                      <span
+                        className="chat-seat"
+                        style={{
+                          background:
+                            m.role === "arcy" ? "#c2b4e5" : COLORS[m.seat],
+                        }}
+                      />
+                    )}
                     <strong>
                       {m.role === "arcy"
                         ? "Arcy"
                         : (room.seats[m.seat]?.name ?? `Player ${m.seat + 1}`)}
                     </strong>
-                    <span>
-                      {m.role === "arcy"
-                        ? "REFEREE"
-                        : m.seat === room.me
-                          ? "YOU"
-                          : `SEAT ${m.seat + 1}`}
-                    </span>
                     <time dateTime={new Date(m.created).toISOString()}>
                       {new Date(m.created).toLocaleTimeString([], {
                         hour: "numeric",
@@ -393,7 +497,7 @@ export default function TableChat({ room, game, request, onInspect }) {
                       })}
                     </time>
                   </div>
-                  {m.role === "arcy" && (
+                  {m.role === "arcy" && m.seat !== room.me && (
                     <div className="chat-reply-to">
                       Replying to {room.seats[m.seat]?.name ?? "a player"}
                     </div>
@@ -407,7 +511,22 @@ export default function TableChat({ room, game, request, onInspect }) {
                       {m.status === "pending" && (
                         <span className="arcy-pulse" />
                       )}
-                      {m.text}
+                      {m.role === "player"
+                        ? mentionSegments(m.text, mentionOptions).map(
+                            (segment, i) =>
+                              segment.mention ? (
+                                <span
+                                  className="chat-inline-mention"
+                                  key={i}
+                                  title={segment.mention.description}
+                                >
+                                  {segment.text}
+                                </span>
+                              ) : (
+                                segment.text
+                              ),
+                          )
+                        : m.text}
                     </p>
                   )}
                   {m.status === "error" &&
@@ -421,31 +540,152 @@ export default function TableChat({ room, game, request, onInspect }) {
                         <RotateCcw size={12} /> Retry with current board
                       </button>
                     )}
+                  {thread === null && m.threadId == null && (
+                    <button
+                      className="chat-thread-link"
+                      onClick={() => showThread(m.threadId ?? m.id)}
+                    >
+                      <Reply size={13} />{" "}
+                      {threadCounts[m.threadId ?? m.id]?.count
+                        ? `${threadCounts[m.threadId ?? m.id].count} ${threadCounts[m.threadId ?? m.id].count === 1 ? "reply" : "replies"} · Open thread`
+                        : "Reply in thread"}
+                    </button>
+                  )}
                 </article>
               ))}
             </div>
             <form className="chat-compose" onSubmit={send}>
-              <div className="chat-compose-label">
-                <label htmlFor="chat-message">Message the table</label>
-                <button
-                  type="button"
-                  onClick={() =>
-                    ask(draft.includes("@arcy") ? draft : `@arcy ${draft}`)
-                  }
-                >
-                  <Sparkles size={12} /> Ask Arcy
-                </button>
-              </div>
               <div className="chat-input-row">
+                {mention && (
+                  <div className="chat-mention-picker">
+                    <div className="chat-mention-heading">
+                      <AtSign size={14} /> Add a reference{" "}
+                      <small>↑↓ to navigate · ↵ to insert</small>
+                    </div>
+                    <div
+                      role="listbox"
+                      id="chat-mentions"
+                      aria-label="Mention suggestions"
+                      className="chat-mention-options"
+                    >
+                      {suggestions.map((option, i) => (
+                        <React.Fragment key={option.id}>
+                          {(i === 0 ||
+                            suggestions[i - 1].kind !== option.kind) && (
+                            <div
+                              className="chat-mention-group"
+                              role="presentation"
+                            >
+                              {option.kind === "referee"
+                                ? "Referee"
+                                : option.kind === "player"
+                                  ? "Players"
+                                  : "Game references"}
+                            </div>
+                          )}
+                          <button
+                            type="button"
+                            role="option"
+                            id={`chat-mention-${i}`}
+                            aria-selected={i === mentionIndex}
+                            onMouseDown={(e) => e.preventDefault()}
+                            onMouseEnter={() => setMentionIndex(i)}
+                            onClick={() => chooseMention(option)}
+                          >
+                            {option.kind === "referee" ? (
+                              <Sparkles size={17} />
+                            ) : option.kind === "player" ? (
+                              <UserRound size={17} />
+                            ) : (
+                              <Orbit size={17} />
+                            )}
+                            <span>
+                              <strong>{option.label}</strong>
+                              <small>{option.description}</small>
+                            </span>
+                            <code>{option.token}</code>
+                          </button>
+                        </React.Fragment>
+                      ))}
+                      {!suggestions.length && (
+                        <p className="chat-mention-empty">
+                          No matching reference. Try a player’s name, board, or
+                          turn.
+                        </p>
+                      )}
+                    </div>
+                    <div className="chat-mention-hint">
+                      {threadHasArcy
+                        ? "Arcy follows replies in this thread. References add context."
+                        : "Mention @arcy to get an answer. Other references add context."}
+                    </div>
+                  </div>
+                )}
+                <label className="chat-sr-only" htmlFor="chat-message">
+                  Message the table
+                </label>
                 <textarea
                   id="chat-message"
                   ref={input}
                   value={draft}
                   maxLength={1500}
                   rows={2}
-                  placeholder="Say something, or ask @arcy…"
-                  onChange={(e) => setDraft(e.target.value)}
+                  placeholder={
+                    threadHasArcy
+                      ? "Reply to Arcy… no @ needed"
+                      : thread !== null
+                        ? "Reply in thread, or ask @arcy"
+                        : "Message the table, or ask @arcy"
+                  }
+                  aria-autocomplete="list"
+                  aria-controls={mention ? "chat-mentions" : undefined}
+                  aria-activedescendant={
+                    suggestions.length
+                      ? `chat-mention-${mentionIndex}`
+                      : undefined
+                  }
+                  onChange={(e) => {
+                    setDraft(e.target.value);
+                    updateMention(e.target);
+                  }}
+                  onClick={(e) => updateMention(e.target)}
+                  onKeyUp={(e) => {
+                    if (
+                      ["ArrowLeft", "ArrowRight", "Home", "End"].includes(e.key)
+                    )
+                      updateMention(e.target);
+                  }}
                   onKeyDown={(e) => {
+                    if (mention && !e.nativeEvent.isComposing) {
+                      if (e.key === "Escape") {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setMention(null);
+                        return;
+                      }
+                      if (
+                        suggestions.length &&
+                        ["ArrowDown", "ArrowUp"].includes(e.key)
+                      ) {
+                        e.preventDefault();
+                        setMentionIndex(
+                          (i) =>
+                            (i +
+                              (e.key === "ArrowDown" ? 1 : -1) +
+                              suggestions.length) %
+                            suggestions.length,
+                        );
+                        return;
+                      }
+                      if (
+                        suggestions.length &&
+                        (e.key === "Tab" || (e.key === "Enter" && !e.shiftKey))
+                      ) {
+                        e.preventDefault();
+                        chooseMention(suggestions[mentionIndex]);
+                        return;
+                      }
+                    }
                     if (
                       e.key === "Enter" &&
                       !e.shiftKey &&
@@ -456,14 +696,47 @@ export default function TableChat({ room, game, request, onInspect }) {
                     }
                   }}
                 />
-                <button
-                  className="chat-send"
-                  type="submit"
-                  disabled={!draft.trim() || busy}
-                  aria-label="Send message"
-                >
-                  <Send size={18} />
-                </button>
+                <div className="chat-compose-tools">
+                  <button
+                    type="button"
+                    className="chat-reference"
+                    aria-label="Add a reference"
+                    title="Reference a player or part of the game"
+                    onClick={() => {
+                      const text =
+                        draft + (draft && !/\s$/.test(draft) ? " " : "") + "@";
+                      setDraft(text);
+                      setMention(mentionQuery(text));
+                      setMentionIndex(0);
+                      requestAnimationFrame(() => {
+                        input.current?.focus();
+                        input.current?.setSelectionRange(
+                          text.length,
+                          text.length,
+                        );
+                      });
+                    }}
+                  >
+                    <AtSign size={17} />
+                  </button>
+                  <button
+                    type="button"
+                    className="chat-mention"
+                    onClick={() =>
+                      ask(draft.includes("@arcy") ? draft : `@arcy ${draft}`)
+                    }
+                  >
+                    <Sparkles size={14} /> Ask Arcy
+                  </button>
+                  <button
+                    className="chat-send"
+                    type="submit"
+                    disabled={!draft.trim() || busy}
+                    aria-label="Send message"
+                  >
+                    <ArrowUp size={19} />
+                  </button>
+                </div>
               </div>
               {error && (
                 <p role="alert" className="chat-error">
@@ -472,7 +745,7 @@ export default function TableChat({ room, game, request, onInspect }) {
               )}
               <details className="chat-privacy">
                 <summary>
-                  <ChevronDown size={12} /> Shared with everyone at this table
+                  <ChevronDown size={12} /> Everyone at this table can read this
                 </summary>
                 <p>
                   When you mention @arcy, your question, recent chat and the

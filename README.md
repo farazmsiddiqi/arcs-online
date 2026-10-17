@@ -28,7 +28,7 @@ Timer controls have their own revision, so game activity cannot make a timer req
 
 ## Table chat and @arcy
 
-Open **Chat @arcy** in a table to talk with the other players. Mention `@arcy` anywhere in a message to ask the referee, for example: `@arcy Why is the lead 0, and what can I do now?` Everyone sees the answer and its supporting rule excerpts. The panel can be resized from its left edge; Enter sends and Shift+Enter adds a line.
+Open **Chat @arcy** in a table to talk with the other players. Mention `@arcy` anywhere in a message to ask the referee, for example: `@arcy Why is the lead 0, and what can I do now?` Everyone sees the answer and its supporting rule excerpts. Type `@` to pick Arcy, another player, or references such as `@draft`, `@board`, `@lead`, `@turn`, `@ambitions`, `@court`, and `@battle`; arrow keys navigate and Enter/Tab insert. Include `@arcy` when you want the referee to answer. Open a reply thread to keep follow-ups together; Arcy follows replies in its threads without another mention. It sees the actual public Leader and Lore draft options. Arcy explains rules and legality but refuses move recommendations, rankings, tactical hints, and strategy. The panel can be resized from its left edge; Enter sends and Shift+Enter adds a line.
 
 Player chat works without an API key. To enable the optional GPT referee, set `OPENAI_API_KEY` **on the server only**. On Railway, add it to the service's production variables. For local use, copy `.env.example` to `.env`, add the key there, and run `node --env-file=.env server/index.js`. Never put secrets in a `VITE_` variable, client code, or a commit.
 

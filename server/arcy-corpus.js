@@ -174,6 +174,11 @@ export function initialSources(question, context, recentQuestions = "") {
       ?.flatMap((p) => [p.leader, ...(p.cards ?? [])])
       .filter(Boolean) ?? [],
   );
+  for (const card of [
+    ...(context.draft?.leaders ?? []),
+    ...(context.draft?.lore ?? []),
+  ])
+    activeCards.add(card.id);
   const result = [
     ...searchRules(question, { limit: 12 }),
     ...searchRules(`${recentQuestions} ${context.activity?.label ?? ""}`, {

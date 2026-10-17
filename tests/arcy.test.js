@@ -202,21 +202,27 @@ test("agent uses retrieval tools, a separate review pass, store:false and valida
     assert.equal(body.store, false);
     assert.equal(body.text.format.strict, true);
     const data =
-      requests.length === 1
-        ? {
-            status: "completed",
-            output: [
-              {
-                type: "function_call",
-                name: "search_rules",
-                call_id: "search-1",
-                arguments: JSON.stringify({
-                  query: "Repair damaged Loyal ship",
-                }),
-              },
-            ],
-          }
-        : completion(valid());
+      body.text.format.name === "arcy_scope"
+        ? completion({ category: "rules" })
+        : requests.length === 2
+          ? {
+              status: "completed",
+              output: [
+                {
+                  type: "function_call",
+                  name: "search_rules",
+                  call_id: "search-1",
+                  arguments: JSON.stringify({
+                    query: "Repair damaged Loyal ship",
+                  }),
+                },
+              ],
+            }
+          : completion(
+              body.text.format.name === "arcy_review"
+                ? { containsStrategy: false, answer: valid() }
+                : valid(),
+            );
     return { ok: true, json: async () => data };
   };
   const r = await generateRuling({
@@ -225,12 +231,12 @@ test("agent uses retrieval tools, a separate review pass, store:false and valida
     apiKey: "test-secret",
     fetchImpl,
   });
-  assert.equal(requests.length, 3);
-  assert.ok(requests[1].input.some((x) => x.type === "function_call_output"));
-  assert.ok(requests[2].instructions.includes("Independently verify EVERY"));
+  assert.equal(requests.length, 4);
+  assert.ok(requests[2].input.some((x) => x.type === "function_call_output"));
+  assert.ok(requests[3].instructions.includes("Independently verify EVERY"));
   assert.equal(r.status, "ruling");
   assert.ok(!JSON.stringify(requests).includes("test-secret"));
-  assert.equal(r.usage.calls, 3);
+  assert.equal(r.usage.calls, 4);
 });
 test("agent rejects unverified final output and provider error details", async () => {
   const bad = valid();
@@ -240,7 +246,20 @@ test("agent rejects unverified final output and provider error details", async (
       question: "repair",
       context: {},
       apiKey: "test",
-      fetchImpl: async () => ({ ok: true, json: async () => completion(bad) }),
+      fetchImpl: async (url, options) => {
+        const name = JSON.parse(options.body).text.format.name;
+        return {
+          ok: true,
+          json: async () =>
+            completion(
+              name === "arcy_scope"
+                ? { category: "rules" }
+                : name === "arcy_review"
+                  ? { containsStrategy: false, answer: bad }
+                  : bad,
+            ),
+        };
+      },
     }),
     /citation/,
   );
@@ -451,4 +470,217 @@ test("a public-state-only answer does not need a fabricated rule citation", () =
 test("lobby questions retrieve rules before players have game boards", () => {
   const c = refereeContext({ seats: [{ name: "Ada" }], game: null }, 0);
   assert.ok(initialSources("How do I play?", c).length > 3);
+});
+
+test("strategy gate never sends the board to an answering model and uses a fixed refusal", async () => {
+  const requests = [];
+  const result = await generateRuling({
+    question: "@arcy Pick my best move",
+    context: { secretBoardMarker: "BOARD_SENTINEL" },
+    apiKey: "test",
+    fetchImpl: async (url, options) => {
+      const b = JSON.parse(options.body);
+      requests.push(b);
+      return {
+        ok: true,
+        json: async () => completion({ category: "strategy" }),
+      };
+    },
+  });
+  assert.equal(requests.length, 1);
+  assert.equal(result.status, "strategy");
+  assert.ok(!JSON.stringify(requests).includes("BOARD_SENTINEL"));
+  assert.match(result.paragraphs[0].text, /can’t recommend moves/);
+  assert.deepEqual(result.paragraphs[0].evidence, []);
+});
+test("independent review withholds coaching even when the input gate permitted the question", async () => {
+  const unsafe = {
+    ...valid(),
+    followUp: "You should attack Bo to maximize Power.",
+  };
+  const result = await generateRuling({
+    question: "Explain battle",
+    context: {},
+    apiKey: "test",
+    fetchImpl: async (url, options) => {
+      const name = JSON.parse(options.body).text.format.name;
+      return {
+        ok: true,
+        json: async () =>
+          completion(
+            name === "arcy_scope"
+              ? { category: "rules" }
+              : name === "arcy_review"
+                ? { containsStrategy: true, answer: unsafe }
+                : unsafe,
+          ),
+      };
+    },
+  });
+  assert.equal(result.status, "strategy");
+  assert.ok(!JSON.stringify(result).includes("attack Bo"));
+});
+test("missing or malformed strategy checks fail closed", async () => {
+  for (const category of [undefined, "approved"]) {
+    await assert.rejects(
+      generateRuling({
+        question: "help",
+        context: {},
+        apiKey: "test",
+        fetchImpl: async () => ({
+          ok: true,
+          json: async () => completion({ category }),
+        }),
+      }),
+      /scope/,
+    );
+  }
+  await assert.rejects(
+    generateRuling({
+      question: "repair",
+      context: {},
+      apiKey: "test",
+      fetchImpl: async (url, options) => ({
+        ok: true,
+        json: async () =>
+          completion(
+            JSON.parse(options.body).text.format.name === "arcy_scope"
+              ? { category: "rules" }
+              : valid(),
+          ),
+      }),
+    }),
+    /fair-play/,
+  );
+});
+
+test("referee sees the public draft pool and retrieves its card rules without exposing undrafted reserve", () => {
+  const r = room();
+  r.game = createGame(["Ada", "Bo"], { leaders: true }, 71);
+  const before = structuredClone(r.game);
+  const context = refereeContext(r, 0);
+  assert.deepEqual(
+    context.draft.leaders.map((c) => c.id),
+    r.game.draft.leaders,
+  );
+  assert.deepEqual(
+    context.draft.lore.map((c) => c.id),
+    r.game.draft.lore,
+  );
+  assert.equal(context.draft.choosingPlayer, r.game.current);
+  const sources = initialSources("the leader opts", context);
+  for (const c of [...context.draft.leaders, ...context.draft.lore]) {
+    assert.ok(c.name);
+    assert.ok(
+      sources.some((s) => s.cardId === c.id),
+      c.name,
+    );
+    assert.equal(context.cardNames[c.id], c.name);
+  }
+  assert.equal(context.draft.remaining, undefined);
+  assert.deepEqual(r.game, before);
+});
+
+test("thread replies are persistent, scoped to their root, and invoke Arcy without a repeat mention", async (t) => {
+  const calls = [];
+  const { api, tick, db } = chatHarness(t, {
+    generate: async (args) => {
+      calls.push(args);
+      return result();
+    },
+  });
+  const first = api.send("table", 0, message("@arcy explain Repair"));
+  const root = first.messages[0].id;
+  await api.idle();
+  api.send("table", 1, message("unrelated table discussion", "u".repeat(16)));
+  tick();
+  api.send("table", 1, {
+    ...message("without ships?", "r".repeat(16)),
+    replyTo: first.messages[1].id,
+  });
+  await api.idle();
+  assert.equal(calls.length, 2);
+  assert.ok(
+    calls[1].conversation.some((m) => m.text === "@arcy explain Repair"),
+  );
+  assert.ok(!calls[1].conversation.some((m) => m.text.includes("unrelated")));
+  const thread = api.view("table", undefined, root);
+  assert.equal(thread.messages.length, 4);
+  assert.equal(thread.threadCounts[root].count, 3);
+  assert.equal(thread.threadCounts[root].arcy, true);
+  assert.ok(thread.messages.slice(1).every((m) => m.threadId === root));
+  const restored = createChatService(db, {
+    load: () => ({ room: room() }),
+    broadcast: () => {},
+    enabled: () => true,
+  });
+  assert.deepEqual(
+    restored.view("table", undefined, root).messages,
+    thread.messages,
+  );
+});
+
+test("thread references cannot cross tables, spoof IDs, or redirect an idempotent request", (t) => {
+  const { api } = chatHarness(t);
+  const root = api.send("table", 0, message("Hi")).messages[0].id;
+  assert.throws(
+    () => api.send("other", 0, { ...message("reply"), replyTo: root }),
+    /not found/,
+  );
+  assert.throws(() => api.view("other", undefined, root), /not found/);
+  for (const replyTo of ["1", -1, 1.5, {}])
+    assert.throws(
+      () => api.send("table", 0, { ...message("reply"), replyTo }),
+      /Invalid/,
+    );
+  assert.throws(
+    () => api.send("table", 0, { ...message("Hi"), replyTo: root }),
+    /already sent/,
+  );
+});
+
+test("ordinary player threads never invoke Arcy and old roots survive paginated thread history", async (t) => {
+  let calls = 0;
+  const { api, db } = chatHarness(t, {
+    generate: async () => {
+      calls++;
+      return result();
+    },
+  });
+  const root = api.send("table", 0, message("ordinary topic")).messages[0].id;
+  api.send("table", 1, {
+    ...message("ordinary reply", "r".repeat(16)),
+    replyTo: root,
+  });
+  await api.idle();
+  assert.equal(calls, 0);
+  const insert = db.prepare(
+    "INSERT INTO chat_messages(room,seat,role,text,created,status,thread_id,reply_to) VALUES('table',1,'player',?,1,'complete',?,?)",
+  );
+  for (let i = 0; i < 120; i++) insert.run(`reply ${i}`, root, root);
+  const page = api.view("table", undefined, root);
+  assert.equal(page.messages.length, 101); // root + last 100 replies
+  assert.equal(page.messages[0].id, root);
+  assert.equal(page.threadCounts[root].count, 121);
+  assert.ok(page.hasOlder);
+  const previous = api.view("table", page.nextBefore, root);
+  assert.equal(previous.messages.length, 22);
+  assert.equal(previous.hasOlder, false);
+  assert.ok(previous.messages.slice(1).every((m) => m.id < page.nextBefore));
+});
+
+test("existing chat database gains threads without losing messages", (t) => {
+  const db = new DatabaseSync(":memory:");
+  t.after(() => db.close());
+  db.exec(`CREATE TABLE chat_messages (id INTEGER PRIMARY KEY AUTOINCREMENT, room TEXT NOT NULL, seat INTEGER NOT NULL, client_id TEXT, role TEXT NOT NULL, text TEXT NOT NULL, created INTEGER NOT NULL, status TEXT NOT NULL, reply_to INTEGER, payload TEXT NOT NULL DEFAULT '{}', updated INTEGER NOT NULL DEFAULT 0, UNIQUE(room,seat,client_id));
+  INSERT INTO chat_messages(room,seat,role,text,created,status) VALUES('table',0,'player','@arcy help',1,'complete');
+  INSERT INTO chat_messages(room,seat,role,text,created,status,reply_to) VALUES('table',0,'arcy','answer',2,'complete',1);`);
+  const api = createChatService(db, {
+    load: () => ({ room: room() }),
+    broadcast: () => {},
+  });
+  const saved = api.view("table", undefined, 1);
+  assert.equal(saved.messages[1].text, "answer");
+  assert.equal(saved.messages[1].threadId, 1);
+  assert.equal(saved.threadCounts[1].count, 1);
 });

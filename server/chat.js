@@ -26,12 +26,25 @@ export function createChatService(
     CREATE INDEX IF NOT EXISTS chat_by_room ON chat_messages(room,id);
     CREATE TABLE IF NOT EXISTS arcy_usage (room TEXT NOT NULL, seat INTEGER NOT NULL, created INTEGER NOT NULL);
     CREATE INDEX IF NOT EXISTS arcy_usage_time ON arcy_usage(created);`);
+  // Additive migration: existing chat and game saves remain untouched.
+  if (
+    !db
+      .prepare("PRAGMA table_info(chat_messages)")
+      .all()
+      .some((c) => c.name === "thread_id")
+  ) {
+    db.exec("ALTER TABLE chat_messages ADD COLUMN thread_id INTEGER");
+    db.exec("UPDATE chat_messages SET thread_id=reply_to WHERE role='arcy'");
+  }
+  db.exec(
+    "CREATE INDEX IF NOT EXISTS chat_threads ON chat_messages(room,thread_id,id)",
+  );
   db.prepare(
     "UPDATE chat_messages SET status='error',text=?,payload='{}' WHERE role='arcy' AND status='pending'",
   ).run(interrupted);
   const active = new Map();
   const insert = db.prepare(
-    "INSERT INTO chat_messages(room,seat,client_id,role,text,created,status,reply_to,payload) VALUES(?,?,?,?,?,?,?,?,?)",
+    "INSERT INTO chat_messages(room,seat,client_id,role,text,created,status,reply_to,payload,thread_id) VALUES(?,?,?,?,?,?,?,?,?,?)",
   );
   const decode = (row) => ({
     id: row.id,
@@ -42,18 +55,54 @@ export function createChatService(
     updated: row.updated || row.created,
     status: row.status,
     replyTo: row.reply_to,
+    threadId: row.thread_id,
     ...JSON.parse(row.payload),
   });
-  function view(id, before = Number.MAX_SAFE_INTEGER) {
-    const rows = db
-      .prepare(
-        "SELECT * FROM chat_messages WHERE room=? AND id<? ORDER BY id DESC LIMIT 101",
-      )
-      .all(id, before);
+  function view(id, before = Number.MAX_SAFE_INTEGER, thread = null) {
+    if (
+      thread !== null &&
+      !db
+        .prepare(
+          "SELECT id FROM chat_messages WHERE room=? AND id=? AND thread_id IS NULL",
+        )
+        .get(id, thread)
+    )
+      fail(404, "Thread not found.");
+    const rows =
+      thread === null
+        ? db
+            .prepare(
+              "SELECT * FROM chat_messages WHERE room=? AND id<? ORDER BY id DESC LIMIT 101",
+            )
+            .all(id, before)
+        : db
+            .prepare(
+              "SELECT * FROM chat_messages WHERE room=? AND thread_id=? AND id<? ORDER BY id DESC LIMIT 101",
+            )
+            .all(id, thread, before);
+    const page = rows.slice(0, 100).reverse();
+    const roots = new Set(page.map((m) => m.thread_id ?? m.id));
+    if (thread !== null) roots.add(thread);
+    const combined = new Map(page.map((m) => [m.id, m]));
+    const threadCounts = {};
+    for (const root of roots) {
+      const parent = db
+        .prepare("SELECT * FROM chat_messages WHERE room=? AND id=?")
+        .get(id, root);
+      if (parent) combined.set(parent.id, parent);
+      const stats = db
+        .prepare(
+          "SELECT count(*) count, max(role='arcy') arcy FROM chat_messages WHERE room=? AND thread_id=?",
+        )
+        .get(id, root);
+      threadCounts[root] = { count: stats.count, arcy: !!stats.arcy };
+    }
     return {
       enabled: enabled(),
-      messages: rows.slice(0, 100).reverse().map(decode),
+      messages: [...combined.values()].sort((a, b) => a.id - b.id).map(decode),
       hasOlder: rows.length > 100,
+      nextBefore: page[0]?.id ?? before,
+      threadCounts,
     };
   }
   const update = (id, status, text, payload) =>
@@ -108,9 +157,21 @@ export function createChatService(
     }
     db.prepare("INSERT INTO arcy_usage VALUES(?,?,?)").run(id, seat, now());
     const room = load(id).room;
-    const conversation = view(id)
-      .messages.filter((m) => m.id < replyId && m.status === "complete")
-      .slice(-9)
+    const reply = db
+      .prepare("SELECT thread_id FROM chat_messages WHERE room=? AND id=?")
+      .get(id, replyId);
+    const root = db
+      .prepare("SELECT * FROM chat_messages WHERE room=? AND id=?")
+      .get(id, reply.thread_id);
+    const recent = db
+      .prepare(
+        "SELECT * FROM chat_messages WHERE room=? AND thread_id=? AND id<? AND status='complete' ORDER BY id DESC LIMIT 7",
+      )
+      .all(id, reply.thread_id, replyId)
+      .reverse();
+    const conversation = [root, ...recent]
+      .filter(Boolean)
+      .map(decode)
       .map((m) => ({ ...m, name: room.seats[m.seat]?.name ?? "Player" }));
     const work = Promise.resolve()
       .then(() =>
@@ -147,7 +208,7 @@ export function createChatService(
       });
     active.set(id, work);
   }
-  function send(id, seat, { text, clientId }) {
+  function send(id, seat, { text, clientId, replyTo = null }) {
     if (
       typeof text !== "string" ||
       !text.trim() ||
@@ -158,13 +219,24 @@ export function createChatService(
       fail(400, "Write a message of 1–1,500 characters.");
     text = text.trim().replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/g, "");
     if (!text) fail(400, "Write a message first.");
+    if (replyTo !== null && (!Number.isSafeInteger(replyTo) || replyTo < 1))
+      fail(400, "Invalid reply reference.");
+    const parent =
+      replyTo === null
+        ? null
+        : db
+            .prepare("SELECT * FROM chat_messages WHERE room=? AND id=?")
+            .get(id, replyTo);
+    if (replyTo !== null && !parent)
+      fail(404, "Reply message not found at this table.");
+    const threadId = parent ? (parent.thread_id ?? parent.id) : null;
     const existing = db
       .prepare(
         "SELECT * FROM chat_messages WHERE room=? AND seat=? AND client_id=?",
       )
       .get(id, seat, clientId);
     if (existing) {
-      if (existing.text !== text)
+      if (existing.text !== text || existing.reply_to !== replyTo)
         fail(409, "This message was already sent with different text.");
       return view(id);
     }
@@ -176,7 +248,14 @@ export function createChatService(
         .get(id, seat, now() - 60000).n >= 20
     )
       fail(429, "Please slow down—20 messages per minute is the table limit.");
-    const ask = mentionsArcy(text),
+    const ask =
+        mentionsArcy(text) ||
+        (threadId !== null &&
+          !!db
+            .prepare(
+              "SELECT id FROM chat_messages WHERE room=? AND thread_id=? AND role='arcy' LIMIT 1",
+            )
+            .get(id, threadId)),
       room = load(id).room;
     if (ask && enabled()) checkAI(id, seat);
     const context = ask ? refereeContext(room, seat) : null;
@@ -191,8 +270,9 @@ export function createChatService(
         text,
         now(),
         "complete",
-        null,
+        replyTo,
         "{}",
+        threadId,
       );
       if (ask)
         replyId = Number(
@@ -206,6 +286,7 @@ export function createChatService(
             "pending",
             Number(message.lastInsertRowid),
             JSON.stringify({ snapshot: snapshotLabel(context) }),
+            threadId ?? Number(message.lastInsertRowid),
           ).lastInsertRowid,
         );
       db.exec("COMMIT");

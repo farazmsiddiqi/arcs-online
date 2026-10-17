@@ -29,6 +29,8 @@ export function refereeContext(room, asker) {
   const ids = new Set([
     ...players.flatMap((p) => [p.leader, ...p.cards]),
     ...v.court.map((c) => c.id),
+    ...(v.draft?.leaders ?? []),
+    ...(v.draft?.lore ?? []),
   ]);
   return {
     status: room.status,
@@ -37,6 +39,15 @@ export function refereeContext(room, asker) {
     chapter: v.chapter,
     round: v.round,
     phase: v.phase,
+    draft: v.draft
+      ? {
+          leaders: v.draft.leaders.map((id) => ({ id, name: CARDS[id].name })),
+          lore: v.draft.lore.map((id) => ({ id, name: CARDS[id].name })),
+          choosingPlayer: v.current,
+          instruction:
+            "Public shared draft pool. Explain these visible options when asked; never recommend or rank them. Each player picks a Leader and the configured number of Lore cards.",
+        }
+      : null,
     currentPlayer: v.current,
     decisionActor: v.decision.actor,
     activity: v.activity,
