@@ -191,4 +191,79 @@ test("authenticated chat is realtime, durable, private to the table, and indepen
       .messages,
     thread.data.messages,
   );
+  // A private consultation is omitted from every host transport, not merely
+  // hidden by the UI. Knowing its message ID never grants access.
+  const privateSent = await req(
+    root + "/chat",
+    "POST",
+    {
+      text: "Private rules question @Ada",
+      clientId: "private-integration-test",
+      private: true,
+    },
+    guest.key,
+  );
+  assert.equal(privateSent.status, 201);
+  const privateRoot = privateSent.data.messages.find(
+    (m) => m.private && m.role === "player",
+  );
+  const privateReply = privateSent.data.messages.find(
+    (m) => m.private && m.role === "arcy",
+  );
+  for (const path of [
+    root,
+    root + "/chat",
+    root + "/chat?scope=private",
+    root + "/export",
+  ]) {
+    const response = await req(path, "GET", null, host.key);
+    assert.equal(response.status, 200);
+    assert.ok(
+      !JSON.stringify(response.data).includes("Private rules question"),
+    );
+  }
+  assert.equal(
+    (await req(root + `/chat?thread=${privateRoot.id}`, "GET", null, host.key))
+      .status,
+    404,
+  );
+  assert.equal(
+    (await req(root + `/chat/${privateReply.id}/retry`, "POST", {}, host.key))
+      .status,
+    404,
+  );
+  assert.equal(
+    (
+      await req(
+        root + "/chat",
+        "POST",
+        {
+          text: "intrude",
+          clientId: "private-guess-thread",
+          replyTo: privateRoot.id,
+        },
+        host.key,
+      )
+    ).status,
+    404,
+  );
+  const hostSocket = new WebSocket(`ws://127.0.0.1:${port}/socket`);
+  await new Promise((r) => hostSocket.once("open", r));
+  const initial = new Promise((r) =>
+    hostSocket.once("message", (d) => r(JSON.parse(d))),
+  );
+  hostSocket.send(JSON.stringify({ id: host.id, key: host.key }));
+  assert.ok(!(await initial).chat.messages.some((m) => m.private));
+  hostSocket.close();
+  await stop();
+  await start();
+  assert.ok(
+    (
+      await req(root + "/chat?scope=private", "GET", null, guest.key)
+    ).data.messages.some((m) => m.id === privateRoot.id),
+  );
+  assert.ok(
+    !(await req(root + "/chat?scope=private", "GET", null, host.key)).data
+      .messages.length,
+  );
 });

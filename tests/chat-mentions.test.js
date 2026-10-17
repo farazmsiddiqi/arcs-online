@@ -74,3 +74,25 @@ test("player names cannot collide with referee invocation or another player fall
   );
   assert.equal(new Set(players.map((o) => o.token)).size, 4);
 });
+
+test("mention notifications honor visibility, authorship, and exact player references", async () => {
+  const { isPlayerMention } = await import("../game/chat-mentions.js");
+  const players = [
+    { id: 0, name: "Nova" },
+    { id: 1, name: "Orion" },
+  ];
+  const message = {
+    role: "player",
+    seat: 1,
+    text: "Hey @Nova, please check this.",
+  };
+  assert.equal(isPlayerMention(message, 0, players), true);
+  for (const change of [
+    { private: true },
+    { seat: 0 },
+    { role: "arcy" },
+    { text: "@NovaLong" },
+    { text: "@turn" },
+  ])
+    assert.equal(isPlayerMention({ ...message, ...change }, 0, players), false);
+});

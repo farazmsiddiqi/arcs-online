@@ -1,3 +1,4 @@
+import { chatReferences, referenceOnly } from "./chat-references.js";
 import { generateRuling, mentionsArcy } from "./arcy.js";
 import { refereeContext, snapshotLabel } from "./arcy-context.js";
 
@@ -36,6 +37,14 @@ export function createChatService(
     db.exec("ALTER TABLE chat_messages ADD COLUMN thread_id INTEGER");
     db.exec("UPDATE chat_messages SET thread_id=reply_to WHERE role='arcy'");
   }
+  if (
+    !db
+      .prepare("PRAGMA table_info(chat_messages)")
+      .all()
+      .some((c) => c.name === "private_seat")
+  ) {
+    db.exec("ALTER TABLE chat_messages ADD COLUMN private_seat INTEGER");
+  }
   db.exec(
     "CREATE INDEX IF NOT EXISTS chat_threads ON chat_messages(room,thread_id,id)",
   );
@@ -44,7 +53,7 @@ export function createChatService(
   ).run(interrupted);
   const active = new Map();
   const insert = db.prepare(
-    "INSERT INTO chat_messages(room,seat,client_id,role,text,created,status,reply_to,payload,thread_id) VALUES(?,?,?,?,?,?,?,?,?,?)",
+    "INSERT INTO chat_messages(room,seat,client_id,role,text,created,status,reply_to,payload,thread_id,private_seat) VALUES(?,?,?,?,?,?,?,?,?,?,?)",
   );
   const decode = (row) => ({
     id: row.id,
@@ -56,30 +65,45 @@ export function createChatService(
     status: row.status,
     replyTo: row.reply_to,
     threadId: row.thread_id,
+    private: row.private_seat !== null,
     ...JSON.parse(row.payload),
   });
-  function view(id, before = Number.MAX_SAFE_INTEGER, thread = null) {
+  function view(
+    id,
+    before = Number.MAX_SAFE_INTEGER,
+    thread = null,
+    seat = null,
+    scope = "all",
+  ) {
+    const visibility = "(private_seat IS NULL OR private_seat = @seat)";
+    const channel =
+      scope === "private"
+        ? "private_seat = @seat"
+        : scope === "table"
+          ? "private_seat IS NULL"
+          : "1=1";
+    const params = { room: id, seat, before, thread };
     if (
       thread !== null &&
       !db
         .prepare(
-          "SELECT id FROM chat_messages WHERE room=? AND id=? AND thread_id IS NULL",
+          `SELECT id FROM chat_messages WHERE room=@room AND id=@thread AND thread_id IS NULL AND ${visibility}`,
         )
-        .get(id, thread)
+        .get({ room: id, thread, seat })
     )
       fail(404, "Thread not found.");
     const rows =
       thread === null
         ? db
             .prepare(
-              "SELECT * FROM chat_messages WHERE room=? AND id<? ORDER BY id DESC LIMIT 101",
+              `SELECT * FROM chat_messages WHERE room=@room AND id<@before AND ${visibility} AND ${channel} ORDER BY id DESC LIMIT 101`,
             )
-            .all(id, before)
+            .all({ room: id, before, seat })
         : db
             .prepare(
-              "SELECT * FROM chat_messages WHERE room=? AND thread_id=? AND id<? ORDER BY id DESC LIMIT 101",
+              `SELECT * FROM chat_messages WHERE room=@room AND thread_id=@thread AND id<@before AND ${visibility} ORDER BY id DESC LIMIT 101`,
             )
-            .all(id, thread, before);
+            .all(params);
     const page = rows.slice(0, 100).reverse();
     const roots = new Set(page.map((m) => m.thread_id ?? m.id));
     if (thread !== null) roots.add(thread);
@@ -113,10 +137,7 @@ export function createChatService(
       .run(status, text, JSON.stringify(payload), now(), id);
   function checkAI(id, seat) {
     if (active.has(id))
-      fail(
-        429,
-        "Arcy is already checking a question at this table. You can still send a message without @arcy.",
-      );
+      fail(429, "Arcy is busy checking sources. Please try again shortly.");
     if (active.size >= 4)
       fail(429, "Arcy is helping other tables. Please try again shortly.");
     const day = now() - 86400000;
@@ -208,7 +229,12 @@ export function createChatService(
       });
     active.set(id, work);
   }
-  function send(id, seat, { text, clientId, replyTo = null }) {
+  function send(
+    id,
+    seat,
+    { text, clientId, replyTo = null, private: isPrivate = false },
+  ) {
+    if (typeof isPrivate !== "boolean") fail(400, "Invalid chat visibility.");
     if (
       typeof text !== "string" ||
       !text.trim() ||
@@ -227,8 +253,15 @@ export function createChatService(
         : db
             .prepare("SELECT * FROM chat_messages WHERE room=? AND id=?")
             .get(id, replyTo);
-    if (replyTo !== null && !parent)
+    if (
+      replyTo !== null &&
+      (!parent ||
+        (parent.private_seat !== null && parent.private_seat !== seat))
+    )
       fail(404, "Reply message not found at this table.");
+    if (parent && parent.private_seat === null && isPrivate)
+      fail(400, "This thread is shared. Start a private consultation instead.");
+    const privateSeat = parent ? parent.private_seat : isPrivate ? seat : null;
     const threadId = parent ? (parent.thread_id ?? parent.id) : null;
     const existing = db
       .prepare(
@@ -236,9 +269,13 @@ export function createChatService(
       )
       .get(id, seat, clientId);
     if (existing) {
-      if (existing.text !== text || existing.reply_to !== replyTo)
+      if (
+        existing.text !== text ||
+        existing.reply_to !== replyTo ||
+        existing.private_seat !== privateSeat
+      )
         fail(409, "This message was already sent with different text.");
-      return view(id);
+      return view(id, undefined, null, seat);
     }
     if (
       db
@@ -248,15 +285,18 @@ export function createChatService(
         .get(id, seat, now() - 60000).n >= 20
     )
       fail(429, "Please slow down—20 messages per minute is the table limit.");
+    const room = load(id).room;
+    const references = chatReferences(room, seat, text);
     const ask =
-        mentionsArcy(text) ||
-        (threadId !== null &&
-          !!db
-            .prepare(
-              "SELECT id FROM chat_messages WHERE room=? AND thread_id=? AND role='arcy' LIMIT 1",
-            )
-            .get(id, threadId)),
-      room = load(id).room;
+      mentionsArcy(text) ||
+      (!referenceOnly(text, room.seats) &&
+        (privateSeat !== null ||
+          (threadId !== null &&
+            !!db
+              .prepare(
+                "SELECT id FROM chat_messages WHERE room=? AND thread_id=? AND role='arcy' LIMIT 1",
+              )
+              .get(id, threadId))));
     if (ask && enabled()) checkAI(id, seat);
     const context = ask ? refereeContext(room, seat) : null;
     let replyId;
@@ -271,8 +311,9 @@ export function createChatService(
         now(),
         "complete",
         replyTo,
-        "{}",
+        JSON.stringify({ references }),
         threadId,
+        privateSeat,
       );
       if (ask)
         replyId = Number(
@@ -287,6 +328,7 @@ export function createChatService(
             Number(message.lastInsertRowid),
             JSON.stringify({ snapshot: snapshotLabel(context) }),
             threadId ?? Number(message.lastInsertRowid),
+            privateSeat,
           ).lastInsertRowid,
         );
       db.exec("COMMIT");
@@ -296,7 +338,7 @@ export function createChatService(
     }
     if (ask) start(id, seat, text, replyId, context);
     broadcast(id);
-    return view(id);
+    return view(id, undefined, null, seat);
   }
   function retry(id, seat, messageId) {
     const message = db
@@ -304,7 +346,11 @@ export function createChatService(
         "SELECT * FROM chat_messages WHERE room=? AND id=? AND role='arcy'",
       )
       .get(id, messageId);
-    if (!message) fail(404, "Referee message not found.");
+    if (
+      !message ||
+      (message.private_seat !== null && message.private_seat !== seat)
+    )
+      fail(404, "Referee message not found.");
     if (seat !== message.seat && seat !== 0)
       fail(403, "Only the asker or host can retry this question.");
     if (message.status !== "error")
@@ -321,7 +367,7 @@ export function createChatService(
     });
     start(id, message.seat, question, message.id, context);
     broadcast(id);
-    return view(id);
+    return view(id, undefined, null, seat);
   }
   return { view, send, retry, idle: () => Promise.all([...active.values()]) };
 }

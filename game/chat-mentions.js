@@ -124,3 +124,14 @@ export function resolveChatMentions(text, players) {
     ).values(),
   ];
 }
+
+export function isPlayerMention(message, seat, players) {
+  return (
+    !message.private &&
+    message.role === "player" &&
+    message.seat !== seat &&
+    resolveChatMentions(message.text, players).some(
+      (m) => m.kind === "player" && m.playerId === seat,
+    )
+  );
+}

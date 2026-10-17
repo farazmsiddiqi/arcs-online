@@ -102,11 +102,10 @@ export function RoundStory({ game, onInspect, onPlayer }) {
                     </>
                   )}
                 </span>
-                <button
+                <div
                   className="round-player-power"
-                  onClick={() => onPlayer?.(p)}
                   style={{ "--player": game.players[p].color }}
-                  aria-label={`${game.players[p].name}: ${game.players[p].power} Power${p === game.initiative ? ", holds initiative" : ""}. Inspect player board`}
+                  aria-label={`${game.players[p].name}: ${game.players[p].power} Power${p === game.initiative ? ", holds initiative" : ""}`}
                 >
                   <span className="power-piece" aria-hidden="true" />
                   <b>{game.players[p].power}</b> Power
@@ -116,6 +115,13 @@ export function RoundStory({ game, onInspect, onPlayer }) {
                       {game.seized ? "Seized" : "Initiative"}
                     </span>
                   )}
+                </div>
+                <button
+                  className="view-play-area"
+                  onClick={() => onPlayer?.(p)}
+                  aria-label={`View ${game.players[p].name}’s play area`}
+                >
+                  View play area <span aria-hidden="true">↗</span>
                 </button>
               </div>
             </div>

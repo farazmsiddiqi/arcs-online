@@ -128,7 +128,7 @@ function publicRoom(row, p) {
     clock: clockView(row.room),
     notices: row.room.notices ?? [],
     game: row.room.game ? viewFor(row.room.game, p) : null,
-    chat: chat.view(row.id),
+    chat: chat.view(row.id, undefined, null, p),
   };
 }
 const connections = new Map();
@@ -142,7 +142,7 @@ function broadcast(id) {
 const chat = createChatService(db, { load, broadcast });
 app.get("/api/rooms/:id/chat", (req, res) => {
   const row = load(req.params.id);
-  auth(row, getKey(req));
+  const p = auth(row, getKey(req));
   const before =
     req.query.before === undefined
       ? Number.MAX_SAFE_INTEGER
@@ -153,7 +153,15 @@ app.get("/api/rooms/:id/chat", (req, res) => {
     req.query.thread === undefined ? null : Number(req.query.thread);
   if (thread !== null && (!Number.isSafeInteger(thread) || thread < 1))
     return res.status(400).json({ error: "Invalid thread." });
-  res.json(chat.view(row.id, before, thread));
+  res.json(
+    chat.view(
+      row.id,
+      before,
+      thread,
+      p,
+      req.query.scope === "private" ? "private" : "table",
+    ),
+  );
 });
 app.post("/api/rooms/:id/chat", (req, res) => {
   const row = load(req.params.id),

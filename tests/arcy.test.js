@@ -346,7 +346,7 @@ test("only mentions invoke AI, room concurrency limits allow normal player chat"
   api.send("table", 0, message("@arcy repair?"));
   assert.throws(
     () => api.send("table", 1, message("@arcy move?", "2222222222222222")),
-    /already checking/,
+    /busy checking/,
   );
   api.send("table", 1, message("Hello", "3333333333333333"));
   finish();

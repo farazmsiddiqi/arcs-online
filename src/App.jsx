@@ -1,3 +1,5 @@
+import SystemDetails from "./SystemDetails.jsx";
+import { requestJSON, subscribeRoom } from "./connection.js";
 import PlayChoices from "./PlayChoices.jsx";
 import TableChat from "./TableChat.jsx";
 import { setupImage, setupsFor } from "./setupPreview.js";
@@ -320,61 +322,26 @@ export default function App() {
     };
   }, [dockHeight, live, game.revision, picked]);
   const request = async (path, method = "GET", body) => {
-    const key = credentials.key;
-    const r = await fetch(path, {
-      method,
-      headers: {
-        "Content-Type": "application/json",
-        ...(key ? { Authorization: `Bearer ${key}` } : {}),
-      },
-      ...(body ? { body: JSON.stringify(body) } : {}),
-    });
-    const data = await r.json();
-    if (!r.ok) {
-      if (data.game) setRoom(data);
-      throw new Error(data.error ?? "Connection failed.");
+    try {
+      return await requestJSON(path, { method, body, key: credentials.key });
+    } catch (e) {
+      if (e.data?.game) setRoom(e.data);
+      throw e;
     }
-    return data;
   };
   useEffect(() => {
     if (!credentials.id || !credentials.key) return;
-    let active = true,
-      ws,
-      timer;
-    const refresh = () =>
-      request(`/api/rooms/${credentials.id}`)
-        .then((data) => {
-          if (active) setRoom(data);
-        })
-        .catch((e) => {
-          if (active) setError(e.message);
-        });
-    refresh();
-    const connect = () => {
-      ws = new WebSocket(
-        `${location.protocol === "https:" ? "wss" : "ws"}://${location.host}/socket`,
-      );
-      ws.onopen = () => ws.send(JSON.stringify(credentials));
-      ws.onmessage = (e) => {
-        if (active) {
-          setRoom(JSON.parse(e.data));
-          setConnected(true);
-        }
-      };
-      ws.onclose = () => {
-        setConnected(false);
-        if (active) timer = setTimeout(connect, 2000);
-      };
-      ws.onerror = () => ws.close();
-    };
-    connect();
-    const poll = setInterval(refresh, 15000);
-    return () => {
-      active = false;
-      clearTimeout(timer);
-      clearInterval(poll);
-      ws?.close();
-    };
+    return subscribeRoom({
+      credentials,
+      onRoom: (data) =>
+        setRoom((current) =>
+          current?.id === data.id && current.revision > data.revision
+            ? current
+            : data,
+        ),
+      onConnected: setConnected,
+      onError: setError,
+    });
   }, [credentials.id, credentials.key]);
   useEffect(() => {
     if (!live) {
@@ -749,6 +716,11 @@ export default function App() {
               game={room.game}
               request={request}
               onInspect={setDetail}
+              onReveal={() => {
+                setModal(null);
+                setPlayerDetail(null);
+                setDetail(null);
+              }}
             />
           )}
           <button onClick={() => setModal("players")} aria-label="Players">
@@ -1204,7 +1176,7 @@ export default function App() {
               if (layer === "modal")
                 modalScroll.current = e.currentTarget.scrollTop;
             }}
-            className={`modal ${modal === "library" ? "library-modal" : modal === "dice-guide" ? "dice-guide-modal" : ""} ${detail ? "card-modal" : ""}`}
+            className={`modal ${!detail && playerDetail !== null ? "player-area-modal" : ""} ${!detail && playerDetail === null && modal === "system" ? "system-details-modal" : ""} ${modal === "library" ? "library-modal" : modal === "dice-guide" ? "dice-guide-modal" : ""} ${detail ? "card-modal" : ""}`}
             role="dialog"
             aria-modal="true"
             aria-label={
@@ -1320,88 +1292,30 @@ export default function App() {
                 </div>
               </>
             ) : playerDetail !== null ? (
-              <>
-                <span className="eyebrow gold">COMMANDER</span>
-                <h2 style={{ color: game.players[playerDetail].color }}>
-                  {game.players[playerDetail].name}
-                </h2>
-                <p>
-                  {game.players[playerDetail].power} Power ·{" "}
-                  {game.players[playerDetail].trophies.length} Trophies ·{" "}
-                  {game.players[playerDetail].captives.length} Captives
-                </p>
-                {live && (
-                  <div className="supply-list">
-                    {Object.entries(game.supplies[playerDetail]).map(
-                      ([type, n]) => (
-                        <span key={type}>
-                          <img src={sprite(playerDetail, type)} alt="" />
-                          {n} {type}
-                          {n === 1 ? "" : "s"} in supply
-                        </span>
-                      ),
-                    )}
-                  </div>
-                )}
-                <p>
-                  Outrage:{" "}
-                  {game.players[playerDetail].outrage.join(", ") || "none"}
-                </p>
-                {live && (
-                  <div className="resource-detail">
-                    {game.players[playerDetail].resources.map((r, index) => (
-                      <span key={index}>
-                        {r ? (
-                          <img src={`/assets/${r}.webp`} alt={r} />
-                        ) : (
-                          <span>Empty</span>
-                        )}
-                        <small>
-                          Slot {index + 1} ·{" "}
-                          {game.resourceKeys[playerDetail][index]} keys
-                        </small>
-                      </span>
-                    ))}
-                  </div>
-                )}
-                {["trophies", "captives"].map((kind) => (
-                  <details className="card-faq" key={kind}>
-                    <summary>
-                      {cap(kind)} · {game.players[playerDetail][kind].length}
-                    </summary>
-                    {game.players.map((owner) => {
-                      const pieces = game.players[playerDetail][kind].filter(
-                        (x) => x.owner === owner.id,
-                      );
-                      return pieces.length ? (
-                        <p key={owner.id} style={{ color: owner.color }}>
-                          {owner.name}:{" "}
-                          {["ship", "city", "starport", "agent"]
-                            .map((type) => ({
-                              type,
-                              n: pieces.filter((x) => x.type === type).length,
-                            }))
-                            .filter((x) => x.n)
-                            .map(
-                              (x) => `${x.n} ${x.type}${x.n === 1 ? "" : "s"}`,
-                            )
-                            .join(", ")}
-                        </p>
-                      ) : null;
-                    })}
-                  </details>
-                ))}
-                <div className="player-catalogue">
-                  {[
-                    game.players[playerDetail].leader,
-                    ...game.players[playerDetail].cards,
-                  ]
-                    .filter(Boolean)
-                    .map((id) => (
-                      <Card key={id} id={id} onClick={() => setDetail(id)} />
-                    ))}
-                </div>
-              </>
+              <div className="player-area-inspection">
+                <nav
+                  className="player-area-tabs"
+                  aria-label="View a player’s play area"
+                >
+                  {game.players.map((p) => (
+                    <button
+                      key={p.id}
+                      aria-pressed={playerDetail === p.id}
+                      onClick={() => setPlayerDetail(p.id)}
+                      style={{ "--player-color": p.color }}
+                    >
+                      {p.name}
+                    </button>
+                  ))}
+                </nav>
+                <PlayerTable
+                  game={game}
+                  playerId={playerDetail}
+                  readOnly
+                  live={live}
+                  onInspect={setDetail}
+                />
+              </div>
             ) : modal === "welcome" ? (
               <>
                 <span className="eyebrow gold">
@@ -2176,94 +2090,12 @@ export default function App() {
                 </div>
               </>
             ) : modal === "system" && selected ? (
-              <>
-                {" "}
-                {selected && (
-                  <div className="inspect">
-                    <button
-                      className="inspect-close"
-                      onClick={() => {
-                        setSelected(null);
-                        setModal(null);
-                      }}
-                      aria-label="Close system inspection"
-                    >
-                      <X size={13} />
-                    </button>
-                    <span className="eyebrow">SYSTEM SELECTED</span>
-                    <h3>
-                      Sector {MAP[selected].cluster} ·{" "}
-                      {cap(MAP[selected].symbol)}
-                    </h3>
-                    {live && (
-                      <p>
-                        {game.controls?.[selected] == null
-                          ? "Uncontrolled"
-                          : `Controlled by ${game.players[game.controls[selected]].name}`}
-                      </p>
-                    )}
-                    <p>
-                      {cap(
-                        game.overrides?.[selected] ?? MAP[selected].resource,
-                      ) ?? "Transit gate"}
-                      {MAP[selected].slots
-                        ? ` · ${MAP[selected].slots} building slots`
-                        : ""}
-                    </p>
-                    {game.players
-                      .filter((p) =>
-                        game.pieces.some(
-                          (v) => v.owner === p.id && v.system === selected,
-                        ),
-                      )
-                      .map((p) => (
-                        <div
-                          key={p.id}
-                          className="inspect-force"
-                          style={{ color: p.color }}
-                        >
-                          <Ship size={16} />
-                          {p.name}
-                          <div className="force-breakdown">
-                            {["ship", "city", "starport"].map((type) => {
-                              const pieces = game.pieces.filter(
-                                (v) =>
-                                  v.owner === p.id &&
-                                  v.system === selected &&
-                                  v.type === type,
-                              );
-                              if (!pieces.length) return null;
-                              return (
-                                <span key={type}>
-                                  <img src={sprite(p.id, type)} alt="" />
-                                  <b>
-                                    {pieces.length}{" "}
-                                    {type === "city"
-                                      ? pieces.length === 1
-                                        ? "city"
-                                        : "cities"
-                                      : `${type}${pieces.length === 1 ? "" : "s"}`}
-                                  </b>
-                                  <small>
-                                    {pieces.filter((v) => v.damaged).length}{" "}
-                                    damaged
-                                  </small>
-                                </span>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      ))}
-                    <p className="control-help">
-                      Control requires strictly more fresh ships than each
-                      rival. Ties leave the system uncontrolled.
-                    </p>
-                    {!game.pieces.some((v) => v.system === selected) && (
-                      <p className="empty-system">No pieces in this system.</p>
-                    )}
-                  </div>
-                )}
-              </>
+              <SystemDetails
+                game={game}
+                systemId={selected}
+                onPlayer={setPlayerDetail}
+                onClose={() => setModal(null)}
+              />
             ) : modal === "timers" && room ? (
               <TurnTimers
                 room={room}

@@ -3,123 +3,9 @@ import { ZoomIn, ZoomOut, Scan, Focus } from "lucide-react";
 import CombatEffects from "./CombatEffects.jsx";
 import { useRef, useState, useEffect } from "react";
 import { MAP } from "../game/data.js";
-const CENTERS = {
-  "1-gate": [1300, 550],
-  "1-arrow": [1050, 360],
-  "1-crescent": [1320, 130],
-  "1-hex": [1630, 400],
-  "2-gate": [1630, 780],
-  "2-arrow": [1810, 580],
-  "2-crescent": [1920, 730],
-  "2-hex": [1900, 900],
-  "3-gate": [1590, 1110],
-  "3-arrow": [1860, 1060],
-  "3-crescent": [2110, 1420],
-  "3-hex": [1670, 1370],
-  "4-gate": [1170, 1260],
-  "4-arrow": [1350, 1660],
-  "4-crescent": [940, 1700],
-  "4-hex": [570, 1630],
-  "5-gate": [870, 990],
-  "5-arrow": [640, 1230],
-  "5-crescent": [240, 1160],
-  "5-hex": [530, 900],
-  "6-gate": [910, 690],
-  "6-arrow": [630, 730],
-  "6-crescent": [630, 520],
-  "6-hex": [830, 450],
-};
-const slotCoords = {
-  "1-arrow": [
-    [1049, 223],
-    [1166, 170],
-  ],
-  "1-crescent": [[1434, 212]],
-  "1-hex": [
-    [1745, 147],
-    [1846, 228],
-  ],
-  "2-arrow": [[2010, 440]],
-  "2-crescent": [[2300, 618]],
-  "2-hex": [
-    [2116, 880],
-    [2221, 936],
-  ],
-  "3-arrow": [[2186, 1127]],
-  "3-crescent": [[1846, 1249]],
-  "3-hex": [
-    [1929, 1534],
-    [1830, 1610],
-  ],
-  "4-arrow": [
-    [1529, 1573],
-    [1430, 1497],
-  ],
-  "4-crescent": [
-    [1060, 1584],
-    [1159, 1660],
-  ],
-  "4-hex": [[776, 1505]],
-  "5-arrow": [[255, 1458]],
-  "5-crescent": [[434, 1101]],
-  "5-hex": [
-    [223, 876],
-    [125, 952],
-  ],
-  "6-arrow": [[431, 683]],
-  "6-crescent": [
-    [397, 313],
-    [299, 389],
-  ],
-  "6-hex": [[678, 228]],
-};
+import { CENTERS, slotCoords, areas } from "./mapGeometry.js";
 export const sprite = (owner, type, damaged = false) =>
   `/assets/${["r", "y", "b", "w"][owner]}-${type}${damaged ? "-damaged" : ""}.webp`;
-const areas = [
-  [
-    [770, 0],
-    [1970, 0],
-    [1620, 490],
-    [1530, 620],
-    [1040, 610],
-  ],
-  [
-    [1970, 0],
-    [2528, 0],
-    [2528, 1055],
-    [1640, 920],
-    [1530, 620],
-  ],
-  [
-    [2528, 1055],
-    [2528, 1776],
-    [1715, 1776],
-    [1420, 1280],
-    [1530, 940],
-  ],
-  [
-    [1715, 1776],
-    [180, 1776],
-    [780, 1190],
-    [1040, 1100],
-    [1420, 1280],
-  ],
-  [
-    [180, 1776],
-    [0, 1776],
-    [0, 758],
-    [880, 856],
-    [1040, 1100],
-    [780, 1190],
-  ],
-  [
-    [0, 758],
-    [0, 0],
-    [770, 0],
-    [1040, 610],
-    [880, 856],
-  ],
-];
 export default function Board({
   game,
   selected,
@@ -292,11 +178,12 @@ export default function Board({
           (pts, i) =>
             !game.clusters.includes(i + 1) && (
               <g key={i}>
-                <polygon
-                  points={pts.map((p) => p.join(",")).join(" ")}
-                  fill="#171419ee"
-                  stroke="#596265"
-                  strokeWidth="3"
+                <path
+                  d={pts}
+                  transform="scale(1.35404392 1.35365854)"
+                  fill="#171419e8"
+                  pointerEvents="none"
+                  data-out-of-play={i + 1}
                 />
                 <text
                   x={CENTERS[`${i + 1}-crescent`][0]}

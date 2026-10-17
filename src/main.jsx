@@ -17,3 +17,5 @@ import "./player-table.css";
 import "./shared-board.css";
 
 import "./laptop-fit.css";
+
+import "./inspection.css";

@@ -620,3 +620,212 @@
   font-size: 12px;
   padding: 8px;
 }
+.chat-channel-switch {
+  display: flex;
+  gap: 5px;
+  padding: 0 18px 12px;
+}
+.table-chat .chat-channel-switch button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 10px;
+  flex: 1;
+  border: 1px solid transparent;
+  background: #ffffff04;
+  border-radius: 9px;
+  color: #b1a593;
+  font-size: 12px;
+}
+.table-chat .chat-channel-switch button[aria-pressed="true"] {
+  border-color: #cbb37a44;
+  color: #f1dab0;
+  background: #c6a66712;
+}
+.chat-private-banner {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0 20px 12px;
+  color: #c4b4d7;
+  font-size: 11px;
+}
+.chat-mention-notices {
+  position: fixed;
+  top: 84px;
+  right: 20px;
+  z-index: 160;
+  width: min(355px, calc(100vw - 32px));
+  display: grid;
+  gap: 8px;
+}
+.chat-mention-notice {
+  display: flex;
+  background: linear-gradient(120deg, #39313d, #211f27);
+  border: 1px solid #cfb87950;
+  border-radius: 14px;
+  box-shadow: 0 12px 40px #0008;
+  animation: mention-arrive 0.25s ease-out;
+  color: #eadac0;
+}
+.chat-mention-notice button {
+  font: inherit;
+  color: inherit;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+.mention-open {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px;
+  min-width: 0;
+  text-align: left;
+  flex: 1;
+}
+.mention-open > span:last-child {
+  min-width: 0;
+}
+.mention-seal {
+  flex-shrink: 0;
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border: 1px solid #d6b97b70;
+  border-radius: 50%;
+  background: #b89c6020;
+  color: #e7c983;
+}
+.mention-open strong {
+  display: block;
+  font:
+    14px "Fraunces",
+    Georgia,
+    serif;
+}
+.mention-open small {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  font:
+    13px/1.4 "Source Sans 3",
+    sans-serif;
+  margin: 5px 0;
+  color: #c3b6a5;
+  overflow-wrap: anywhere;
+}
+.mention-open em {
+  font:
+    10px "Source Sans 3",
+    sans-serif;
+  color: #a9977c;
+}
+.mention-dismiss {
+  align-self: flex-start;
+  padding: 10px 10px 0 0;
+}
+@keyframes mention-arrive {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .chat-mention-notice {
+    animation: none;
+  }
+}
+.chat-state-card {
+  margin: 12px 0 4px;
+  padding: 12px 14px;
+  border: 1px solid #c6b28a2b;
+  border-radius: 10px;
+  background: #d9bd7910;
+}
+.chat-state-card > header {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: #e4cea1;
+  font-size: 13px;
+}
+.chat-state-card header > span {
+  margin-left: auto;
+  font-size: 9px;
+  color: #a8997c;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+.chat-state-card dl {
+  margin: 10px 0;
+}
+.chat-reference-row {
+  display: flex;
+  gap: 12px;
+  align-items: baseline;
+  padding: 6px 0;
+  border-bottom: 1px solid #ffffff08;
+}
+.chat-reference-row dt {
+  flex: 0 0 30%;
+  color: #a79c88;
+  font-size: 11px;
+}
+.chat-reference-row dd {
+  margin: 0;
+  color: #d4ccbc;
+  font-size: 12px;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+.chat-state-card footer,
+.chat-state-card summary {
+  font-size: 10px;
+  color: #a99a80;
+}
+.table-chat .chat-reference-row button {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 10px;
+  border: 0;
+  padding: 0;
+  background: none;
+  color: #ded3bd;
+  text-align: left;
+}
+.chat-reference-row button img {
+  width: 30px;
+  height: 42px;
+  object-fit: contain;
+}
+.chat-reference-row button small {
+  display: block;
+  color: #ab9c83;
+  font-size: 10px;
+}
+.chat-reference-row button strong {
+  font-size: 12px;
+  font-weight: 500;
+}
+.chat-reference-row button > span:last-child {
+  margin-left: auto;
+}
+.chat-message:has(.chat-state-card) {
+  width: 100%;
+  max-width: 100%;
+}
+.chat-message:has(.chat-state-card) > p {
+  width: fit-content;
+}
+.from-me:has(.chat-state-card) > p {
+  margin-left: auto;
+}

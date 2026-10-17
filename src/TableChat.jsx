@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import {
   MessageCircle,
+  LockKeyhole,
   ArrowUp,
   ArrowLeft,
   Reply,
@@ -14,9 +15,11 @@ import {
   UserRound,
   Orbit,
 } from "lucide-react";
+import { cardImage } from "./Cards.jsx";
 import { COLORS } from "../game/data.js";
 import {
   chatMentionOptions,
+  isPlayerMention,
   mentionQuery,
   filterMentions,
   mentionSegments,
@@ -100,13 +103,72 @@ function Ruling({ message, game, onInspect }) {
   );
 }
 
-export default function TableChat({ room, game, request, onInspect }) {
+function ReferenceSnapshot({ reference, game, onInspect }) {
+  const rows = reference.rows,
+    changed =
+      reference.snapshot?.revision != null &&
+      reference.snapshot.revision !== game?.revision;
+  const renderRow = (r, i) => (
+    <div className="chat-reference-row" key={i}>
+      {r.cardId ? (
+        <button onClick={() => onInspect(r.cardId)}>
+          <img src={cardImage(r.cardId)} alt="" />
+          <span>
+            <small>{r.label}</small>
+            <strong>{r.value}</strong>
+          </span>
+          <span aria-hidden="true">↗</span>
+        </button>
+      ) : (
+        <>
+          <dt>{r.label}</dt>
+          <dd>{r.value}</dd>
+        </>
+      )}
+    </div>
+  );
+  return (
+    <section
+      className="chat-state-card"
+      aria-label={`${reference.title} snapshot`}
+    >
+      <header>
+        <Orbit size={14} />
+        <strong>{reference.title}</strong>
+        <span>Table snapshot</span>
+      </header>
+      <dl>{rows.slice(0, 6).map(renderRow)}</dl>
+      {rows.length > 6 && (
+        <details>
+          <summary>{rows.length - 6} more details</summary>
+          <dl>{rows.slice(6).map(renderRow)}</dl>
+        </details>
+      )}
+      <footer>
+        {reference.snapshot?.chapter
+          ? `Chapter ${reference.snapshot.chapter} · Round ${reference.snapshot.round}`
+          : "Lobby"}
+        {changed ? " · Earlier position" : ""} · No AI
+      </footer>
+    </section>
+  );
+}
+
+export default function TableChat({
+  room,
+  game,
+  request,
+  onInspect,
+  onReveal,
+}) {
   const [open, setOpen] = useState(false),
     [messages, setMessages] = useState([]),
     [draft, setDraft] = useState(""),
     [busy, setBusy] = useState(false),
     [error, setError] = useState(""),
     [thread, setThread] = useState(null),
+    [privateMode, setPrivateMode] = useState(false),
+    [mentionNotices, setMentionNotices] = useState([]),
     [threadCounts, setThreadCounts] = useState({}),
     [pages, setPages] = useState({}),
     [threadLoading, setThreadLoading] = useState(false),
@@ -129,14 +191,18 @@ export default function TableChat({ room, game, request, onInspect }) {
     previousDraft = useRef(""),
     drafts = useRef({}),
     currentThread = useRef(null);
-  const pageKey = thread ?? "table";
+  const channelKey = privateMode ? "private" : "table";
+  const pageKey = thread ?? channelKey;
   const older = pages[pageKey]?.hasOlder ?? false;
-  const threadHasArcy = thread !== null && threadCounts[thread]?.arcy;
-  const visibleMessages = messages.filter((m) =>
-    thread !== null
-      ? m.id === thread || m.threadId === thread
-      : m.threadId == null || (m.role === "arcy" && m.replyTo === m.threadId),
-  );
+  const threadHasArcy =
+    privateMode || (thread !== null && threadCounts[thread]?.arcy);
+  const visibleMessages = messages
+    .filter((m) => !!m.private === privateMode)
+    .filter((m) =>
+      thread !== null
+        ? m.id === thread || m.threadId === thread
+        : m.threadId == null || (m.role === "arcy" && m.replyTo === m.threadId),
+    );
   const enabled = room.chat?.enabled ?? false;
   const mentionOptions = chatMentionOptions(room.seats);
   const suggestions = mention
@@ -186,6 +252,22 @@ export default function TableChat({ room, game, request, onInspect }) {
     if (previousIds.current === null)
       setPages((current) => ({ ...current, table: room.chat }));
     const signatures = new Set(incoming.map((m) => `${m.id}:${m.status}`));
+    const seenKey = `arcs-mentions:${room.id}:${room.me}`;
+    let lastSeen = Number(localStorage.getItem(seenKey));
+    if (!lastSeen)
+      lastSeen =
+        previousIds.current === null
+          ? Math.max(0, ...incoming.map((m) => m.id))
+          : 0;
+    const mentions = incoming.filter(
+      (m) => m.id > lastSeen && isPlayerMention(m, room.me, room.seats),
+    );
+    if (mentions.length)
+      setMentionNotices((current) => [...current, ...mentions].slice(-5));
+    localStorage.setItem(
+      seenKey,
+      String(Math.max(lastSeen, ...incoming.map((m) => m.id))),
+    );
     if (previousIds.current && !open)
       setUnread(
         (n) =>
@@ -219,10 +301,10 @@ export default function TableChat({ room, game, request, onInspect }) {
     input.current?.focus();
   };
   async function showThread(id) {
-    drafts.current[currentThread.current ?? "table"] = draft;
+    drafts.current[currentThread.current ?? channelKey] = draft;
     currentThread.current = id;
     setThread(id);
-    setDraft(drafts.current[id ?? "table"] ?? "");
+    setDraft(drafts.current[id ?? channelKey] ?? "");
     setMention(null);
     setError("");
     nearBottom.current = true;
@@ -250,9 +332,12 @@ export default function TableChat({ room, game, request, onInspect }) {
     const sentThread = thread;
     // Keep a failed request's ID: retrying after a lost response cannot double
     // post or bill the same question twice.
-    if (!clientId.current || previousDraft.current !== `${thread}:${text}`)
+    if (
+      !clientId.current ||
+      previousDraft.current !== `${channelKey}:${thread}:${text}`
+    )
       clientId.current = crypto.randomUUID();
-    previousDraft.current = `${thread}:${text}`;
+    previousDraft.current = `${channelKey}:${thread}:${text}`;
     setBusy(true);
     setError("");
     try {
@@ -260,13 +345,14 @@ export default function TableChat({ room, game, request, onInspect }) {
         text,
         clientId: clientId.current,
         replyTo: sentThread,
+        private: privateMode,
       });
       merge(result.messages);
       setThreadCounts((current) => ({ ...current, ...result.threadCounts }));
       if (currentThread.current === sentThread)
         setDraft((current) => (current.trim() === text ? "" : current));
-      else if (drafts.current[sentThread ?? "table"]?.trim() === text)
-        drafts.current[sentThread ?? "table"] = "";
+      else if (drafts.current[sentThread ?? channelKey]?.trim() === text)
+        drafts.current[sentThread ?? channelKey] = "";
       setMention(null);
       clientId.current = null;
       nearBottom.current = true;
@@ -298,7 +384,7 @@ export default function TableChat({ room, game, request, onInspect }) {
     const height = feed.current?.scrollHeight ?? 0;
     try {
       const result = await request(
-        `/api/rooms/${room.id}/chat?before=${pages[pageKey]?.nextBefore}${thread !== null ? `&thread=${thread}` : ""}`,
+        `/api/rooms/${room.id}/chat?scope=${channelKey}&before=${pages[pageKey]?.nextBefore}${thread !== null ? `&thread=${thread}` : ""}`,
       );
       merge(result.messages);
       setPages((current) => ({ ...current, [pageKey]: result }));
@@ -313,6 +399,34 @@ export default function TableChat({ room, game, request, onInspect }) {
       setLoadingOlder(false);
     }
   }
+  async function switchChannel(value) {
+    drafts.current[currentThread.current ?? channelKey] = draft;
+    currentThread.current = null;
+    setThread(null);
+    setPrivateMode(value);
+    setMention(null);
+    setError("");
+    setDraft(drafts.current[value ? "private" : "table"] ?? "");
+    nearBottom.current = true;
+    try {
+      const key = value ? "private" : "table";
+      const result = await request(`/api/rooms/${room.id}/chat?scope=${key}`);
+      merge(result.messages);
+      setPages((p) => ({ ...p, [key]: result }));
+      setThreadCounts((p) => ({ ...p, ...result.threadCounts }));
+    } catch (e) {
+      setError(e.message);
+    }
+    input.current?.focus();
+  }
+  const openMention = (message) => {
+    onReveal?.();
+    setOpen(true);
+    setPrivateMode(false);
+    setUnread(0);
+    setMentionNotices((ns) => ns.filter((n) => n.id !== message.id));
+    showThread(message.threadId ?? message.id);
+  };
   const resize = (value) => {
     const w = Math.max(320, Math.min(600, innerWidth - 32, value));
     setWidth(w);
@@ -337,6 +451,41 @@ export default function TableChat({ room, game, request, onInspect }) {
         </span>
         {unread > 0 && <b className="chat-unread">{Math.min(unread, 99)}</b>}
       </button>
+      {!!mentionNotices.length &&
+        createPortal(
+          <div
+            className="chat-mention-notices"
+            aria-label="Chat mentions"
+            role="status"
+          >
+            {mentionNotices.map((m) => (
+              <div key={m.id} className="chat-mention-notice">
+                <button className="mention-open" onClick={() => openMention(m)}>
+                  <span className="mention-seal">
+                    <AtSign size={20} />
+                  </span>
+                  <span>
+                    <strong>
+                      {room.seats[m.seat]?.name ?? "A player"} mentioned you
+                    </strong>
+                    <small>{m.text}</small>
+                    <em>Table message · Open conversation ↗</em>
+                  </span>
+                </button>
+                <button
+                  className="mention-dismiss"
+                  aria-label="Dismiss mention"
+                  onClick={() =>
+                    setMentionNotices((ns) => ns.filter((n) => n.id !== m.id))
+                  }
+                >
+                  <X size={15} />
+                </button>
+              </div>
+            ))}
+          </div>,
+          document.body,
+        )}
       {open &&
         createPortal(
           <aside
@@ -386,7 +535,7 @@ export default function TableChat({ room, game, request, onInspect }) {
             />
             <div className="chat-heading">
               <div>
-                <h2>Table chat</h2>
+                <h2>{privateMode ? "Consult Arcy" : "Table chat"}</h2>
                 <span className="chat-eyebrow">
                   {enabled
                     ? "Arcy is here for rules · no strategy advice"
@@ -397,20 +546,46 @@ export default function TableChat({ room, game, request, onInspect }) {
                 <X size={19} />
               </button>
             </div>
+            <div className="chat-channel-switch" aria-label="Chat visibility">
+              <button
+                aria-pressed={!privateMode}
+                onClick={() => switchChannel(false)}
+              >
+                <MessageCircle size={14} /> Table
+              </button>
+              <button
+                aria-pressed={privateMode}
+                onClick={() => switchChannel(true)}
+              >
+                <LockKeyhole size={14} /> Consult Arcy privately
+              </button>
+            </div>
+            {privateMode && (
+              <div className="chat-private-banner">
+                <LockKeyhole size={12} /> Only you and Arcy · Rules, never move
+                advice
+              </div>
+            )}
             {thread !== null && (
               <div className="chat-thread-heading">
                 <button
                   onClick={() => showThread(null)}
-                  aria-label="Back to table chat"
+                  aria-label={
+                    privateMode
+                      ? "Back to private consultations"
+                      : "Back to table chat"
+                  }
                 >
                   <ArrowLeft size={17} />
                 </button>
                 <div>
                   <strong>Thread</strong>
                   <small>
-                    {threadHasArcy
-                      ? "Arcy follows replies here · shared with the table"
-                      : "Replies stay together · shared with the table"}
+                    {privateMode
+                      ? "Private consultation · visible only to you"
+                      : threadHasArcy
+                        ? "Arcy follows replies here · shared with the table"
+                        : "Replies stay together · shared with the table"}
                   </small>
                 </div>
               </div>
@@ -419,7 +594,11 @@ export default function TableChat({ room, game, request, onInspect }) {
               className="chat-feed"
               ref={feed}
               role="log"
-              aria-label="Shared table messages"
+              aria-label={
+                privateMode
+                  ? "Private Arcy consultations"
+                  : "Shared table messages"
+              }
               aria-live="polite"
               aria-relevant="additions text"
               onScroll={() => {
@@ -440,13 +619,14 @@ export default function TableChat({ room, game, request, onInspect }) {
               {threadLoading && (
                 <p className="chat-thread-loading">Loading thread…</p>
               )}
-              {!messages.length && thread === null && (
+              {!visibleMessages.length && thread === null && (
                 <div className="chat-empty">
                   <MessageCircle size={28} />
                   <h3>What’s the rule?</h3>
                   <p>
-                    Message your table, or mention @arcy for a rules explanation
-                    with sources. You make the moves.
+                    {privateMode
+                      ? "Ask a rules question discreetly. Other players cannot see this consultation, even when you reference them. Arcy answers automatically."
+                      : "Message your table, or mention @arcy for a rules explanation with sources. You make the moves."}
                   </p>
                   <div className="chat-starters">
                     {[
@@ -529,6 +709,14 @@ export default function TableChat({ room, game, request, onInspect }) {
                         : m.text}
                     </p>
                   )}
+                  {m.references?.map((reference) => (
+                    <ReferenceSnapshot
+                      key={reference.id}
+                      reference={reference}
+                      game={game}
+                      onInspect={onInspect}
+                    />
+                  ))}
                   {m.status === "error" &&
                     (m.seat === room.me || room.host) &&
                     enabled && (
@@ -617,12 +805,12 @@ export default function TableChat({ room, game, request, onInspect }) {
                     <div className="chat-mention-hint">
                       {threadHasArcy
                         ? "Arcy follows replies in this thread. References add context."
-                        : "Mention @arcy to get an answer. Other references add context."}
+                        : "References show instant table data. Mention @arcy for rules."}
                     </div>
                   </div>
                 )}
                 <label className="chat-sr-only" htmlFor="chat-message">
-                  Message the table
+                  {privateMode ? "Ask Arcy privately" : "Message the table"}
                 </label>
                 <textarea
                   id="chat-message"
@@ -631,11 +819,13 @@ export default function TableChat({ room, game, request, onInspect }) {
                   maxLength={1500}
                   rows={2}
                   placeholder={
-                    threadHasArcy
-                      ? "Reply to Arcy… no @ needed"
-                      : thread !== null
-                        ? "Reply in thread, or ask @arcy"
-                        : "Message the table, or ask @arcy"
+                    privateMode
+                      ? "Ask Arcy privately… no @ needed"
+                      : threadHasArcy
+                        ? "Reply to Arcy… no @ needed"
+                        : thread !== null
+                          ? "Reply in thread, or ask @arcy"
+                          : "Message the table, or ask @arcy"
                   }
                   aria-autocomplete="list"
                   aria-controls={mention ? "chat-mentions" : undefined}
@@ -745,13 +935,16 @@ export default function TableChat({ room, game, request, onInspect }) {
               )}
               <details className="chat-privacy">
                 <summary>
-                  <ChevronDown size={12} /> Everyone at this table can read this
+                  <ChevronDown size={12} />{" "}
+                  {privateMode
+                    ? "Private · Only you can read this"
+                    : "Everyone at this table can read this"}
                 </summary>
                 <p>
-                  When you mention @arcy, your question, recent chat and the
-                  public board are sent to OpenAI. Hidden hands and face-down
-                  cards are excluded. Arcy cites the publisher’s rules, can make
-                  mistakes, and never changes play or pauses the timer.
+                  When you ask Arcy, your question, this thread and the public
+                  board are sent to OpenAI. Hidden hands and face-down cards are
+                  excluded. Arcy cites the publisher’s rules, can make mistakes,
+                  and never changes play or pauses the timer.
                 </p>
               </details>
             </form>

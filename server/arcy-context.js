@@ -2,7 +2,7 @@ import { viewFor } from "../game/engine.js";
 import { ACTION_CARDS, CARDS, MAP, DICE } from "../game/data.js";
 
 // A separate allowlist, never a spread of room/game state. Even the asker has
-// no private-hand channel to Arcy: all answers belong to the shared table.
+// no private-hand channel to Arcy, including in private consultations.
 export function refereeContext(room, asker) {
   if (!room.game)
     return {

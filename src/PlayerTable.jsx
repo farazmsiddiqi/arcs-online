@@ -54,6 +54,8 @@ function CapturedPieces({ kind, player, game }) {
 }
 export default function PlayerTable({
   game,
+  playerId = game.me ?? 0,
+  readOnly = false,
   live,
   busy,
   children,
@@ -63,28 +65,50 @@ export default function PlayerTable({
   resourceFocus,
 }) {
   const ownedTrack = useRef(null);
-  const me = game.players[game.me ?? 0],
-    actor = live && game.decision?.actor === game.me,
+  const me = game.players[playerId],
+    actor =
+      !readOnly &&
+      playerId === game.me &&
+      live &&
+      game.decision?.actor === game.me,
     arranging = actor && !!game.resourceArrangement,
-    keys = game.resourceKeys?.[game.me] ?? [3, 1, 1, 2, 1, 3],
-    capacity = game.capacities?.[game.me] ?? me.resources.length,
-    citySupply = game.supplies?.[game.me]?.city,
+    keys = game.resourceKeys?.[playerId] ?? [3, 1, 1, 2, 1, 3],
+    capacity = game.capacities?.[playerId] ?? me.resources.length,
+    citySupply = game.supplies?.[playerId]?.city,
     owned = [me.leader, ...me.cards].filter(Boolean),
-    handSize = Array.isArray(me.hand) ? me.hand.length : 0;
+    handSize = Array.isArray(me.hand) ? me.hand.length : (me.hand ?? 0);
   return (
     <section
-      className="hand-tray player-table"
-      aria-label="Your player board"
+      className={`hand-tray player-table ${readOnly ? "public-player-table" : ""}`}
+      aria-label={readOnly ? `${me.name}’s play area` : "Your player board"}
       style={{ "--player-color": me.color }}
     >
       <div className="player-table-inner">
         <header className="player-table-heading">
           <span className="commander-mark" />
           <strong>
-            {me.name} <span>· Your play area</span>
+            {me.name} <span>· {readOnly ? "Play area" : "Your play area"}</span>
           </strong>
           <span>{me.power} Power</span>
         </header>
+        {game.supplies?.[playerId] && (
+          <div className="mat-supplies" aria-label="Pieces in supply">
+            {["ship", "agent", "starport"].map((type) => (
+              <div key={type}>
+                <img src={sprite(playerId, type)} alt="" />
+                <strong>{game.supplies[playerId][type]}</strong>
+                <span>
+                  {type === "ship"
+                    ? "Ships"
+                    : type === "agent"
+                      ? "Agents"
+                      : "Starports"}
+                  <small>in supply</small>
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
         <div className="personal-tabletop">
           <div className={`player-mat ${arranging ? "arranging" : ""}`}>
             <header className="mat-heading">
@@ -112,7 +136,7 @@ export default function PlayerTable({
             ) : (
               <div
                 className="mat-resource-track"
-                aria-label="Your stored resources"
+                aria-label={`${me.name}’s stored resources`}
               >
                 {Array.from(
                   { length: Math.max(6, capacity, me.resources.length) },
@@ -185,7 +209,7 @@ export default function PlayerTable({
                     }
                   >
                     {i < citySupply ? (
-                      <img src={sprite(game.me, "city")} alt="Unbuilt city" />
+                      <img src={sprite(playerId, "city")} alt="Unbuilt city" />
                     ) : (
                       <span>△</span>
                     )}
@@ -216,7 +240,7 @@ export default function PlayerTable({
                       {me.outrage.includes(r) && (
                         <img
                           className="outrage-agent"
-                          src={sprite(game.me, "agent")}
+                          src={sprite(playerId, "agent")}
                           alt="Outrage"
                         />
                       )}
@@ -229,7 +253,10 @@ export default function PlayerTable({
               <CapturedPieces kind="captives" player={me} game={game} />
             </div>
           </div>
-          <section className="owned-table-cards" aria-label="Your owned cards">
+          <section
+            className="owned-table-cards"
+            aria-label={`${me.name}’s owned cards`}
+          >
             <header>
               Leader, Lore & Guilds <span>{owned.length}</span>
             </header>
@@ -238,7 +265,7 @@ export default function PlayerTable({
                 <button
                   className="owned-table-card"
                   key={id}
-                  aria-label={`Inspect your ${CARDS[id].name}`}
+                  aria-label={`Inspect ${me.name}’s ${CARDS[id].name}`}
                   onClick={() => onInspect(id)}
                   style={{ "--card-tilt": `${((i % 3) - 1) * 2}deg` }}
                 >
@@ -248,7 +275,7 @@ export default function PlayerTable({
               ))}
               {!owned.length && (
                 <p className="empty-owned">
-                  Your secured Guilds and other cards go here.
+                  Secured Guilds and other owned cards go here.
                 </p>
               )}
             </div>
@@ -292,17 +319,35 @@ export default function PlayerTable({
         </div>
         <section
           className={`personal-hand ${actor && game.phase === "card" ? "hand-active" : ""}`}
-          aria-label="Your private action cards"
+          aria-label={
+            readOnly
+              ? `${handSize} face-down action cards`
+              : "Your private action cards"
+          }
         >
           <div className="hand-label">
-            <span className="eyebrow">YOUR HAND</span>
+            <span className="eyebrow">{readOnly ? "HAND" : "YOUR HAND"}</span>
             <strong>{handSize} action cards</strong>
             <span className="private-hand-note">
               <Shield size={10} />
-              Only you
+              {readOnly ? "Faces hidden" : "Only you"}
             </span>
           </div>
-          {children}
+          {readOnly ? (
+            <div className="hidden-hand" aria-hidden="true">
+              {Array.from({ length: handSize }, (_, i) => (
+                <img
+                  key={i}
+                  src="/assets/card-back.webp"
+                  alt=""
+                  style={{ "--fan": `${(i - (handSize - 1) / 2) * 2}deg` }}
+                />
+              ))}
+              {!handSize && <span>No cards in hand</span>}
+            </div>
+          ) : (
+            children
+          )}
         </section>
       </div>
     </section>
