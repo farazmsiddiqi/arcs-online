@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { wheelCamera } from "./cameraGesture.js";
 import { boundedCamera, frameCamera } from "./cameraFraming.js";
 export default function useMapCamera(system, centers, slots, pieces) {
   const [camera, setCamera] = useState({ x: 1264, y: 888, z: 1 });
@@ -8,12 +9,38 @@ export default function useMapCamera(system, centers, slots, pieces) {
     svg = useRef(null),
     pan = useRef(null),
     suppress = useRef(false),
-    tour = useRef(null);
+    tour = useRef(null),
+    settled = useRef(null),
+    manualUntil = useRef(0);
   const cancelTour = () => {
     clearTimeout(tour.current);
     tour.current = null;
   };
+  const draw = (v) => {
+    current.current = v;
+    svg.current?.setAttribute(
+      "viewBox",
+      `${v.x - 1264 / v.z} ${v.y - 888 / v.z} ${2528 / v.z} ${1776 / v.z}`,
+    );
+  };
+  const takeControl = () => {
+    cancelTour();
+    clearTimeout(settled.current);
+    cancelAnimationFrame(animation.current);
+    goal.current = current.current;
+    manualUntil.current = performance.now() + 1500;
+  };
+  const direct = (next) => {
+    const target = boundedCamera(next);
+    goal.current = target;
+    // Gesture input is already interpolated by the OS. Applying another easing
+    // loop makes reversals fight an old target and causes the pointer to drift.
+    draw(target);
+    clearTimeout(settled.current);
+    settled.current = setTimeout(() => setCamera(current.current), 120);
+  };
   const move = (next, duration = 0) => {
+    clearTimeout(settled.current);
     cancelAnimationFrame(animation.current);
     const target = boundedCamera(next),
       from = current.current,
@@ -29,11 +56,7 @@ export default function useMapCamera(system, centers, slots, pieces) {
         y: from.y + (target.y - from.y) * k,
         z: from.z + (target.z - from.z) * k,
       };
-      current.current = v;
-      svg.current?.setAttribute(
-        "viewBox",
-        `${v.x - 1264 / v.z} ${v.y - 888 / v.z} ${2528 / v.z} ${1776 / v.z}`,
-      );
+      draw(v);
       if (t < 1) animation.current = requestAnimationFrame(tick);
       else setCamera(v);
     };
@@ -44,15 +67,16 @@ export default function useMapCamera(system, centers, slots, pieces) {
     if (next) move(next, duration);
   };
   const focus = (id) => {
-    cancelTour();
+    takeControl();
     frame([id], true, 650);
   };
   const frameSystems = (ids) => {
-    cancelTour();
+    takeControl();
     frame(ids);
   };
   const follow = (effects) => {
     cancelTour();
+    if (performance.now() < manualUntil.current) return;
     const ids = [
       ...new Set(effects.flatMap((e) => [e.from, e.system]).filter(Boolean)),
     ];
@@ -62,20 +86,23 @@ export default function useMapCamera(system, centers, slots, pieces) {
       tour.current = setTimeout(() => frame([destination], true, 900), 850);
   };
   const zoom = (factor) => {
-    cancelTour();
-    move({ ...current.current, z: goal.current.z * factor }, 280);
+    const z = goal.current.z * factor;
+    takeControl();
+    move({ ...current.current, z }, 280);
   };
   const reset = () => {
-    cancelTour();
+    takeControl();
     move({ x: 1264, y: 888, z: 1 }, 650);
   };
   useEffect(() => {
-    if (system) frame([system], true, 750);
+    if (system && performance.now() >= manualUntil.current)
+      frame([system], true, 750);
   }, [system]);
   useEffect(
     () => () => {
       cancelAnimationFrame(animation.current);
       cancelTour();
+      clearTimeout(settled.current);
     },
     [],
   );
@@ -83,39 +110,25 @@ export default function useMapCamera(system, centers, slots, pieces) {
     const el = svg.current;
     if (!el) return;
     const wheel = (e) => {
+      if (!Number.isFinite(e.deltaY) || !e.deltaY) return;
       e.preventDefault();
-      cancelTour();
       const matrix = el.getScreenCTM();
       if (!matrix) return;
       const point = new DOMPoint(e.clientX, e.clientY).matrixTransform(
-          matrix.inverse(),
-        ),
-        old = current.current;
-      const delta =
-          e.deltaY * (e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? 500 : 1),
-        z = Math.max(
-          1,
-          Math.min(4, goal.current.z * Math.exp(-delta * 0.0015)),
-        ),
-        ratio = old.z / z;
-      move(
-        {
-          z,
-          x: point.x + (old.x - point.x) * ratio,
-          y: point.y + (old.y - point.y) * ratio,
-        },
-        150,
+        matrix.inverse(),
       );
+      takeControl();
+      direct(wheelCamera(current.current, point, e));
     };
     el.addEventListener("wheel", wheel, { passive: false });
     return () => el.removeEventListener("wheel", wheel);
   }, []);
   const handlers = {
     onPointerDown: (e) => {
+      if (e.button !== 0 && e.button !== 1) return;
       if (e.button !== 1 && e.target.closest("[data-system]")) return;
       if (current.current.z <= 1) return;
-      cancelTour();
-      cancelAnimationFrame(animation.current);
+      takeControl();
       const matrix = svg.current.getScreenCTM().inverse(),
         p = new DOMPoint(e.clientX, e.clientY).matrixTransform(matrix);
       pan.current = {
@@ -134,7 +147,8 @@ export default function useMapCamera(system, centers, slots, pieces) {
         p = new DOMPoint(e.clientX, e.clientY).matrixTransform(d.matrix);
       if (Math.hypot(e.clientX - d.screenX, e.clientY - d.screenY) > 5)
         suppress.current = true;
-      move({ ...d.c, x: d.c.x + d.p.x - p.x, y: d.c.y + d.p.y - p.y });
+      takeControl();
+      direct({ ...d.c, x: d.c.x + d.p.x - p.x, y: d.c.y + d.p.y - p.y });
     },
     onPointerUp: () => {
       pan.current = null;
