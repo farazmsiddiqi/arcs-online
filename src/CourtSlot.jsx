@@ -1,4 +1,4 @@
-import { Search, UserPlus, Undo2, Check, Hand } from "lucide-react";
+import { UserPlus, Undo2, Check, Hand } from "lucide-react";
 import { Card } from "./Cards.jsx";
 import { CARDS } from "../game/data.js";
 import { courtActions } from "./courtActions.js";
@@ -25,36 +25,29 @@ export default function CourtSlot({
       {card.id ? (
         <>
           <Card id={card.id} onClick={() => onInspect(card.id)} />
-          <div className="court-card-controls">
-            <button
-              className="court-inspect"
-              onClick={() => onInspect(card.id)}
-              aria-label={`Inspect ${CARDS[card.id]?.name}`}
-              title="Enlarge and read this card"
-            >
-              <Search size={15} />
-              <span>Inspect</span>
-            </button>
-            {actions.map((c) => (
-              <button
-                key={c.id}
-                className={`court-action ${reviewing ? "court-confirm" : ""}`}
-                disabled={busy || blocked}
-                onClick={() => onAction({ choice: c.id })}
-                aria-label={`${c.actionLabel} ${CARDS[card.id]?.name}`}
-                title={c.label}
-              >
-                {reviewing ? (
-                  <Check size={15} />
-                ) : c.op === "influenceTarget" || c.op === "bold" ? (
-                  <UserPlus size={15} />
-                ) : (
-                  <Hand size={15} />
-                )}
-                <span>{c.actionLabel}</span>
-              </button>
-            ))}
-          </div>
+          {actions.length > 0 && (
+            <div className="court-card-controls">
+              {actions.map((c) => (
+                <button
+                  key={c.id}
+                  className={`court-action ${reviewing ? "court-confirm" : ""}`}
+                  disabled={busy || blocked}
+                  onClick={() => onAction({ choice: c.id })}
+                  aria-label={`${c.actionLabel} ${CARDS[card.id]?.name}`}
+                  title={c.label}
+                >
+                  {reviewing ? (
+                    <Check size={15} />
+                  ) : c.op === "influenceTarget" || c.op === "bold" ? (
+                    <UserPlus size={15} />
+                  ) : (
+                    <Hand size={15} />
+                  )}
+                  <span>{c.actionLabel}</span>
+                </button>
+              ))}
+            </div>
+          )}
           {reviewing && (
             <div className="court-placement-review">
               <span>Agent placed · not yet confirmed</span>

@@ -15,12 +15,6 @@
   font-size: 12px;
   line-height: 1.2;
 }
-.app .court-card-controls .court-inspect {
-  color: #c7beb0;
-  border: 1px solid #76655366;
-  background: #17151866;
-  flex: 1;
-}
 .app .court-card-controls .court-action {
   color: #f7e6bf;
   border: 1px solid #c6a36a;
@@ -72,16 +66,6 @@
   font-size: 11px;
   margin: 0 0 6px;
 }
-@media (max-width: 1250px) {
-  .court-card-controls .court-inspect span {
-    display: none;
-  }
-  .app .court-card-controls .court-inspect {
-    flex: 0 0 30px;
-    padding: 5px;
-  }
-}
-
 /* Court cards remain readable within the narrow board-side rail. */
 .app .board-area:not(.expanded-board) .court-row {
   padding: 0;
@@ -89,13 +73,6 @@
 }
 .app .board-area:not(.expanded-board) .court-card-controls {
   flex-wrap: wrap;
-}
-.app .board-area:not(.expanded-board) .court-inspect {
-  flex: 0 0 28px;
-  padding: 4px;
-}
-.app .board-area:not(.expanded-board) .court-inspect span {
-  display: none;
 }
 .app .board-area:not(.expanded-board) .court-action {
   min-width: 0;
