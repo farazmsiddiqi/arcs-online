@@ -1,3 +1,4 @@
+import CourtSlot from "./CourtSlot.jsx";
 import { shortcutFor, SHORTCUTS } from "./keyboardShortcuts.js";
 import { installAudioUnlock, readVolume, writeVolume } from "./gameAudio.js";
 import ReplayViewer from "./ReplayViewer.jsx";
@@ -1044,83 +1045,23 @@ export default function App() {
                 <Layers size={12} /> Action discard
               </button>
             </div>
+            <p className="court-read-hint">
+              Click a card to read it. Use its button below to act.
+            </p>
             <div className="court-row">
               {game.court.map((c, index) => (
-                <div
-                  className="court-slot"
-                  data-court-slot={index}
+                <CourtSlot
                   key={`${index}-${c.id}`}
-                >
-                  {c.id ? (
-                    <>
-                      <Card
-                        id={c.id}
-                        onClick={() => {
-                          const target =
-                            game.decision?.actor === game.me &&
-                            game.decision?.choices?.find(
-                              (v) =>
-                                v.card === c.id &&
-                                [
-                                  "influenceTarget",
-                                  "secureTarget",
-                                  "bold",
-                                  "ransack",
-                                ].includes(v.op),
-                            );
-                          if (target && !busy && !room?.clock?.blocked)
-                            actOrConfirm({ choice: target.id });
-                          else setDetail(c.id);
-                        }}
-                      />
-                      {game.decision?.choices?.some(
-                        (v) =>
-                          v.card === c.id &&
-                          [
-                            "influenceTarget",
-                            "secureTarget",
-                            "bold",
-                            "ransack",
-                          ].includes(v.op),
-                      ) && (
-                        <span className="court-action-hint">
-                          {game.decision.choices
-                            .find(
-                              (v) =>
-                                v.card === c.id &&
-                                [
-                                  "influenceTarget",
-                                  "secureTarget",
-                                  "bold",
-                                  "ransack",
-                                ].includes(v.op),
-                            )
-                            .op.match(/influenceTarget|bold/)
-                            ? "Place agent"
-                            : game.decision.choices.some(
-                                  (v) => v.card === c.id && v.op === "ransack",
-                                )
-                              ? "Ransack card"
-                              : "Secure card"}{" "}
-                          ↗
-                        </span>
-                      )}
-                    </>
-                  ) : (
-                    <div className="empty-court">Court deck empty</div>
-                  )}
-                  <div className="influence-dots">
-                    {game.players.map((p, i) => (
-                      <span
-                        key={i}
-                        style={{ color: p.color }}
-                        title={`${p.name}: ${c.agents[i]} agents`}
-                      >
-                        ● <b>{c.agents[i]}</b>
-                      </span>
-                    ))}
-                  </div>
-                </div>
+                  game={game}
+                  card={c}
+                  index={index}
+                  busy={busy}
+                  blocked={room?.clock?.blocked}
+                  history={room?.history}
+                  onInspect={setDetail}
+                  onAction={actOrConfirm}
+                  onUndo={() => control("history", { direction: "undo" })}
+                />
               ))}
             </div>
           </div>

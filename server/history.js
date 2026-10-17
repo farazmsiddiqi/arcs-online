@@ -4,6 +4,8 @@ const actorOf = (s) =>
 const equal = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 const discardPiles = (s) => [s.discardDown, s.discardUp];
 export function historyBoundary(before, after, actor, choice) {
+  if (choice?.op === "confirmInfluence")
+    return "Influence confirmed. Earlier decisions are committed.";
   if (
     choice?.op === "endTurn" ||
     choice?.op === "pass" ||

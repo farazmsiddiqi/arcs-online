@@ -1,0 +1,131 @@
+.court-card-controls {
+  display: flex;
+  gap: 5px;
+  width: 100%;
+  margin: 6px 0 3px;
+}
+.app .court-card-controls button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  border-radius: 6px;
+  min-height: 32px;
+  padding: 5px 8px;
+  font-size: 12px;
+  line-height: 1.2;
+}
+.app .court-card-controls .court-inspect {
+  color: #c7beb0;
+  border: 1px solid #76655366;
+  background: #17151866;
+  flex: 1;
+}
+.app .court-card-controls .court-action {
+  color: #f7e6bf;
+  border: 1px solid #c6a36a;
+  background: linear-gradient(135deg, #5e4833, #352b25);
+  flex: 2;
+  font-weight: 600;
+}
+.app .court-card-controls .court-action:hover:not(:disabled) {
+  background: #795e3d;
+  border-color: #efd09b;
+}
+.app .court-card-controls button:focus-visible {
+  outline: 2px solid #f4d6a3;
+  outline-offset: 3px;
+}
+.app .court-card-controls button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.app .court-can-act .court-card {
+  outline: 1px solid #b89b6044;
+  outline-offset: 2px;
+}
+.app .court-reviewing {
+  border-radius: 8px;
+  background: #b89b6014;
+  box-shadow: 0 0 0 1px #b89b6077;
+  padding: 5px;
+}
+.court-placement-review {
+  display: grid;
+  gap: 4px;
+  font-size: 10px;
+  color: #d6c094;
+  text-align: center;
+}
+.court-placement-review button {
+  display: inline-flex;
+  gap: 5px;
+  align-items: center;
+  justify-content: center;
+  padding: 5px;
+  color: #ead9ba;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.court-read-hint {
+  color: #baad9a;
+  font-size: 11px;
+  margin: 0 0 6px;
+}
+@media (max-width: 1250px) {
+  .court-card-controls .court-inspect span {
+    display: none;
+  }
+  .app .court-card-controls .court-inspect {
+    flex: 0 0 30px;
+    padding: 5px;
+  }
+}
+
+/* Court cards remain readable within the narrow board-side rail. */
+.app .board-area:not(.expanded-board) .court-row {
+  padding: 0;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.app .board-area:not(.expanded-board) .court-card-controls {
+  flex-wrap: wrap;
+}
+.app .board-area:not(.expanded-board) .court-inspect {
+  flex: 0 0 28px;
+  padding: 4px;
+}
+.app .board-area:not(.expanded-board) .court-inspect span {
+  display: none;
+}
+.app .board-area:not(.expanded-board) .court-action {
+  min-width: 0;
+  padding: 4px;
+  font-size: 11px;
+}
+.app .board-area:not(.expanded-board) .court-action svg {
+  display: none;
+}
+.app .reaction-window .decision-history {
+  position: relative;
+  top: auto;
+  right: auto;
+  width: auto;
+  margin: 8px 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.app .reaction-window h2 {
+  padding-right: 0;
+  margin-right: 0;
+}
+
+.app .reaction-window .decision-history > div {
+  flex-shrink: 0;
+}
+.app .reaction-window .decision-history button {
+  white-space: nowrap;
+  min-width: 64px;
+}

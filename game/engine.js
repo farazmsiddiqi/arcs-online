@@ -1890,6 +1890,16 @@ function taskDecision(s, t) {
       return preludeDecision(s, t);
     case "special":
       return specialDecision(s, t);
+    case "influenceReview":
+      return {
+        title: "Elder · Review your Influence",
+        description: `Your agent is on ${title(t.card)}. Inspect any Court card, or undo to choose a different one. Confirm when ready to let play continue.`,
+        choices: [
+          choose("Confirm Influence & continue", "confirmInfluence", {
+            card: t.card,
+          }),
+        ],
+      };
     case "freeChoice":
       return {
         title: t.reason,
@@ -2118,6 +2128,18 @@ function resolveTask(s, t, c) {
     }
     case "freeChoice":
       resolveStandard(s, p, c, "free", t);
+      // Beloved is an out-of-turn decision. Keep the defender's window open
+      // until they accept the placement; otherwise handing control back would
+      // immediately commit it and make a misclick impossible to undo.
+      if (c.op === "influenceTarget" && t.reason === "Elder · Beloved")
+        push(s, {
+          type: "influenceReview",
+          p,
+          card: s.court[c.index].id,
+          reason: "Elder · Review Influence",
+        });
+      break;
+    case "influenceReview":
       break;
     case "moveTo":
       executeMove(s, { ...t, to: c.system });

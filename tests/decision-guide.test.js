@@ -18,7 +18,7 @@ test("every explicit pending decision has an instruction and a next-step explana
     text.indexOf("function resolveTask("),
   );
   const kinds = [...section.matchAll(/case "([^"]+)":/g)].map((m) => m[1]);
-  assert.equal(kinds.length, 44);
+  assert.equal(kinds.length, 45);
   for (const kind of kinds) {
     assert.equal(STATE_GUIDES[kind]?.length, 2, kind);
     assert.ok(

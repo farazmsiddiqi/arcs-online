@@ -148,6 +148,10 @@ export const STATE_GUIDES = {
     "Choose the target or payment for this card ability.",
     "Finish its effects before returning to the action.",
   ],
+  influenceReview: [
+    "Your agent is placed. You can still inspect cards or Undo to change the target.",
+    "Confirm Influence to return control and resume play. This commits the placement.",
+  ],
   freeChoice: [
     "Choose a target for this bonus action, or skip it.",
     "Resolve the bonus before the original action continues.",

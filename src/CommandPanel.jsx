@@ -163,7 +163,9 @@ export default function CommandPanel({
     />
   );
   return (
-    <div className={`command-live phase-${game.phase}`}>
+    <div
+      className={`command-live phase-${game.phase} ${myTurn && !myCardTurn ? "reaction-window" : ""}`}
+    >
       <span className="eyebrow">
         {myTurn ? "YOUR COMMAND" : "TABLE STATUS"}
       </span>
@@ -583,14 +585,16 @@ export default function CommandPanel({
             <strong>
               {targetChoices.some((c) => c.system)
                 ? "Choose on the map"
-                : "Choose a card in the Court"}
+                : "Use the action button below a Court card"}
             </strong>
             <small>
               {targetChoices.some((c) => c.op === "hit")
                 ? "Click the piece that should take the hit."
                 : targetChoices.some((c) => c.op === "repairTarget")
                   ? "Click a damaged piece to repair it."
-                  : "Glowing targets show where this action is available."}
+                  : !targetChoices.some((c) => c.system)
+                    ? "Click the card itself to enlarge and read it."
+                    : "Glowing targets show where this action is available."}
             </small>
           </div>
         </div>
