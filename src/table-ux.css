@@ -1543,3 +1543,32 @@ body {
   text-decoration: underline;
   text-underline-offset: 3px;
 }
+.confirm-end:has(.draft-confirm-card) {
+  display: grid;
+  grid-template-columns: 86px minmax(0, 1fr);
+  gap: 8px 12px;
+}
+.confirm-end:has(.draft-confirm-card) > .eyebrow,
+.confirm-end:has(.draft-confirm-card) > h3,
+.confirm-end:has(.draft-confirm-card) > div {
+  grid-column: 1 / -1;
+  margin: 0;
+}
+.confirm-end:has(.draft-confirm-card) > p {
+  margin: 0;
+  align-self: center;
+}
+.confirm-end .draft-confirm-card {
+  flex-direction: column;
+  gap: 4px;
+  margin: 0;
+  padding: 4px;
+}
+.draft-confirm-card img {
+  width: 68px;
+  max-height: 100px;
+}
+.draft-confirm-card span {
+  font-size: 10px;
+  line-height: 1.2;
+}
