@@ -30,7 +30,8 @@ export function useClock(clock) {
   const elapsed = pauseExpiry ? Math.max(0, clock.remainingMs) : dt;
   // The bank drains only once the response grace is used up, never in the draft.
   const grace = clock.graceMs ?? 0,
-    drain = clock.draft ? 0 : Math.max(0, elapsed - grace),
+    drain =
+      clock.draft || !clock.config.bank ? 0 : Math.max(0, elapsed - grace),
     mine = (v, i, add) => v + (i === clock.actor ? add : 0);
   return {
     ...clock,
@@ -87,7 +88,9 @@ export function ClockChip({ clock, onClick }) {
             : c.complete
               ? "Game complete"
               : c.remainingMs === null
-                ? "Untimed"
+                ? c.config.mode === "off"
+                  ? "Untimed"
+                  : "Timer ready"
                 : which + duration(shownMs(c))}
         <small>
           {c.remainingMs < 0
@@ -167,14 +170,49 @@ export default function TurnTimers({ room, onControl, busy, error }) {
       <span className="eyebrow gold">PACE OF PLAY</span>
       <h2>Turn timers</h2>
       <p>
-        A turn limit caps each card turn, from choosing your card through
-        confirmation. A time bank lasts your whole game, and an increment is
-        added to it whenever your card turn starts. With both, the tighter one
-        applies. Actions, Back, Undo, and Redo never restart a clock. During
-        another player’s response only their clock runs, and the first 10
-        seconds of each response do not touch their bank. Draft picks never use
-        the bank.
+        Add, remove, or restart timers whenever you like—even mid-battle or
+        after time expires. These controls never restart the game or change the
+        decision in front of you.
       </p>
+      {room.host && (
+        <div className="timer-lifecycle">
+          <div className="timer-controls">
+            <button
+              className="primary"
+              disabled={busy}
+              onClick={() => onControl({ operation: "restart" })}
+            >
+              {config.mode === "off" ? "Start timer" : "Restart timers"}
+            </button>
+            {config.mode !== "off" && (
+              <button
+                disabled={busy}
+                onClick={() => onControl({ operation: "remove" })}
+              >
+                Remove timer
+              </button>
+            )}
+          </div>
+          <p>
+            {config.mode === "off"
+              ? `Start with ${timerSummary(c?.restartConfig ?? { mode: "live", turn: 300 })}. Customize below.`
+              : "Restart refills every time bank and gives this turn a full clock. Remove continues untimed."}
+            {c?.actor === null && " Timers wait until a player has a decision."}
+          </p>
+        </div>
+      )}
+      <details className="timer-explanation">
+        <summary>How turn limits and time banks work</summary>
+        <p>
+          A turn limit caps each card turn, from choosing your card through
+          confirmation. A time bank lasts your whole game, and an increment is
+          added to it whenever your card turn starts. With both, the tighter one
+          applies. Actions, Back, Undo, and Redo never restart a clock. During
+          another player’s response only their clock runs, and the first 10
+          seconds of each response do not touch their bank. Draft picks never
+          use the bank.
+        </p>
+      </details>
       {c && (
         <>
           <div className="timer-hero">
@@ -186,7 +224,9 @@ export default function TurnTimers({ room, onControl, busy, error }) {
                     ? "AI finishing turn"
                     : "Time expired"
                   : c.remainingMs === null
-                    ? "Untimed"
+                    ? c.config.mode === "off"
+                      ? "Untimed"
+                      : "Timer ready"
                     : duration(shownMs(c))}
             </strong>
             <span>
@@ -368,11 +408,13 @@ export default function TurnTimers({ room, onControl, busy, error }) {
             <p>
               Applying settings restarts the current turn’s allowance for
               everyone and removes added time. Time already charged to a bank
-              stays charged. Pausing stops play and clocks. Disconnection does
-              not pause a clock. With AI completion, expiry commits the
-              remaining legal decisions and passes play onward; once a bank is
-              empty with no increment, AI plays that player’s turns until the
-              host adds time. AI preserves saved resources and favors
+              stays charged when editing an existing bank; a newly added bank
+              starts full. Restart timers refills all banks, preserving total
+              decision-time statistics. Pausing stops play and clocks.
+              Disconnection does not pause a clock. With AI completion, expiry
+              commits the remaining legal decisions and passes play onward; once
+              a bank is empty with no increment, AI plays that player’s turns
+              until the host adds time. AI preserves saved resources and favors
               conservative actions. It never forfeits a player. Pause or add
               time to interrupt automatic play. Adding time goes to the turn
               limit and the bank alike.

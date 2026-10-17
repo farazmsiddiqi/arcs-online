@@ -353,3 +353,66 @@ test("host extend goes to each enabled limit; configure keeps bank use", () => {
   const loaded = JSON.parse(JSON.stringify(r));
   assert.deepEqual(view(loaded, 70000), view(r, 70000));
 });
+
+test("adding a bank after untimed play starts full instead of billing previous decisions", () => {
+  const r = room({ mode: "off" });
+  changeClock(
+    r,
+    0,
+    { operation: "configure", config: live({ bank: 600 }) },
+    7200000,
+  );
+  assert.deepEqual(view(r, 7200000).bank, [600000, 600000]);
+  assert.equal(view(r, 7200000).total[r.game.current], 7200000);
+  assert.equal(view(r, 7210000).bank[r.game.current], 590000);
+});
+
+test("restart refills all allowances, cancels AI takeover and keeps the position and history", () => {
+  const r = room(live({ turn: 60, bank: 300, increment: 30 }, "auto"));
+  const game = structuredClone(r.game);
+  r.history = { cursor: 1, steps: [{ before: game }] };
+  const history = structuredClone(r.history);
+  r.clock.takeovers = ["old takeover"];
+  r.clock.paused = true;
+  r.clock.charged = [300000, 300000];
+  r.clock.spent = [60000, 60000];
+  changeClock(r, 0, { operation: "restart" }, 90000);
+  const c = view(r, 90000);
+  assert.equal(c.remainingMs, 60000);
+  assert.equal(c.paused, false);
+  assert.deepEqual(c.charged, [0, 0]);
+  assert.deepEqual(r.clock.takeovers, []);
+  assert.deepEqual(
+    c.bank,
+    r.seats.map((_, i) => (i === r.game.current ? 330000 : 300000)),
+  );
+  assert.deepEqual(r.game, game);
+  assert.deepEqual(r.history, history);
+  assert.equal(resolveTimeout(r, 90000), null);
+  changeClock(r, 0, { operation: "remove" }, 100000);
+  assert.equal(view(r, 100000).config.mode, "off");
+  assert.equal(view(r, 100000).blocked, false);
+  assert.equal(resolveTimeout(r, 900000), null);
+  changeClock(r, 0, { operation: "restart" }, 900000);
+  assert.equal(view(r, 900000).config.bank, 300);
+  assert.equal(view(r, 900000).remainingMs, 60000);
+});
+
+test("timer lifecycle works throughout every saved decision fixture without altering game state", () => {
+  for (const [name, fixture] of Object.entries(fixtures)) {
+    if (!fixture.raw) continue;
+    const r = room({ mode: "off" }, fixture.raw);
+    const before = structuredClone(r.game);
+    for (const operation of ["restart", "remove", "restart"]) {
+      changeClock(r, 0, { operation }, 1000);
+      assert.deepEqual(r.game, before, `${name}: ${operation}`);
+    }
+    assert.equal(view(r, 1000).revision, 3, name);
+  }
+  const lobby = { seats: [{ name: "A" }], options: {}, game: null };
+  changeClock(lobby, 0, { operation: "restart" }, 0);
+  assert.equal(view(lobby, 100000).actor, null);
+  assert.equal(view(lobby, 100000).remainingMs, null);
+  changeClock(lobby, 0, { operation: "remove" }, 100000);
+  assert.equal(lobby.game, null);
+});

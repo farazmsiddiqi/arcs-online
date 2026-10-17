@@ -530,7 +530,7 @@ test("reconnecting mid-decision restores the same decision, and a host extension
   );
 
   // Offline again, the host adds time to the guest's clock. The change is a
-  // new revision, and the returning seat sees it with the same decision.
+  // new timer revision, and the returning seat sees it with the same decision.
   back.ws.close();
   await until(
     () => host.messages.at(-1).seats[guest].connected === false,
@@ -542,15 +542,16 @@ test("reconnecting mid-decision restores the same decision, and a host extension
     hostKey,
   );
   assert.equal(extended.status, 200);
-  assert.equal(extended.data.game.revision, decision.revision + 1);
+  assert.equal(extended.data.game.revision, decision.revision);
+  assert.equal(extended.data.clock.revision, 2);
   const returned = await connect(port, id, guestKey);
   await until(() => returned.messages.length, "the view after the extension");
   const after = returned.messages[0];
-  assert.equal(after.game.revision, decision.revision + 1);
+  assert.equal(after.game.revision, decision.revision);
   assert.equal(after.game.decision.title, decision.title);
   assert.equal(after.game.decision.choices.length, decision.choices);
   assert.equal(after.clock.bonus[guest], 120000, "the guest's clock grew");
-  // And the guest can still act on that decision at the new revision.
+  // The guest's already displayed decision is still valid after a timer change.
   const move = await post(
     "/action",
     {
@@ -659,4 +660,78 @@ test("old persisted tables reconnect and save without losing cards or turn timer
   assert.deepEqual(stored.game.discardDown, before.discard);
   assert.equal(stored.game.discard, undefined);
   assert.equal((await req(root, "GET", null, guest.key)).status, 200);
+});
+
+test("timer controls have independent revisions, preserve gameplay, and persist across redeploys", async (t) => {
+  const { start, stop, req } = await launch(t);
+  await start();
+  const host = (await req("/api/rooms", "POST", { name: "Host", players: 2 }))
+    .data;
+  const root = `/api/rooms/${host.id}`;
+  const guest = (
+    await req(root + "/join", "POST", { name: "Guest", invite: host.invite })
+  ).data;
+  let v = (await req(root, "GET", null, host.key)).data;
+  let reply = await req(
+    root + "/timer",
+    "POST",
+    { operation: "restart", clockRevision: 0 },
+    host.key,
+  );
+  assert.equal(reply.status, 200);
+  assert.equal(reply.data.game, null);
+  assert.equal(reply.data.clock.config.turn, 300);
+  assert.equal(reply.data.clock.actor, null);
+  v = (await req(root + "/start", "POST", {}, host.key)).data;
+  const before = structuredClone(v.game);
+  const history = structuredClone(v.history);
+  reply = await req(
+    root + "/timer",
+    "POST",
+    { operation: "remove", revision: -100, clockRevision: v.clock.revision },
+    host.key,
+  );
+  assert.equal(
+    reply.status,
+    200,
+    "stale game revision does not block clock controls",
+  );
+  assert.deepEqual(reply.data.game, before);
+  assert.deepEqual(reply.data.history, history);
+  assert.equal(reply.data.clock.config.mode, "off");
+  const oldClock = v.clock.revision;
+  v = reply.data;
+  assert.equal(
+    (
+      await req(
+        root + "/timer",
+        "POST",
+        { operation: "restart", clockRevision: oldClock },
+        host.key,
+      )
+    ).status,
+    409,
+  );
+  assert.equal(
+    (await req(root + "/timer", "POST", { operation: "restart" }, guest.key))
+      .status,
+    403,
+  );
+  reply = await req(
+    root + "/timer",
+    "POST",
+    { operation: "restart", clockRevision: v.clock.revision },
+    host.key,
+  );
+  assert.equal(reply.status, 200);
+  assert.deepEqual(reply.data.game, before);
+  assert.ok(reply.data.clock.remainingMs > 299000);
+  v = reply.data;
+  await stop();
+  await start();
+  reply = await req(root, "GET", null, host.key);
+  assert.deepEqual(reply.data.game, before);
+  assert.equal(reply.data.clock.revision, v.clock.revision);
+  assert.equal(reply.data.clock.config.mode, "live");
+  assert.ok(reply.data.clock.remainingMs <= v.clock.remainingMs);
 });

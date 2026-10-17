@@ -20,6 +20,12 @@ Open `http://localhost:3001`. Saved games are written to `var/` by default. For 
 
 Create a table, share its invitation link, and join from separate browsers. Seat credentials are stored in the joining browser. Keep invitation links and browser storage private. Practice opponents and timeout resolution use a local heuristic policy; they are not expert players.
 
+## Independent timer controls
+
+Open **Turn timers** as the host at any stage, including during a battle, draft, expired turn, or after the game ends. **Start timer** uses the previous settings (or a five-minute turn timer initially). **Restart timers** refills all time banks and the current turn allowance; **Remove timer** immediately continues untimed. Neither operation changes the board, hands, current decision, or undo history. A timer configured without an active decision waits for one. **Pause table** still explicitly pauses both play and clocks.
+
+Timer controls have their own revision, so game activity cannot make a timer request stale or clear a player's selection. Adding a bank starts it full rather than charging earlier untimed play. Editing an existing bank keeps its usage; Restart explicitly refills it. Timer configuration and elapsed time persist in the same saved room across redeploys. AI timeout completion is unchanged.
+
 ## Table chat and @arcy
 
 Open **Chat @arcy** in a table to talk with the other players. Mention `@arcy` anywhere in a message to ask the referee, for example: `@arcy Why is the lead 0, and what can I do now?` Everyone sees the answer and its supporting rule excerpts. The panel can be resized from its left edge; Enter sends and Shift+Enter adds a line.

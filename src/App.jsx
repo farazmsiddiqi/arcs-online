@@ -581,7 +581,12 @@ export default function App() {
       const data = await request(
         `/api/rooms/${credentials.id}/${kind}`,
         "POST",
-        { revision: room.game?.revision ?? room.revision, ...input },
+        {
+          ...(kind === "timer"
+            ? { clockRevision: room.clock?.revision ?? 0 }
+            : { revision: room.game?.revision ?? room.revision }),
+          ...input,
+        },
       );
       setRoom(data);
     } catch (e) {

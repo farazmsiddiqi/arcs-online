@@ -1222,8 +1222,35 @@ body {
 }
 .timer-controls {
   display: flex;
+  flex-wrap: wrap;
   gap: 10px;
   margin: 20px 0;
+}
+.timer-lifecycle {
+  padding: 4px 18px 12px;
+  margin: 18px 0;
+  border: 1px solid #c6a57266;
+  border-radius: 12px;
+  background: linear-gradient(120deg, #43332b, #272229);
+}
+.timer-lifecycle .timer-controls {
+  margin: 14px 0 10px;
+}
+.timer-lifecycle .primary {
+  background: #cfad76;
+  color: #221e23;
+  font-weight: 700;
+}
+.timer-lifecycle p {
+  margin: 0;
+  font-size: 14px;
+}
+.timer-explanation {
+  margin-bottom: 16px;
+}
+.timer-explanation summary {
+  cursor: pointer;
+  color: #d5bf9a;
 }
 .timer-controls button {
   flex: 1;

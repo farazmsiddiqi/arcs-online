@@ -318,7 +318,7 @@ for (const control of ["history", "timer"])
     const row = load(req.params.id),
       p = auth(row, getKey(req));
     const revision = row.room.game?.revision ?? row.room.revision;
-    if (req.body.revision !== revision)
+    if (control === "history" && req.body.revision !== revision)
       return res.status(409).json({
         error: "The table changed. Your view has been refreshed.",
         ...publicRoom(row, p),
@@ -329,10 +329,30 @@ for (const control of ["history", "timer"])
       travelHistory(row.room, p, req.body.direction);
       followClock(row.room);
     } else {
+      if (p !== 0)
+        return res
+          .status(403)
+          .json({ error: "Only the host can change table timers." });
+      // Timer settings have their own revision. Moving ships or resolving a
+      // battle must never prevent the host from stopping/restarting a clock.
+      if (
+        req.body.clockRevision !== undefined &&
+        req.body.clockRevision !== (row.room.clock?.revision ?? 0)
+      )
+        return res
+          .status(409)
+          .json({
+            error: "Timer settings changed. Review the refreshed controls.",
+            ...publicRoom(row, p),
+          });
       changeClock(row.room, p, req.body);
-      if (row.room.game) row.room.game.revision++;
     }
-    persistAction(row, p, { control, ...req.body });
+    if (control === "history") persistAction(row, p, { control, ...req.body });
+    else {
+      // Timer notices live in the room, independent of the game action journal.
+      row.room.revision++;
+      save(row);
+    }
     res.json(publicRoom(row, p));
     broadcast(row.id);
     if (row.room.practice) scheduleBot(row.id);

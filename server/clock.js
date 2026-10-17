@@ -82,6 +82,7 @@ export function initClock(room, now = Date.now()) {
     return;
   }
   room.clock = {
+    revision: 0,
     config: validateTimer(room.options?.timer),
     key: turnKey(room.game),
     actor: actorOf(room.game),
@@ -140,13 +141,19 @@ export function clockView(room, now = Date.now()) {
   if (active !== null) {
     spent[active] += dt;
     total[active] += dt;
-    if (!isDraft(c)) charged[active] += Math.max(0, dt - grace);
+    if (!isDraft(c) && knobs(c.config).bank)
+      charged[active] += Math.max(0, dt - grace);
   }
   const remaining = binding ? limits(c, dt)[binding] : null,
     bank = knobs(c.config).bank
       ? room.seats.map((_, i) => bankBalance({ ...c, charged }, i))
       : null;
   return {
+    revision: c.revision ?? 0,
+    restartConfig:
+      c.config.mode === "off"
+        ? (c.lastConfig ?? validateTimer({ mode: "live" }))
+        : c.config,
     config: {
       mode: c.config.mode,
       expiry: c.config.expiry,
@@ -283,7 +290,11 @@ export function changeClock(room, p, input, now = Date.now()) {
   // Validate first so a malformed command cannot partially settle the clock.
   const config =
     input.operation === "configure" ? validateTimer(input.config) : null;
-  if (!["configure", "pause", "resume", "extend"].includes(input.operation))
+  if (
+    !["configure", "restart", "remove", "pause", "resume", "extend"].includes(
+      input.operation,
+    )
+  )
     throw new RuleError("Choose a valid timer control.");
   if (
     input.operation === "extend" &&
@@ -295,15 +306,39 @@ export function changeClock(room, p, input, now = Date.now()) {
   settleClock(room, now);
   const c = room.clock;
   let extended;
-  if (input.operation === "configure") {
-    c.config = config;
-    room.options.timer = config;
+  const previous = c.config;
+  if (["configure", "restart", "remove"].includes(input.operation)) {
+    if (previous.mode !== "off") c.lastConfig = previous;
+    c.config =
+      input.operation === "restart"
+        ? validateTimer(
+            previous.mode === "off"
+              ? (c.lastConfig ?? { mode: "live" })
+              : previous,
+          )
+        : input.operation === "remove"
+          ? validateTimer({ mode: "off", expiry: previous.expiry })
+          : config;
+    room.options.timer = c.config;
     // Banks keep the time already charged and the increments earned.
     c.spent = room.seats.map(() => 0);
     c.bonus = room.seats.map(() => 0);
     c.bankBonus = room.seats.map(() => 0);
     c.paused = false;
     c.takeovers = [];
+    // A new/restarted bank starts now, never charging earlier untimed play.
+    if (
+      input.operation === "restart" ||
+      (!knobs(previous).bank && knobs(c.config).bank)
+    ) {
+      c.charged = room.seats.map(() => 0);
+      c.credit = room.seats.map(() => 0);
+      c.empty = room.seats.map(() => false);
+      delete c.credited;
+      creditTurn(room, now);
+    }
+    c.grace =
+      c.actor !== null && c.actor !== turnOwner(room.game) ? GRACE_MS : 0;
   }
   if (input.operation === "pause") c.paused = true;
   if (input.operation === "resume") c.paused = false;
@@ -322,21 +357,26 @@ export function changeClock(room, p, input, now = Date.now()) {
     if (extended.bank) c.bankBonus[c.actor] += ms;
   }
   const text =
-    input.operation === "configure"
-      ? config.mode === "off"
-        ? "Timer set to untimed. Current allowance restarted."
-        : `Timer set to ${summary(config)} (${config.mode}). Current allowance restarted${config.bank ? "; banks keep the time already used" : ""}.`
-      : input.operation === "extend"
-        ? `Host added ${span(input.seconds)} to ${room.seats[c.actor].name}'s ${
-            extended.turn && extended.bank
-              ? "turn clock and time bank"
-              : extended.bank
-                ? "time bank"
-                : "current clock"
-          }.`
-        : `Host ${input.operation === "pause" ? "paused" : "resumed"} the table.`;
+    input.operation === "restart"
+      ? `Host ${previous.mode === "off" ? "started" : "restarted"} timers: ${summary(c.config)}. All allowances refilled; game position unchanged.`
+      : input.operation === "remove"
+        ? "Host removed the timer. Play continues untimed; game position unchanged."
+        : input.operation === "configure"
+          ? config.mode === "off"
+            ? "Timer set to untimed. Current allowance restarted."
+            : `Timer set to ${summary(config)} (${config.mode}). Current allowance restarted${config.bank ? "; banks keep the time already used" : ""}.`
+          : input.operation === "extend"
+            ? `Host added ${span(input.seconds)} to ${room.seats[c.actor].name}'s ${
+                extended.turn && extended.bank
+                  ? "turn clock and time bank"
+                  : extended.bank
+                    ? "time bank"
+                    : "current clock"
+              }.`
+            : `Host ${input.operation === "pause" ? "paused" : "resumed"} the table.`;
   // `p` is the seat whose clock this touches (the player now on the clock), so
   // that player's tab can flash. Pause, resume and settings changes stop or
   // restart the same clock.
   addNotice(room, text, c.actor, now);
+  c.revision = (c.revision ?? 0) + 1;
 }
